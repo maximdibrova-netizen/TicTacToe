@@ -96,6 +96,11 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .sb.won-o { background: color-mix(in srgb, var(--o) 55%, var(--line)); }
 .sb.won-x .cell, .sb.won-o .cell, .sb.drawn .cell { opacity: .28; }
 .sb.drawn { opacity: .55; }
+/* where the player to move has to play */
+.sb.target { background: var(--tc); box-shadow: 0 0 0 2px var(--tc), 0 0 22px -2px var(--tc); }
+.sb.target .cell { background: var(--cell-hi); }
+#big.free .sb.target { box-shadow: 0 0 0 1.5px var(--tc); }
+#big.dim .sb:not(.target):not(.won-x):not(.won-o):not(.drawn) { opacity: .5; }
 .sb .big { position: absolute; inset: 8%; pointer-events: none; }
 .sb .big svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 4px 10px rgba(0,0,0,.45)); }
 .sb .big .mk.x { stroke-width: 12; } .sb .big .mk.o { stroke-width: 10; }
@@ -176,12 +181,13 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
       <h2>Правила</h2>
       <ol class="rules">
         <li>Поле — 9 маленьких досок в крестики-нолики, собранных в большую 3×3.</li>
-        <li>Ходите по очереди. <b>Ставить можно в любую свободную клетку любой незанятой доски.</b></li>
-        <li>Собрал три в ряд на маленькой доске — <b>она твоя</b>. Заполнилась без победителя — ничья, она ни за кем.</li>
-        <li>Побеждает тот, кто соберёт <b>три своих доски в ряд</b> на большом поле.</li>
+        <li>Первый ход — в любую клетку. Дальше <b>клетка, куда ты сходил, задаёт доску для соперника</b>: сходил в правый верхний угол маленькой доски — соперник ходит в правой верхней доске. Нужная доска подсвечена.</li>
+        <li>Если тебя отправили в доску, которая уже выиграна или заполнена, ходи <b>в любую</b> открытую доску.</li>
+        <li>Собрал три в ряд на маленькой доске — <b>она твоя</b>. Заполнилась без победителя — она не засчитывается никому.</li>
+        <li>Побеждает тот, кто соберёт <b>три своих доски в ряд</b> на большом поле. Если так не вышел никто — ничья.</li>
       </ol>
     </div>
-    <p class="hint" style="opacity:.6;font-size:11px">Версия от 01.11.2026 18:04</p>
+    <p class="hint" style="opacity:.6;font-size:11px">Версия от 01.11.2026 18:16</p>
   </div>
 </section>
 
@@ -242,22 +248,25 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 <script id="core">
 // ===== Крестики-нолики 3×3 из 3×3: правила и бот (общий код для страницы и воркера) =====
 // Клетка i = доска*9 + клетка_на_доске (обе от 0 до 8, слева направо, сверху вниз).
+// Правила Ultimate tic-tac-toe: клетка, в которую ты сходил, задаёт доску, где ходит соперник (next).
+// Если эта доска уже выиграна или заполнена — соперник ходит в любую открытую доску (next = -1).
 // cells: 0 пусто, 1 крестик, 2 нолик. boards: 0 идёт игра, 1/2 захвачена, 3 ничья (ничья ни за кем).
 var LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
 var LINES_OF = [[], [], [], [], [], [], [], [], []];
 LINES.forEach(function (l, k) { l.forEach(function (c) { LINES_OF[c].push(k); }); });
 
 function newState(first) {
-  return { cells: new Int8Array(81), boards: new Int8Array(9), turn: first || 1, winner: 0, line: null, moves: 0 };
+  return { cells: new Int8Array(81), boards: new Int8Array(9), turn: first || 1, winner: 0, line: null, moves: 0, next: -1 };
 }
 function cloneState(s) {
-  return { cells: s.cells.slice(), boards: s.boards.slice(), turn: s.turn, winner: s.winner, line: s.line, moves: s.moves };
+  return { cells: s.cells.slice(), boards: s.boards.slice(), turn: s.turn, winner: s.winner, line: s.line, moves: s.moves, next: s.next };
 }
-function legal(s, i) { return !s.winner && s.cells[i] === 0 && s.boards[(i / 9) | 0] === 0; }
+function legal(s, i) { var b = (i / 9) | 0; return !s.winner && s.cells[i] === 0 && s.boards[b] === 0 && (s.next < 0 || s.next === b); }
+function canEnter(s, b) { return s.boards[b] === 0 && (s.next < 0 || s.next === b); }
 function legalMoves(s) {
   var out = [];
   if (s.winner) return out;
-  for (var b = 0; b < 9; b++) if (s.boards[b] === 0) for (var c = 0; c < 9; c++) if (s.cells[b * 9 + c] === 0) out.push(b * 9 + c);
+  for (var b = 0; b < 9; b++) if (canEnter(s, b)) for (var c = 0; c < 9; c++) if (s.cells[b * 9 + c] === 0) out.push(b * 9 + c);
   return out;
 }
 function smallLineWon(cells, b, c, p) {
@@ -286,6 +295,7 @@ function play(s, i) {
     if (!open) s.winner = 3;                       // все доски решены, линии нет — ничья
     else if (!bigLinePossible(s)) s.winner = 3;     // никто уже не может собрать линию
   }
+  s.next = s.boards[c] === 0 ? c : -1;      // куда отправлен соперник
   s.turn = 3 - p;
   return res;
 }
@@ -323,7 +333,7 @@ function evaluate(s, p) {
     if (st === p) { cp[b] = 1; cq[b] = 0; }
     else if (st === q) { cp[b] = 0; cq[b] = 1; }
     else if (st === 3) { cp[b] = 0; cq[b] = 0; }
-    else { cp[b] = boardChance(s.cells, b, p, s.turn); cq[b] = boardChance(s.cells, b, q, s.turn); }
+    else { var tm = canEnter(s, b) ? s.turn : 0; cp[b] = boardChance(s.cells, b, p, tm); cq[b] = boardChance(s.cells, b, q, tm); }
   }
   var sp = 0, sq = 0, wp = 0, wq = 0;
   for (var k = 0; k < 8; k++) {
@@ -334,7 +344,8 @@ function evaluate(s, p) {
   }
   var mat = 0;
   for (b = 0; b < 9; b++) mat += (cp[b] - cq[b]) * (b === 4 ? 1.4 : (b % 2 === 0 ? 1.15 : 1));
-  return 260 * (sp - sq) + 520 * (wp - wq) + 18 * mat;
+  var free = s.next < 0 ? (s.turn === p ? 14 : -14) : 0;   // свобода выбора доски — преимущество
+  return 260 * (sp - sq) + 520 * (wp - wq) + 18 * mat + free;
 }
 
 // ---------- порядок ходов ----------
@@ -358,6 +369,17 @@ function moveScore(s, i) {
   }
   sc *= 1 + imp * 0.12;
   sc += (c === 4 ? 6 : c % 2 === 0 ? 4 : 2) + (b === 4 ? 3 : b % 2 === 0 ? 2 : 1);
+  // куда этот ход отправит соперника
+  var sendTo = c, closes = sc >= 1000 && b === c;           // если берём доску c и она же цель — она закроется
+  if (s.boards[sendTo] !== 0 || closes) sc -= 120;           // соперник получит свободный ход
+  else {
+    var tb = sendTo * 9;
+    for (k = 0; k < 8; k++) {
+      var L2 = LINES[k], nq2 = 0, np2 = 0, e2 = 0;
+      for (t = 0; t < 3; t++) { var v2 = s.cells[tb + L2[t]]; if (v2 === q) nq2++; else if (v2 === p) np2++; else e2++; }
+      if (nq2 === 2 && e2 === 1) { sc -= 700; break; }       // там соперник сразу возьмёт доску
+    }
+  }
   return sc;
 }
 function tacticalMove(s, i) {
@@ -372,9 +394,9 @@ function tacticalMove(s, i) {
 
 // ---------- поиск ----------
 var TTT_LEVELS = [
-  { name: 'Лёгкий', time: 120, depth: 1, beam: 99, noise: 160 },
-  { name: 'Средний', time: 400, depth: 3, beam: 10, noise: 12 },
-  { name: 'Сильный', time: 1500, depth: 12, beam: 12, noise: 0.5 }
+  { name: 'Лёгкий', time: 120, depth: 1, beam: 99, noise: 90 },
+  { name: 'Средний', time: 400, depth: 4, beam: 10, noise: 12 },
+  { name: 'Сильный', time: 1500, depth: 14, beam: 14, noise: 0.5 }
 ];
 function tttThink(s0, levelIdx) {
   var L = TTT_LEVELS[levelIdx], me = s0.turn, deadline = Date.now() + L.time, nodes = 0, ABORT = {};
@@ -558,6 +580,10 @@ onmessage = function (e) {
       el.classList.toggle('last', i === last);
       el.disabled = false;
     }
+    var live = !s.winner, tc = s.turn === 1 ? 'var(--x)' : 'var(--o)';
+    $('big').style.setProperty('--tc', tc);
+    $('big').classList.toggle('free', live && s.next < 0);
+    $('big').classList.toggle('dim', live && s.next >= 0);
     for (var b = 0; b < 9; b++) {
       var st = s.boards[b], sb = boardsEl[b];
       if (full || sb._st !== st) {
@@ -565,6 +591,7 @@ onmessage = function (e) {
         sb.querySelector('.big').innerHTML = st === 1 || st === 2 ? markSVG(st, !full) : '';
         sb._st = st;
       }
+      sb.classList.toggle('target', !s.winner && canEnter(s, b));
     }
     var bl = $('bigLine');
     if (s.line && s.winner && s.winner !== 3) {
@@ -596,7 +623,7 @@ onmessage = function (e) {
     if (NET && NET.undo) { st.textContent = 'Ждём ответа про отмену хода'; return; }
     if (k === 'bot') st.innerHTML = '<span class="think">Бот думает</span>';
     else if (k === 'net') st.innerHTML = '<span class="think">Ходит друг</span>';
-    else st.textContent = mySide() ? 'Твой ход' : 'Ходят ' + NAME[s.turn].toLowerCase();
+    else st.textContent = (mySide() ? 'Твой ход' : 'Ходят ' + NAME[s.turn].toLowerCase()) + (s.next < 0 ? ' · в любую доску' : ' · в подсвеченную доску');
   }
 
   function onCell(e) {

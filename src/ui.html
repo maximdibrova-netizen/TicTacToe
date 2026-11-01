@@ -94,6 +94,11 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .sb.won-o { background: color-mix(in srgb, var(--o) 55%, var(--line)); }
 .sb.won-x .cell, .sb.won-o .cell, .sb.drawn .cell { opacity: .28; }
 .sb.drawn { opacity: .55; }
+/* where the player to move has to play */
+.sb.target { background: var(--tc); box-shadow: 0 0 0 2px var(--tc), 0 0 22px -2px var(--tc); }
+.sb.target .cell { background: var(--cell-hi); }
+#big.free .sb.target { box-shadow: 0 0 0 1.5px var(--tc); }
+#big.dim .sb:not(.target):not(.won-x):not(.won-o):not(.drawn) { opacity: .5; }
 .sb .big { position: absolute; inset: 8%; pointer-events: none; }
 .sb .big svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 4px 10px rgba(0,0,0,.45)); }
 .sb .big .mk.x { stroke-width: 12; } .sb .big .mk.o { stroke-width: 10; }
@@ -174,9 +179,10 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
       <h2>Правила</h2>
       <ol class="rules">
         <li>Поле — 9 маленьких досок в крестики-нолики, собранных в большую 3×3.</li>
-        <li>Ходите по очереди. <b>Ставить можно в любую свободную клетку любой незанятой доски.</b></li>
-        <li>Собрал три в ряд на маленькой доске — <b>она твоя</b>. Заполнилась без победителя — ничья, она ни за кем.</li>
-        <li>Побеждает тот, кто соберёт <b>три своих доски в ряд</b> на большом поле.</li>
+        <li>Первый ход — в любую клетку. Дальше <b>клетка, куда ты сходил, задаёт доску для соперника</b>: сходил в правый верхний угол маленькой доски — соперник ходит в правой верхней доске. Нужная доска подсвечена.</li>
+        <li>Если тебя отправили в доску, которая уже выиграна или заполнена, ходи <b>в любую</b> открытую доску.</li>
+        <li>Собрал три в ряд на маленькой доске — <b>она твоя</b>. Заполнилась без победителя — она не засчитывается никому.</li>
+        <li>Побеждает тот, кто соберёт <b>три своих доски в ряд</b> на большом поле. Если так не вышел никто — ничья.</li>
       </ol>
     </div>
     <p class="hint" style="opacity:.6;font-size:11px">Версия от /*VER*/</p>
@@ -369,6 +375,10 @@ onmessage = function (e) {
       el.classList.toggle('last', i === last);
       el.disabled = false;
     }
+    var live = !s.winner, tc = s.turn === 1 ? 'var(--x)' : 'var(--o)';
+    $('big').style.setProperty('--tc', tc);
+    $('big').classList.toggle('free', live && s.next < 0);
+    $('big').classList.toggle('dim', live && s.next >= 0);
     for (var b = 0; b < 9; b++) {
       var st = s.boards[b], sb = boardsEl[b];
       if (full || sb._st !== st) {
@@ -376,6 +386,7 @@ onmessage = function (e) {
         sb.querySelector('.big').innerHTML = st === 1 || st === 2 ? markSVG(st, !full) : '';
         sb._st = st;
       }
+      sb.classList.toggle('target', !s.winner && canEnter(s, b));
     }
     var bl = $('bigLine');
     if (s.line && s.winner && s.winner !== 3) {
@@ -407,7 +418,7 @@ onmessage = function (e) {
     if (NET && NET.undo) { st.textContent = 'Ждём ответа про отмену хода'; return; }
     if (k === 'bot') st.innerHTML = '<span class="think">Бот думает</span>';
     else if (k === 'net') st.innerHTML = '<span class="think">Ходит друг</span>';
-    else st.textContent = mySide() ? 'Твой ход' : 'Ходят ' + NAME[s.turn].toLowerCase();
+    else st.textContent = (mySide() ? 'Твой ход' : 'Ходят ' + NAME[s.turn].toLowerCase()) + (s.next < 0 ? ' · в любую доску' : ' · в подсвеченную доску');
   }
 
   function onCell(e) {
