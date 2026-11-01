@@ -1,0 +1,539 @@
+<title>Русские шашки</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@600;800&family=Manrope:wght@500;700;800&display=swap">
+<style>
+/* Layout: a wooden board on a dark walnut table; one screen, status above, tools below. One dark look by choice. */
+:root {
+  color-scheme: dark;
+  --table: #1f1813;
+  --table-2: #2b2119;
+  --light: #ead6b0;
+  --dark: #8b5a36;
+  --frame: #5a3a22;
+  --ink: #f3ece2;
+  --ink-dim: #c2b3a1;
+  --white: #f6f1e7;
+  --white-edge: #c9bca6;
+  --black: #2b2420;
+  --black-edge: #120e0c;
+  --gold: #f2c14e;
+  --move: #7fd36b;
+  --btn: #3a2d23;
+  --btn-hi: #4a3a2d;
+  --display: "Rubik", "Trebuchet MS", system-ui, sans-serif;
+  --body: "Manrope", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: radial-gradient(110% 80% at 50% 40%, var(--table-2), var(--table) 70%); background-color: var(--table); color: var(--ink); font-family: var(--body); overflow: hidden; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.screen { position: fixed; inset: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+#menu { overflow-y: auto; display: grid; place-items: center; padding-block: 18px; }
+.col { width: min(100%, 440px); display: flex; flex-direction: column; gap: 12px; }
+h1 { margin: 0; text-align: center; font: 800 clamp(30px, 8vw, 40px)/1 var(--display); letter-spacing: -.01em; }
+.sub { margin: -4px 0 4px; text-align: center; font: 700 14px/1.3 var(--body); color: var(--ink-dim); }
+.card { background: rgba(58, 45, 35, .7); border: 1px solid #4b3a2c; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.card h2 { margin: 0; font: 800 11.5px/1 var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
+.seg { display: grid; gap: 6px; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); }
+.seg button { border: 0; border-radius: 10px; padding: 10px 6px; background: var(--btn); font: 800 14.5px/1.1 var(--body); min-width: 0; }
+.seg button:hover { background: var(--btn-hi); }
+.seg button[aria-pressed="true"] { background: var(--light); color: #2b1a0e; }
+.play { border: 0; border-radius: 14px; padding: 14px; background: var(--gold); color: #2b1a0e; font: 800 20px/1 var(--display); box-shadow: 0 4px 0 #a07a1e; }
+.play:active { transform: translateY(3px); box-shadow: 0 1px 0 #a07a1e; }
+.rules { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font: 600 13.5px/1.4 var(--body); color: var(--ink-dim); }
+.rules b { color: var(--ink); }
+.hint { margin: 0; font: 700 12.5px/1.4 var(--body); color: var(--ink-dim); text-align: center; text-wrap: balance; }
+.hint a { color: var(--ink-dim); }
+.join { display: flex; gap: 6px; }
+.join input { flex: 1; min-width: 0; border: 0; border-radius: 10px; padding: 10px 12px; font: 800 18px/1 var(--body); letter-spacing: .2em; text-transform: uppercase; color: #2b1a0e; background: var(--light); }
+.join button { border: 0; border-radius: 10px; padding: 0 16px; font: 800 15px/1 var(--body); background: var(--gold); color: #2b1a0e; }
+
+#game { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding-block: max(10px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-bottom, 0px)); }
+.top { width: var(--B); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pl { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 12px; border: 1.5px solid transparent; min-width: 0; }
+.pl.on { border-color: var(--gold); background: rgba(242, 193, 78, .12); }
+.pl .dot { width: 22px; height: 22px; border-radius: 50%; flex: none; }
+.pl .dot.w { background: var(--white); box-shadow: inset 0 -3px 0 var(--white-edge); }
+.pl .dot.b { background: var(--black); box-shadow: inset 0 -3px 0 var(--black-edge), 0 0 0 1.5px #5a4a3d; }
+.pl .nm { font: 800 13.5px/1.15 var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl .sc { font: 700 12px/1 var(--body); color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.pl.r { flex-direction: row-reverse; text-align: right; }
+.status { font: 800 15px/1.2 var(--display); text-align: center; min-height: 18px; text-wrap: balance; }
+.wrap { position: relative; padding: calc(var(--B) * .045); background: var(--frame); border-radius: 10px; box-shadow: 0 14px 40px rgba(0,0,0,.5), inset 0 0 0 2px #6d4a2e; }
+#board { position: relative; width: var(--B); height: var(--B); display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); }
+.sq { position: relative; border: 0; padding: 0; background: var(--light); }
+.sq.d { background: var(--dark); }
+.sq.from { box-shadow: inset 0 0 0 3px var(--gold); }
+.sq.lastmv { box-shadow: inset 0 0 0 999px rgba(242, 193, 78, .22); }
+.sq.tgt::after { content: ""; position: absolute; left: 50%; top: 50%; width: 30%; height: 30%; margin: -15% 0 0 -15%; border-radius: 50%; background: var(--move); opacity: .85; box-shadow: 0 0 0 3px rgba(0,0,0,.25); }
+.sq.must .pc { box-shadow: 0 0 0 3px var(--gold), 0 4px 0 rgba(0,0,0,.35); }
+.sq.can { cursor: pointer; }
+.pc { position: absolute; inset: 11%; border-radius: 50%; transition: transform .16s, opacity .2s; }
+.pc.w { background: radial-gradient(circle at 50% 42%, #fffdf8, var(--white) 55%, #e2d8c6); box-shadow: inset 0 -4px 0 var(--white-edge), 0 4px 0 rgba(0,0,0,.35); }
+.pc.b { background: radial-gradient(circle at 50% 42%, #4a3f38, var(--black) 60%); box-shadow: inset 0 -4px 0 var(--black-edge), 0 4px 0 rgba(0,0,0,.45); }
+.pc::before { content: ""; position: absolute; inset: 20%; border-radius: 50%; border: 2px solid rgba(0,0,0,.12); }
+.pc.b::before { border-color: rgba(255,255,255,.1); }
+.pc.k::after { content: ""; position: absolute; inset: 26%; background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 18h18l-1.6-9.5-4.4 4-3-6.5-3 6.5-4.4-4z' fill='%23d9a52f' stroke='%238a6214' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.pc.cap { opacity: .35; transform: scale(.85); }
+.pc.moving { z-index: 5; transition: transform .17s ease-in-out; }
+.coord { position: absolute; font: 800 calc(var(--B) * .028)/1 var(--body); color: #e8d2a9; opacity: .85; pointer-events: none; }
+.bar { display: flex; gap: 8px; }
+.bar button { border: 0; border-radius: 12px; width: 50px; height: 46px; background: var(--btn); display: grid; place-items: center; }
+.bar button:hover:not(:disabled) { background: var(--btn-hi); }
+.bar button:disabled { opacity: .35; cursor: default; }
+.bar svg { width: 22px; height: 22px; }
+.ov { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(15, 11, 8, .7); backdrop-filter: blur(3px); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px; overflow-y: auto; }
+.dlg { width: min(100%, 380px); background: var(--table-2); border: 1px solid #4b3a2c; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.dlg h3 { margin: 0; font: 800 26px/1.15 var(--display); text-wrap: balance; }
+.dlg p { margin: 0; font: 700 14px/1.4 var(--body); color: var(--ink-dim); }
+.btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.btns button { border: 0; border-radius: 10px; padding: 10px 16px; font: 800 15px/1 var(--body); background: var(--gold); color: #2b1a0e; }
+.btns button.alt { background: var(--btn); color: var(--ink); }
+.code { font: 800 36px/1 var(--body); letter-spacing: .16em; background: var(--light); color: #2b1a0e; border-radius: 12px; padding: 12px 6px 10px; }
+.linkrow { display: flex; gap: 6px; }
+.linkrow input { flex: 1; min-width: 0; border: 0; border-radius: 9px; padding: 8px 10px; font: 700 12.5px/1 var(--body); color: #2b1a0e; background: var(--ink-dim); }
+.linkrow button { border: 0; border-radius: 9px; padding: 0 12px; font: 800 13px/1 var(--body); background: var(--btn-hi); white-space: nowrap; }
+.err { background: #4a1f1b; color: #ffc2bb; border-radius: 10px; padding: 10px; font: 700 13.5px/1.4 var(--body); }
+.toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 12px); transform: translateX(-50%); z-index: 30; background: var(--light); color: #2b1a0e; font: 800 14px/1.25 var(--body); padding: 10px 16px; border-radius: 10px; max-width: calc(100% - 32px); text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+@media (prefers-reduced-motion: reduce) { .pc, .pc.moving { transition: none; } }
+</style>
+
+<section class="screen" id="menu">
+  <div class="col">
+    <h1>Русские шашки</h1>
+    <p class="sub">доска 8×8, классические правила</p>
+    <div class="card"><h2>Режим</h2>
+      <div class="seg" id="modeSeg"><button data-v="bot" id="m-bot">С ботом</button><button data-v="duo" id="m-duo">Вдвоём</button><button data-v="net" id="m-net">Онлайн</button></div>
+    </div>
+    <div class="card" id="levelCard"><h2>Сила бота</h2><div class="seg" id="levelSeg"></div></div>
+    <div class="card" id="sideCard"><h2>Я играю</h2>
+      <div class="seg" id="sideSeg"><button data-v="1" id="s-w">Белыми</button><button data-v="-1" id="s-b">Чёрными</button><button data-v="0" id="s-r">Случайно</button></div>
+    </div>
+    <div class="card" id="netCard" hidden><h2>Онлайн с другом</h2>
+      <div class="seg" style="--cols:2"><button id="netCreate">Создать игру</button><button id="netJoinBtn">Войти по коду</button></div>
+      <div class="join" id="joinRow" hidden><input id="joinCode" maxlength="5" placeholder="КОД" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Код игры"><button id="joinGo">Войти</button></div>
+      <p class="hint">Цвет хозяина берётся из «Я играю». В реванше цвета меняются.</p>
+    </div>
+    <button class="play" id="playBtn">Играть</button>
+    <div class="card"><h2>Правила</h2>
+      <ol class="rules">
+        <li>Белые ходят первыми. Простая шашка ходит <b>вперёд</b> по диагонали на одно поле.</li>
+        <li><b>Бить обязательно</b>, причём простая бьёт и вперёд, и назад. Начатое взятие доводится до конца, но если вариантов несколько, можно выбрать любой.</li>
+        <li>Дошла до последнего ряда — становится <b>дамкой</b>. Если это случилось во время взятия, она сразу бьёт дальше уже как дамка.</li>
+        <li>Дамка ходит и бьёт на <b>любое расстояние</b> по диагонали.</li>
+        <li>Сбитые шашки снимаются после хода целиком; через одну шашку дважды прыгать нельзя.</li>
+        <li>Проигрывает тот, у кого не осталось шашек или ходов. Ничья: позиция повторилась трижды или 15 ходов подряд только дамками без взятий.</li>
+      </ol>
+    </div>
+    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от /*VER*/</span></p>
+  </div>
+</section>
+
+<section class="screen" id="game" hidden>
+  <div class="top">
+    <div class="pl" id="plA"><span class="dot" id="dotA"></span><div><div class="nm" id="nmA"></div><div class="sc" id="scA"></div></div></div>
+    <div class="pl r" id="plB"><span class="dot" id="dotB"></span><div><div class="nm" id="nmB"></div><div class="sc" id="scB"></div></div></div>
+  </div>
+  <div class="status" id="status"></div>
+  <div class="wrap" id="wrap"><div id="board"></div></div>
+  <div class="bar">
+    <button id="homeBtn" aria-label="В меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"><path d="M3.5 11 12 3.8 20.5 11M6 9v11h12V9"/></svg></button>
+    <button id="againBtn" aria-label="Новая партия"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v5h-5"/></svg></button>
+    <button id="undoBtn" aria-label="Отменить ход"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+    <button id="soundBtn" aria-label="Звук"></button>
+  </div>
+</section>
+
+<div class="ov" id="endOv" hidden><div class="dlg"><h3 id="endTitle"></h3><p id="endText"></p>
+  <div class="btns"><button id="endAgain">Ещё раз</button><button id="endUndo" class="alt">Отменить ход</button><button id="endLook" class="alt">Посмотреть доску</button><button id="endMenu" class="alt">Меню</button></div></div></div>
+<div class="ov" id="lobbyOv" hidden><div class="dlg"><h3 id="lbTitle">Онлайн-игра</h3><p id="lbText"></p><div class="code" id="lbCode" hidden></div>
+  <div class="linkrow" id="lbLinkRow" hidden><input id="lbLink" readonly aria-label="Ссылка для друга"><button id="lbCopy">Копировать</button></div>
+  <p class="err" id="lbErr" hidden></p><div class="btns"><button id="lbRetry" hidden>Попробовать ещё раз</button><button id="lbCancel" class="alt">Отмена</button></div></div></div>
+<div class="ov" id="askOv" hidden><div class="dlg"><h3>Друг просит отменить ход</h3><p id="askText"></p><p id="askTimer" style="font-size:12.5px"></p>
+  <div class="btns"><button id="askYes">Согласен</button><button id="askNo" class="alt">Нет</button></div></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>/*NET*/</script>
+<script id="core">/*CORE*/</script>
+<script id="workerGlue" type="text/plain">
+onmessage = function (e) {
+  var d = e.data, s = ckNew();
+  for (var k = 0; k < d.moves.length; k++) { var mv = ckMoves(s).filter(function (m) { return m.path.join(',') === d.moves[k]; })[0]; ckApply(s, mv, true); }
+  postMessage({ id: d.id, path: ckMoves(s)[ckThink(s, d.level)].path.join(',') });
+};
+</script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var ONLINE = !!window.GAMES_ONLINE;
+  var NAME = { 1: 'Белые', '-1': 'Чёрные' };
+  var ICON_SND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>';
+  var ICON_MUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></svg>';
+  var S = { mode: 'bot', level: 1, side: 1, sound: true };
+  try { var sv = JSON.parse(localStorage.getItem('ck-set') || 'null'); if (sv) Object.assign(S, sv); } catch (e) {}
+  if (!ONLINE && S.mode === 'net') S.mode = 'bot';
+  function saveS() { try { localStorage.setItem('ck-set', JSON.stringify(S)); } catch (e) {} }
+  CK_LEVELS.forEach(function (L, i) { var b = document.createElement('button'); b.textContent = L.name; b.dataset.v = i; b.id = 'lv-' + i; b.onclick = function () { S.level = i; saveS(); renderMenu(); }; $('levelSeg').appendChild(b); });
+  Array.prototype.forEach.call(document.querySelectorAll('#modeSeg button'), function (b) { if (b.dataset.v === 'net' && !ONLINE) b.hidden = true; b.onclick = function () { S.mode = b.dataset.v; saveS(); renderMenu(); }; });
+  if (!ONLINE) $('modeSeg').style.setProperty('--cols', 2);
+  Array.prototype.forEach.call(document.querySelectorAll('#sideSeg button'), function (b) { b.onclick = function () { S.side = +b.dataset.v; saveS(); renderMenu(); }; });
+  function renderMenu() {
+    Array.prototype.forEach.call(document.querySelectorAll('#modeSeg button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === S.mode)); });
+    Array.prototype.forEach.call(document.querySelectorAll('#levelSeg button'), function (b) { b.setAttribute('aria-pressed', String(+b.dataset.v === S.level)); });
+    Array.prototype.forEach.call(document.querySelectorAll('#sideSeg button'), function (b) { b.setAttribute('aria-pressed', String(+b.dataset.v === S.side)); });
+    $('levelCard').hidden = S.mode !== 'bot'; $('sideCard').hidden = S.mode === 'duo'; $('netCard').hidden = S.mode !== 'net'; $('playBtn').hidden = S.mode === 'net';
+    $('soundBtn').innerHTML = S.sound ? ICON_SND : ICON_MUTE;
+  }
+
+  // ---------- sound ----------
+  var AC = null;
+  function knock(f, vol, delay) {
+    if (!S.sound) return;
+    try {
+      if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+      if (AC.state === 'suspended') AC.resume();
+      var t = AC.currentTime + (delay || 0), o = AC.createOscillator(), g = AC.createGain(), fl = AC.createBiquadFilter();
+      o.type = 'triangle'; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * .6, t + .08);
+      fl.type = 'lowpass'; fl.frequency.value = 1800;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + .12);
+      o.connect(fl); fl.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + .15);
+    } catch (e) {}
+  }
+
+  // ---------- bot worker ----------
+  var worker = null, reqId = 0, pending = {};
+  try {
+    worker = new Worker(URL.createObjectURL(new Blob([$('core').textContent + '\n' + $('workerGlue').textContent], { type: 'text/javascript' })));
+    worker.onmessage = function (e) { var cb = pending[e.data.id]; delete pending[e.data.id]; if (cb) cb(e.data.path); };
+    worker.onerror = function () { worker = null; };
+  } catch (e) { worker = null; }
+  function askBot(moves, level, cb) {
+    if (worker) { var id = ++reqId; pending[id] = cb; try { worker.postMessage({ id: id, moves: moves, level: level }); return; } catch (e) { delete pending[id]; worker = null; } }
+    setTimeout(function () { var s = replay(moves); cb(ckMoves(s)[ckThink(s, level)].path.join(',')); }, 30);
+  }
+
+  // ---------- game ----------
+  // G.kind[1|-1]: 'me' | 'bot' | 'net'. Moves are kept as path strings ("21,30") and replayed from the start.
+  var G = null, token = 0, sqEls = [];
+  function replay(list) {
+    var s = ckNew();
+    for (var k = 0; k < list.length; k++) { var mv = findMove(s, list[k]); if (!mv) break; ckApply(s, mv, true); }
+    return s;
+  }
+  function findMove(s, path) { var all = ckMoves(s); for (var k = 0; k < all.length; k++) if (all[k].path.join(',') === path) return all[k]; return null; }
+  function buildBoard() {
+    var bd = $('board'); bd.innerHTML = ''; sqEls = [];
+    var flip = G.flip;
+    for (var v = 0; v < 64; v++) {
+      var i = flip ? 63 - v : v, r = (i / 8) | 0, c = i % 8;
+      var el = document.createElement('button'); el.className = 'sq' + ((r + c) % 2 ? ' d' : ''); el.dataset.i = i;
+      el.setAttribute('aria-label', ckName(i)); el.addEventListener('click', onSq);
+      bd.appendChild(el); sqEls[i] = el;
+    }
+    // coordinates on the frame
+    var wrap = $('wrap'); Array.prototype.slice.call(wrap.querySelectorAll('.coord')).forEach(function (x) { x.remove(); });
+    for (var k = 0; k < 8; k++) {
+      var f = document.createElement('div'); f.className = 'coord'; f.textContent = CK_FILES[flip ? 7 - k : k];
+      f.style.left = 'calc(var(--B) * .045 + var(--B) / 8 * ' + (k + .5) + ')'; f.style.bottom = 'calc(var(--B) * .012)'; f.style.transform = 'translateX(-50%)'; wrap.appendChild(f);
+      var n = document.createElement('div'); n.className = 'coord'; n.textContent = flip ? k + 1 : 8 - k;
+      n.style.top = 'calc(var(--B) * .045 + var(--B) / 8 * ' + (k + .5) + ')'; n.style.left = 'calc(var(--B) * .014)'; n.style.transform = 'translateY(-50%)'; wrap.appendChild(n);
+    }
+  }
+  function layout() { var B = Math.max(240, Math.min(window.innerWidth - 40, window.innerHeight - 200, 620)); document.documentElement.style.setProperty('--B', Math.floor(B / 8) * 8 + 'px'); }
+  window.addEventListener('resize', layout);
+  function mySide() { return G.kind[1] === 'me' && G.kind[-1] !== 'me' ? 1 : G.kind[-1] === 'me' && G.kind[1] !== 'me' ? -1 : 0; }
+
+  function newGame(kind) {
+    token++;
+    G = { kind: kind, moves: [], s: ckNew(), sel: -1, part: null, busy: false, over: false, endShown: false, lastPath: null };
+    G.flip = mySide() === -1;
+    $('menu').hidden = true; $('game').hidden = false; $('endOv').hidden = true; $('lobbyOv').hidden = true; $('askOv').hidden = true;
+    buildBoard(); layout(); render(); turnLoop();
+  }
+  function startLocal() {
+    if (S.mode === 'duo') { newGame({ 1: 'me', '-1': 'me' }); return; }
+    var side = S.side || (Math.random() < .5 ? 1 : -1), k = {}; k[side] = 'me'; k[-side] = 'bot'; newGame(k);
+  }
+  function canTap() { return G && !G.over && !G.busy && G.kind[G.s.side] === 'me' && !(Net2P.active() && (G.netPending || G.undoVote)); }
+
+  function render() {
+    var s = G.s, all = canTap() ? ckMoves(s) : [], must = {}, from = {};
+    all.forEach(function (m) { from[m.path[0]] = 1; if (m.caps.length) must[m.path[0]] = 1; });
+    var tg = targets(all), capsSoFar = G.part ? partialCaps(all) : {};
+    var lastSet = {}; if (G.lastPath) G.lastPath.forEach(function (x) { lastSet[x] = 1; });
+    for (var i = 0; i < 64; i++) {
+      var el = sqEls[i], v = s.b[i];
+      var html = v ? '<div class="pc ' + (v > 0 ? 'w' : 'b') + (Math.abs(v) === 2 ? ' k' : '') + (capsSoFar[i] ? ' cap' : '') + '"></div>' : '';
+      if (G.part && i === G.part[0]) html = '';
+      if (G.part && i === G.part[G.part.length - 1] && G.part.length > 1) { var pv = s.b[G.part[0]]; html = '<div class="pc ' + (pv > 0 ? 'w' : 'b') + (Math.abs(pv) === 2 ? ' k' : '') + '"></div>'; }
+      if (el._h !== html) { el.innerHTML = html; el._h = html; }
+      el.classList.toggle('can', !!from[i] || !!tg[i]);
+      el.classList.toggle('must', !!must[i] && !G.part);
+      el.classList.toggle('from', G.part ? i === G.part[G.part.length - 1] : false);
+      el.classList.toggle('tgt', !!tg[i]);
+      el.classList.toggle('lastmv', !!lastSet[i] && !G.part);
+    }
+    var cnt = { 1: 0, '-1': 0 }; for (i = 0; i < 64; i++) if (s.b[i]) cnt[s.b[i] > 0 ? 1 : -1]++;
+    var top = G.flip ? 1 : -1, bot = -top;                    // the side shown at the bottom is on the left card
+    fill('A', bot, cnt); fill('B', top, cnt);
+    setStatus(all);
+    $('undoBtn').disabled = undoTarget() < 0 || !!G.undoVote;
+    $('againBtn').hidden = Net2P.active() && Net2P.role() === 'guest';
+  }
+  function fill(slot, side, cnt) {
+    $('dot' + slot).className = 'dot ' + (side === 1 ? 'w' : 'b');
+    $('nm' + slot).textContent = who(side);
+    $('sc' + slot).textContent = 'шашек: ' + cnt[side];
+    $('pl' + slot).classList.toggle('on', !G.over && G.s.side === side);
+  }
+  function who(side) {
+    var k = G.kind[side];
+    if (k === 'bot') return 'Бот · ' + CK_LEVELS[S.level].name.toLowerCase();
+    if (k === 'net') return 'Друг' + (Net2P.active() && !Net2P.online() ? ' (нет связи)' : '');
+    return mySide() ? 'Ты' : NAME[side];
+  }
+  function setStatus(all) {
+    var s = G.s, st = $('status');
+    if (s.winner === 3) { st.textContent = 'Ничья: ' + (s.drawReason || ''); return; }
+    if (s.winner) { st.textContent = NAME[s.winner] + ' победили'; return; }
+    if (G.undoVote) { st.textContent = 'Ждём ответа про отмену хода'; return; }
+    var k = G.kind[s.side];
+    if (k === 'bot') st.textContent = 'Бот думает…';
+    else if (k === 'net') st.textContent = 'Ходит друг…';
+    else {
+      var cap = all.length && all[0].caps.length;
+      st.textContent = (mySide() ? 'Твой ход' : 'Ходят ' + NAME[s.side].toLowerCase()) + (cap ? ' · нужно бить' : '') + (G.part && G.part.length > 1 ? ' · бей дальше' : '');
+    }
+  }
+  function candidates(all) { if (!G.part) return []; var p = G.part.join(','); return all.filter(function (m) { return m.path.join(',').indexOf(p) === 0 && m.path.length >= G.part.length; }); }
+  function targets(all) {
+    var t = {};
+    if (!G.part) return t;
+    candidates(all).forEach(function (m) { if (m.path.length > G.part.length) t[m.path[G.part.length]] = 1; });
+    return t;
+  }
+  function partialCaps(all) { var c = {}, cs = candidates(all); if (cs.length) cs[0].caps.slice(0, G.part.length - 1).forEach(function (x) { c[x] = 1; }); return c; }
+
+  function onSq(e) {
+    if (!canTap()) return;
+    var i = +e.currentTarget.dataset.i, all = ckMoves(G.s);
+    if (G.part && targets(all)[i]) {
+      G.part.push(i); knock(520, .12);
+      var cs = candidates(all), exact = cs.filter(function (m) { return m.path.length === G.part.length; }), longer = cs.filter(function (m) { return m.path.length > G.part.length; });
+      if (exact.length && !longer.length) { var mv = exact[0]; G.part = null; submit(mv.path.join(',')); return; }
+      render(); return;
+    }
+    if (G.part && G.part.length > 1) { if (i === G.part[0]) { G.part = null; render(); } return; }   // в середине взятия: тап по исходной шашке — сброс
+    if (all.some(function (m) { return m.path[0] === i; })) { G.part = [i]; render(); return; }
+    if (G.s.b[i] * G.s.side > 0 && all.length && all[0].caps.length) toast('Нужно бить — подсвечены шашки, которые могут бить');
+    G.part = null; render();
+  }
+  function submit(path) {
+    if (Net2P.active() && Net2P.role() === 'guest') { G.netPending = true; Net2P.send({ t: 'try', path: path, n: G.moves.length }); render(); return; }
+    decide(path);
+  }
+  function decide(path) {
+    if (Net2P.active() && Net2P.role() === 'host') Net2P.send({ t: 'move', path: path, n: G.moves.length });
+    apply(path);
+  }
+  function apply(path) {
+    var mv = findMove(G.s, path); if (!mv) return;
+    var before = G.s.b.slice(), my = token;
+    G.busy = true; G.part = null;
+    ckApply(G.s, mv, true); G.moves.push(path); G.lastPath = mv.path;
+    animate(before, mv, function () {
+      if (my !== token) return;
+      G.busy = false; render();
+      if (G.s.winner) { G.over = true; setTimeout(showEnd, 500); return; }
+      turnLoop();
+    });
+  }
+  function animate(before, mv, done) {
+    // draw the position before the move, then slide the piece square by square
+    var s = G.s, saved = s.b; s.b = Int8Array.from(before); G.busy = true; render(); s.b = saved;
+    var from = mv.path[0], el = sqEls[from].firstChild, k = 1, sz = $('board').clientWidth / 8;
+    if (!el) { done(); return; }
+    el.classList.add('moving');
+    var pos = function (i) { var r = (i / 8) | 0, c = i % 8; if (G.flip) { r = 7 - r; c = 7 - c; } return [c * sz, r * sz]; };
+    var p0 = pos(from);
+    (function step() {
+      if (k >= mv.path.length) {
+        mv.caps.forEach(function (x) { var c = sqEls[x].firstChild; if (c) c.classList.add('cap'); });
+        knock(mv.caps.length ? 300 : 420, .16);
+        setTimeout(done, mv.caps.length ? 220 : 60); return;
+      }
+      var p = pos(mv.path[k]);
+      el.style.transform = 'translate(' + (p[0] - p0[0]) + 'px,' + (p[1] - p0[1]) + 'px)';
+      if (k > 0 && mv.caps[k - 1] !== undefined) { var c = sqEls[mv.caps[k - 1]].firstChild; if (c) c.classList.add('cap'); knock(380, .1); }
+      k++; setTimeout(step, 190);
+    })();
+  }
+  function turnLoop() {
+    if (!G || G.over) return;
+    var side = G.s.side;
+    if (G.kind[side] !== 'bot' || (Net2P.active() && Net2P.role() !== 'host')) { render(); return; }
+    var my = token, n = G.moves.length, t0 = Date.now();
+    G.busy = true; render();
+    askBot(G.moves.slice(), S.level, function (path) {
+      if (my !== token || !G || G.moves.length !== n) return;
+      setTimeout(function () { if (my !== token || !G || G.moves.length !== n) return; G.busy = false; decide(path); }, Math.max(0, 400 - (Date.now() - t0)));
+    });
+  }
+
+  // ---------- undo ----------
+  function undoTargetFor(side) {
+    if (!G) return -1;
+    for (var k = G.moves.length - 1; k >= 0; k--) if ((k % 2 === 0 ? 1 : -1) === side) return k;   // белые делают ходы 0, 2, 4…
+    return -1;
+  }
+  function undoTarget() {
+    if (!G) return -1;
+    if (Net2P.active()) return undoTargetFor(mySide());
+    if (G.kind[1] === 'me' && G.kind[-1] === 'me') return G.moves.length ? G.moves.length - 1 : -1;
+    return undoTargetFor(mySide());
+  }
+  function applyUndo(t, msg) {
+    if (!G || t < 0 || t > G.moves.length) return;
+    token++;
+    G.moves = G.moves.slice(0, t); G.s = replay(G.moves); G.over = false; G.busy = false; G.endShown = false; G.part = null;
+    G.lastPath = null; G.netPending = false;
+    $('endOv').hidden = true; $('askOv').hidden = true;
+    render(); toast(msg || 'Ход отменён'); turnLoop();
+  }
+  function undo() { if (Net2P.active()) requestUndo(); else applyUndo(undoTarget()); }
+  $('undoBtn').onclick = undo; $('endUndo').onclick = undo;
+  document.addEventListener('keydown', function (e) { if (G && !Net2P.active() && !$('game').hidden && (e.ctrlKey || e.metaKey) && /^[zZяЯ]$/.test(e.key)) { e.preventDefault(); undo(); } });
+
+  // ---------- end ----------
+  function showEnd() {
+    if (!G || G.endShown) return; G.endShown = true;
+    var w = G.s.winner, me = mySide();
+    if (w === 3) { $('endTitle').textContent = 'Ничья'; $('endText').textContent = 'Причина: ' + G.s.drawReason + '.'; }
+    else if (me && w === me) { $('endTitle').textContent = 'Победа!'; $('endText').textContent = 'Ходов в партии: ' + Math.ceil(G.moves.length / 2) + '.'; }
+    else if (me) { $('endTitle').textContent = G.kind[w] === 'bot' ? 'Бот победил' : 'Друг победил'; $('endText').textContent = 'Реванш?'; }
+    else { $('endTitle').textContent = NAME[w] + ' победили'; $('endText').textContent = 'Ходов в партии: ' + Math.ceil(G.moves.length / 2) + '.'; }
+    if (Net2P.active() && Net2P.role() === 'guest') $('endText').textContent += ' Новую партию начинает хозяин игры.';
+    $('endAgain').hidden = Net2P.active() && Net2P.role() === 'guest';
+    $('endOv').hidden = false;
+  }
+  $('endLook').onclick = function () { $('endOv').hidden = true; };
+  $('endAgain').onclick = again; $('againBtn').onclick = again;
+  function again() { if (Net2P.active()) { if (Net2P.role() === 'host') hostStart(true); } else startLocal(); }
+  $('endMenu').onclick = toMenu; $('homeBtn').onclick = toMenu;
+  function toMenu() { Net2P.close(); token++; G = null; $('game').hidden = true; $('endOv').hidden = true; $('lobbyOv').hidden = true; $('askOv').hidden = true; $('menu').hidden = false; renderMenu(); }
+  $('playBtn').onclick = function () { knock(500, .1); startLocal(); };
+  $('soundBtn').onclick = function () { S.sound = !S.sound; saveS(); renderMenu(); };
+  var toastT = null;
+  function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 2400); }
+
+  // ---------- online ----------
+  var PREFIX = 'ck-ru-v1-', hostSide = 0;
+  function lobby(title, text, o) {
+    o = o || {};
+    $('lbTitle').textContent = title; $('lbText').textContent = text || ''; $('lbText').hidden = !text;
+    $('lbCode').hidden = !o.code; $('lbCode').textContent = o.code || '';
+    $('lbLinkRow').hidden = !o.link; $('lbLink').value = o.link || '';
+    $('lbErr').hidden = !o.err; $('lbErr').textContent = o.err || ''; $('lbRetry').hidden = !o.err;
+    $('lobbyOv').hidden = false;
+  }
+  $('lbCopy').onclick = function () { var v = $('lbLink').value, b = $('lbCopy'); try { navigator.clipboard.writeText(v).then(function () { b.textContent = 'Скопировано'; setTimeout(function () { b.textContent = 'Копировать'; }, 1500); }, function () { $('lbLink').select(); }); } catch (e) { $('lbLink').select(); } };
+  $('lbCancel').onclick = toMenu;
+  var lastJoin = null;
+  $('lbRetry').onclick = function () { if (lastJoin) joinGame(lastJoin); else hostGame(); };
+  function hostGame() {
+    lastJoin = null; hostSide = 0;
+    lobby('Создаю игру', 'Подключаюсь к серверу связи…');
+    Net2P.host({ prefix: PREFIX,
+      onReady: function (code, link) { lobby('Игра создана', link ? 'Отправь другу ссылку или код. Партия начнётся, как только он зайдёт.' : 'Скажи другу код: он вводит его в «Войти по коду».', { code: code, link: link }); },
+      onJoin: function (o) { if (o.returning && G) { Net2P.send({ t: 'sync', hostSide: hostSide, moves: G.moves }); toast('Друг вернулся'); render(); } else hostStart(false); },
+      onPeer: function (on) { if (G) render(); if (!on) { toast('Связь с другом пропала'); if (G && G.undoVote) endVote(false, 'gone'); } },
+      onLeave: function () { toast('Друг вышел'); },
+      onData: hostData,
+      onFail: function (m) { lobby('Онлайн-игра', '', { err: m }); }
+    });
+  }
+  function hostStart(swap) {
+    if (!hostSide) hostSide = S.side || (Math.random() < .5 ? 1 : -1); else if (swap) hostSide = -hostSide;
+    Net2P.send({ t: 'start', hostSide: hostSide });
+    var k = {}; k[hostSide] = 'me'; k[-hostSide] = 'net'; newGame(k);
+    toast('Ты играешь ' + (hostSide === 1 ? 'белыми' : 'чёрными'));
+  }
+  function hostData(d) {
+    if (d.t === 'try') {
+      var ok = G && !G.over && !G.undoVote && G.kind[G.s.side] === 'net' && d.n === G.moves.length && findMove(G.s, d.path);
+      if (ok) decide(d.path); else Net2P.send({ t: 'nack' });
+    } else if (d.t === 'undoReq') startVote('friend');
+    else if (d.t === 'undoVote') endVote(!!d.ok, d.ok ? '' : 'no');
+    else if (d.t === 'needsync') { if (G) Net2P.send({ t: 'sync', hostSide: hostSide, moves: G.moves }); }
+  }
+  function joinGame(code) {
+    lastJoin = code;
+    lobby('Онлайн-игра', 'Подключаюсь к игре ' + Net2P.cleanCode(code) + '…');
+    Net2P.join(code, { prefix: PREFIX,
+      onOpen: function () { lobby('Онлайн-игра', 'Подключено! Ждём начала…'); },
+      onPeer: function () { if (G) render(); },
+      onData: guestData,
+      onFail: function (m) { lobby('Онлайн-игра', '', { err: m }); }
+    });
+  }
+  function guestKinds(hs) { var k = {}; k[hs] = 'net'; k[-hs] = 'me'; return k; }
+  function guestData(d) {
+    if (d.t === 'start') { newGame(guestKinds(d.hostSide)); toast('Ты играешь ' + (d.hostSide === 1 ? 'чёрными' : 'белыми')); }
+    else if (d.t === 'sync') { newGame(guestKinds(d.hostSide)); G.moves = d.moves.slice(); G.s = replay(G.moves); G.over = !!G.s.winner; G.endShown = G.over; render(); turnLoop(); }
+    else if (!G) return;
+    else if (d.t === 'move') { G.netPending = false; if (d.n === G.moves.length) apply(d.path); else if (d.n > G.moves.length) Net2P.send({ t: 'needsync' }); }
+    else if (d.t === 'nack') { G.netPending = false; render(); }
+    else if (d.t === 'undoAsk') { G.undoVote = { by: 'friend' }; showAsk(d.back); render(); }
+    else if (d.t === 'undoWait') { G.undoVote = { by: 'me' }; render(); toast('Спрашиваю у друга…'); }
+    else if (d.t === 'undoNo') { G.undoVote = null; $('askOv').hidden = true; render(); toast(d.mine ? (d.why === 'time' ? 'Друг не ответил' : 'Друг не согласен') : 'Ход не отменён'); }
+    else if (d.t === 'undo') { G.undoVote = null; applyUndo(d.to, d.mine ? 'Ход отменён, ходи заново' : 'Друг вернул свой ход'); }
+  }
+  // take-back by agreement (the host runs it)
+  function requestUndo() {
+    if (!G || G.undoVote) return;
+    if (undoTargetFor(mySide()) < 0) { toast('Тебе пока нечего отменять'); return; }
+    if (Net2P.role() === 'host') startVote('host'); else Net2P.send({ t: 'undoReq' });
+  }
+  function startVote(by) {
+    if (!G || G.undoVote) { if (by === 'friend') Net2P.send({ t: 'undoNo', mine: true, why: 'busy' }); return; }
+    var side = by === 'host' ? hostSide : -hostSide, t = undoTargetFor(side);
+    if (t < 0) { if (by === 'friend') Net2P.send({ t: 'undoNo', mine: true, why: 'none' }); return; }
+    if (!Net2P.online()) { toast('Друг не в сети'); return; }
+    G.undoVote = { by: by, to: t, n: G.moves.length };
+    G.undoVote.timer = setTimeout(function () { endVote(false, 'time'); }, 30000);
+    var back = G.moves.length - t;
+    if (by === 'host') { Net2P.send({ t: 'undoAsk', back: back }); toast('Спрашиваю у друга…'); }
+    else { Net2P.send({ t: 'undoWait' }); showAsk(back); }
+    render();
+  }
+  function endVote(ok, why) {
+    var u = G && G.undoVote; if (!u || !u.timer) return;
+    clearTimeout(u.timer); G.undoVote = null; $('askOv').hidden = true;
+    if (ok && G.moves.length === u.n) { Net2P.send({ t: 'undo', to: u.to, mine: u.by === 'friend' }); applyUndo(u.to, u.by === 'host' ? 'Ход отменён, ходи заново' : 'Друг вернул свой ход'); }
+    else { Net2P.send({ t: 'undoNo', mine: u.by === 'friend', why: why }); render(); toast(u.by === 'host' ? (why === 'time' ? 'Друг не ответил' : why === 'gone' ? 'Друг отключился' : 'Друг не согласен') : 'Ход не отменён'); }
+  }
+  var askTick = null;
+  function showAsk(back) {
+    $('askText').textContent = back <= 1 ? 'Вернуть его последний ход?' : 'Вернуть партию на ' + back + ' хода назад, до его последнего хода?';
+    var end = Date.now() + 30000; clearInterval(askTick);
+    var tick = function () { var s = Math.max(0, Math.ceil((end - Date.now()) / 1000)); $('askTimer').textContent = 'Нет ответа через ' + s + ' с — значит «нет».'; if (!s) clearInterval(askTick); };
+    tick(); askTick = setInterval(tick, 500); $('askOv').hidden = false;
+  }
+  function answerAsk(ok) {
+    clearInterval(askTick); $('askOv').hidden = true;
+    if (Net2P.role() === 'host') endVote(ok, ok ? '' : 'no');
+    else { Net2P.send({ t: 'undoVote', ok: ok }); if (!ok) { G.undoVote = null; render(); } }
+  }
+  $('askYes').onclick = function () { answerAsk(true); }; $('askNo').onclick = function () { answerAsk(false); };
+  $('netCreate').onclick = hostGame;
+  $('netJoinBtn').onclick = function () { $('joinRow').hidden = !$('joinRow').hidden; if (!$('joinRow').hidden) $('joinCode').focus(); };
+  $('joinCode').addEventListener('input', function () { this.value = Net2P.cleanCode(this.value); });
+  $('joinCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('joinGo').click(); });
+  $('joinGo').onclick = function () { var c = Net2P.cleanCode($('joinCode').value); if (c.length === 5) joinGame(c); };
+  if (ONLINE && Net2P.hashCode()) { S.mode = 'net'; joinGame(Net2P.hashCode()); }
+  renderMenu();
+})();
+</script>

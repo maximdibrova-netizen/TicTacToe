@@ -1,0 +1,589 @@
+<title>Морской бой</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Manrope:wght@500;700;800&display=swap">
+<style>
+/* Layout: a sheet of squared exercise paper — the place this game is really played. Two grids, pen-blue ships, red crosses. One light look by choice. */
+:root {
+  color-scheme: light;
+  --paper: #f8fafd;
+  --grid: #b9d3ee;
+  --grid-strong: #6f9fd3;
+  --pen: #1d4ea0;
+  --pen-soft: rgba(29, 78, 160, .14);
+  --red: #d33a35;
+  --ink: #1b2433;
+  --ink-dim: #5d6a80;
+  --ok: #2e8b57;
+  --btn: #e6eef8;
+  --btn-hi: #d5e3f4;
+  --hand: "Caveat", "Comic Sans MS", cursive;
+  --body: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --c: 30px;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background-color: var(--paper);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 22px 22px; background-position: -1px -1px;
+  color: var(--ink); font-family: var(--body); overflow: hidden; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+}
+body::after { content: ""; position: fixed; inset: 0; pointer-events: none; background: radial-gradient(120% 90% at 50% 40%, rgba(248,250,253,.55), rgba(248,250,253,.86) 70%); z-index: -1; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 3px solid var(--pen); outline-offset: 2px; }
+.screen { position: fixed; inset: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* ---------- menu ---------- */
+#menu { overflow-y: auto; display: grid; place-items: center; padding-block: 18px; }
+.col { width: min(100%, 440px); display: flex; flex-direction: column; gap: 12px; }
+h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--hand); color: var(--pen); transform: rotate(-1.5deg); }
+.sub { margin: -4px 0 4px; text-align: center; font: 700 14px/1.3 var(--body); color: var(--ink-dim); }
+.card { background: rgba(255,255,255,.88); border: 1.5px solid var(--grid-strong); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 2px 0 var(--grid); }
+.card h2 { margin: 0; font: 800 11.5px/1 var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
+.seg { display: grid; gap: 6px; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); }
+.seg button { border: 0; border-radius: 10px; padding: 10px 6px; background: var(--btn); font: 800 14.5px/1.1 var(--body); min-width: 0; }
+.seg button:hover { background: var(--btn-hi); }
+.seg button[aria-pressed="true"] { background: var(--pen); color: #fff; }
+.play { border: 0; border-radius: 14px; padding: 13px; background: var(--pen); color: #fff; font: 700 30px/1 var(--hand); box-shadow: 0 4px 0 #12336d; }
+.play:active { transform: translateY(3px); box-shadow: 0 1px 0 #12336d; }
+.play:disabled { opacity: .45; }
+.rules { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font: 600 13.5px/1.4 var(--body); color: var(--ink-dim); }
+.rules b { color: var(--ink); }
+.hint { margin: 0; font: 700 12.5px/1.4 var(--body); color: var(--ink-dim); text-align: center; text-wrap: balance; }
+.join { display: flex; gap: 6px; }
+.join input { flex: 1; min-width: 0; border: 1.5px solid var(--grid-strong); border-radius: 10px; padding: 9px 12px; font: 800 18px/1 var(--body); letter-spacing: .2em; text-transform: uppercase; color: var(--ink); background: #fff; }
+.join button { border: 0; border-radius: 10px; padding: 0 16px; font: 800 15px/1 var(--body); background: var(--pen); color: #fff; }
+
+/* ---------- game ---------- */
+#game { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding-block: max(10px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-bottom, 0px)); overflow-y: auto; }
+.status { font: 700 30px/1 var(--hand); color: var(--pen); text-align: center; min-height: 30px; text-wrap: balance; }
+.status.red { color: var(--red); }
+.boards { display: flex; gap: 28px; align-items: flex-start; justify-content: center; flex-wrap: wrap; }
+.side { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.side h3 { margin: 0; font: 700 24px/1 var(--hand); color: var(--ink); }
+.side .left { font: 700 12.5px/1.2 var(--body); color: var(--ink-dim); min-height: 15px; text-align: center; }
+.grid { display: grid; grid-template-columns: repeat(11, var(--cs)); grid-template-rows: repeat(11, var(--cs)); background: #fff; border: 2px solid var(--pen); box-shadow: 3px 3px 0 var(--pen-soft); }
+.grid .lab { display: grid; place-items: center; font: 700 calc(var(--cs) * .62)/1 var(--hand); color: var(--pen); background: var(--paper); }
+.grid .cell { position: relative; border: 0; padding: 0; background: transparent; border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid); }
+.grid .cell:nth-child(11n) { border-right: 0; }
+.grid .cell.ship { background: var(--pen-soft); box-shadow: inset 0 0 0 2px var(--pen); }
+.grid .cell.miss::after { content: ""; position: absolute; left: 50%; top: 50%; width: 22%; height: 22%; margin: -11% 0 0 -11%; border-radius: 50%; background: var(--ink-dim); }
+.grid .cell.near::after { content: ""; position: absolute; left: 50%; top: 50%; width: 14%; height: 14%; margin: -7% 0 0 -7%; border-radius: 50%; background: var(--grid-strong); }
+.grid .cell.hit::before, .grid .cell.hit::after { content: ""; position: absolute; left: 12%; right: 12%; top: 50%; height: 2.5px; margin-top: -1px; background: var(--red); border-radius: 2px; }
+.grid .cell.hit::before { transform: rotate(45deg); } .grid .cell.hit::after { transform: rotate(-45deg); }
+.grid .cell.sunk { background: rgba(211, 58, 53, .14); box-shadow: inset 0 0 0 2px var(--red); }
+.grid .cell.boom { animation: boom .35s ease-out; }
+@keyframes boom { 0% { background: rgba(211,58,53,.55); } 100% { } }
+.grid .cell.splash { animation: splash .35s ease-out; }
+@keyframes splash { 0% { background: rgba(111,159,211,.5); } 100% { } }
+.grid.target .cell.can { cursor: crosshair; }
+.grid.target .cell.can:hover { background: rgba(29, 78, 160, .1); }
+.grid .cell.pv-ok { background: rgba(46, 139, 87, .22); box-shadow: inset 0 0 0 2px var(--ok); }
+.grid .cell.pv-bad { background: rgba(211, 58, 53, .18); }
+.grid .cell.last { outline: 2px solid var(--pen); outline-offset: -3px; }
+.grid.off { opacity: .55; }
+.grid .cell.reveal { background: rgba(29, 78, 160, .08); box-shadow: inset 0 0 0 2px rgba(29,78,160,.45); }
+
+/* placement panel */
+.place { display: flex; flex-direction: column; align-items: center; gap: 8px; width: min(100%, 460px); }
+.dock { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.dock button { border: 0; background: transparent; padding: 4px; border-radius: 8px; display: flex; gap: 2px; align-items: center; }
+.dock button i { width: 16px; height: 16px; background: var(--pen-soft); box-shadow: inset 0 0 0 2px var(--pen); }
+.dock button.vert { flex-direction: column; }
+.dock button[aria-pressed="true"] { background: rgba(29, 78, 160, .14); outline: 2px solid var(--pen); }
+.dock button.done { opacity: .25; }
+.tools { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.tools button { border: 0; border-radius: 10px; padding: 9px 14px; background: var(--btn); font: 800 14px/1 var(--body); }
+.tools button.primary { background: var(--pen); color: #fff; }
+.tools button:disabled { opacity: .4; }
+.bar { display: flex; gap: 8px; }
+.bar button { border: 0; border-radius: 12px; width: 48px; height: 44px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--grid-strong); display: grid; place-items: center; color: var(--pen); }
+.bar button:hover { background: var(--btn); }
+.bar svg { width: 21px; height: 21px; }
+
+/* dialogs */
+.ov { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(27, 36, 51, .45); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px; overflow-y: auto; }
+.dlg { width: min(100%, 380px); background: #fff; border: 2px solid var(--pen); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; text-align: center; box-shadow: 5px 5px 0 var(--pen-soft); }
+.dlg h3 { margin: 0; font: 700 40px/1 var(--hand); color: var(--pen); }
+.dlg h3.red { color: var(--red); }
+.dlg p { margin: 0; font: 700 14px/1.4 var(--body); color: var(--ink-dim); }
+.btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.btns button { border: 0; border-radius: 10px; padding: 10px 16px; font: 800 15px/1 var(--body); background: var(--pen); color: #fff; }
+.btns button.alt { background: var(--btn); color: var(--ink); }
+.code { font: 800 36px/1 var(--body); letter-spacing: .16em; color: var(--pen); border: 2px dashed var(--pen); border-radius: 12px; padding: 12px 6px 10px; }
+.linkrow { display: flex; gap: 6px; }
+.linkrow input { flex: 1; min-width: 0; border: 1.5px solid var(--grid-strong); border-radius: 9px; padding: 8px 10px; font: 700 12.5px/1 var(--body); color: var(--ink); background: var(--paper); }
+.linkrow button { border: 0; border-radius: 9px; padding: 0 12px; font: 800 13px/1 var(--body); background: var(--btn-hi); white-space: nowrap; }
+.err { background: #fde9e8; color: #8f1c18; border-radius: 10px; padding: 10px; font: 700 13.5px/1.4 var(--body); }
+.toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 12px); transform: translateX(-50%); z-index: 30; background: var(--pen); color: #fff; font: 800 14px/1.25 var(--body); padding: 10px 16px; border-radius: 10px; max-width: calc(100% - 32px); text-align: center; box-shadow: 0 6px 20px rgba(27,36,51,.25); }
+@media (prefers-reduced-motion: reduce) { .grid .cell.boom, .grid .cell.splash { animation: none; } }
+</style>
+
+<section class="screen" id="menu">
+  <div class="col">
+    <h1>Морской бой</h1>
+    <p class="sub">поле 10×10, классические правила</p>
+    <div class="card">
+      <h2>Режим</h2>
+      <div class="seg" id="modeSeg" style="--cols:2">
+        <button data-v="bot" id="m-bot">С ботом</button>
+        <button data-v="net" id="m-net">Онлайн</button>
+      </div>
+    </div>
+    <div class="card" id="levelCard">
+      <h2>Сила бота</h2>
+      <div class="seg" id="levelSeg"></div>
+    </div>
+    <div class="card" id="netCard" hidden>
+      <h2>Онлайн с другом</h2>
+      <div class="seg" style="--cols:2">
+        <button id="netCreate">Создать игру</button>
+        <button id="netJoinBtn">Войти по коду</button>
+      </div>
+      <div class="join" id="joinRow" hidden>
+        <input id="joinCode" maxlength="5" placeholder="КОД" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Код игры">
+        <button id="joinGo">Войти</button>
+      </div>
+      <p class="hint">Создай игру и отправь другу ссылку. Каждый расставит свой флот, и бой начнётся.</p>
+    </div>
+    <button class="play" id="playBtn">В бой!</button>
+    <div class="card">
+      <h2>Правила</h2>
+      <ol class="rules">
+        <li>У каждого флот: <b>один четырёхпалубный, два трёхпалубных, три двухпалубных и четыре однопалубных</b> корабля.</li>
+        <li>Корабли стоят прямо и <b>не касаются друг друга</b> даже углами.</li>
+        <li>Стреляете по очереди. <b>Попал — стреляешь ещё</b>, промахнулся — ход соперника.</li>
+        <li>Когда корабль потоплен, клетки вокруг него отмечаются: там кораблей точно нет.</li>
+        <li>Побеждает тот, кто первым потопит весь флот соперника.</li>
+      </ol>
+    </div>
+    <p class="hint"><a href="../" style="color:var(--pen)">← все игры</a> · <span style="opacity:.7">версия от /*VER*/</span></p>
+  </div>
+</section>
+
+<section class="screen" id="game" hidden>
+  <div class="status" id="status"></div>
+  <div class="boards" id="boards">
+    <div class="side" id="mySide"><h3 id="myTitle">Мой флот</h3><div class="grid" id="myGrid"></div><div class="left" id="myLeft"></div></div>
+    <div class="side" id="enSide"><h3 id="enTitle">Соперник</h3><div class="grid target" id="enGrid"></div><div class="left" id="enLeft"></div></div>
+  </div>
+  <div class="place" id="placePanel">
+    <div class="dock" id="dock"></div>
+    <div class="tools">
+      <button id="rotBtn">Повернуть ↻</button>
+      <button id="rndBtn">Расставить случайно</button>
+      <button id="clrBtn">Убрать все</button>
+      <button id="readyBtn" class="primary">Готово</button>
+    </div>
+    <p class="hint" id="placeHint">Выбери корабль снизу и тапни клетку. Тап по поставленному кораблю убирает его.</p>
+  </div>
+  <div class="bar">
+    <button id="homeBtn" aria-label="В меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"><path d="M3.5 11 12 3.8 20.5 11M6 9v11h12V9"/></svg></button>
+    <button id="soundBtn" aria-label="Звук"></button>
+  </div>
+</section>
+
+<div class="ov" id="endOv" hidden>
+  <div class="dlg">
+    <h3 id="endTitle"></h3>
+    <p id="endText"></p>
+    <div class="btns">
+      <button id="endAgain">Ещё раз</button>
+      <button id="endLook" class="alt">Посмотреть поле</button>
+      <button id="endMenu" class="alt">Меню</button>
+    </div>
+  </div>
+</div>
+<div class="ov" id="lobbyOv" hidden>
+  <div class="dlg">
+    <h3 id="lbTitle" style="font-size:32px">Онлайн-игра</h3>
+    <p id="lbText"></p>
+    <div class="code" id="lbCode" hidden></div>
+    <div class="linkrow" id="lbLinkRow" hidden><input id="lbLink" readonly aria-label="Ссылка для друга"><button id="lbCopy">Копировать</button></div>
+    <p class="err" id="lbErr" hidden></p>
+    <div class="btns"><button id="lbRetry" hidden>Попробовать ещё раз</button><button id="lbCancel" class="alt">Отмена</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>/*NET*/</script>
+<script>/*CORE*/</script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var ONLINE = !!window.GAMES_ONLINE;
+  var ICON_SND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>';
+  var ICON_MUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></svg>';
+
+  var S = { mode: 'bot', level: 2, sound: true };
+  try { var sv = JSON.parse(localStorage.getItem('bs-set') || 'null'); if (sv) Object.assign(S, sv); } catch (e) {}
+  if (!ONLINE) S.mode = 'bot';
+  function saveS() { try { localStorage.setItem('bs-set', JSON.stringify(S)); } catch (e) {} }
+  BS_LEVELS.forEach(function (L, i) { var b = document.createElement('button'); b.textContent = L.name; b.dataset.v = i; b.id = 'lv-' + i; b.onclick = function () { S.level = i; saveS(); renderMenu(); }; $('levelSeg').appendChild(b); });
+  Array.prototype.forEach.call(document.querySelectorAll('#modeSeg button'), function (b) {
+    if (b.dataset.v === 'net' && !ONLINE) b.hidden = true;
+    b.onclick = function () { S.mode = b.dataset.v; saveS(); renderMenu(); };
+  });
+  if (!ONLINE) $('modeSeg').style.setProperty('--cols', 1);
+  function renderMenu() {
+    Array.prototype.forEach.call(document.querySelectorAll('#modeSeg button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === S.mode)); });
+    Array.prototype.forEach.call(document.querySelectorAll('#levelSeg button'), function (b) { b.setAttribute('aria-pressed', String(+b.dataset.v === S.level)); });
+    $('levelCard').hidden = S.mode !== 'bot'; $('netCard').hidden = S.mode !== 'net'; $('playBtn').hidden = S.mode !== 'bot';
+    $('soundBtn').innerHTML = S.sound ? ICON_SND : ICON_MUTE;
+  }
+
+  // ---------- sound ----------
+  var AC = null, NB = null;
+  function ac() {
+    if (!S.sound) return null;
+    try {
+      if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+      if (AC.state === 'suspended') AC.resume();
+      if (!NB) { NB = AC.createBuffer(1, AC.sampleRate, AC.sampleRate); var d = NB.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+      return AC;
+    } catch (e) { return null; }
+  }
+  function noise(type, f, q, vol, dur) {
+    if (!ac()) return;
+    var t = AC.currentTime, n = AC.createBufferSource(), fl = AC.createBiquadFilter(), g = AC.createGain();
+    n.buffer = NB; fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    n.connect(fl); fl.connect(g); g.connect(AC.destination); n.start(t); n.stop(t + dur + .05);
+  }
+  function tone(f0, f1, dur, vol) {
+    if (!ac()) return;
+    var t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
+    o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .005); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + dur + .02);
+  }
+  function sfx(kind) {
+    if (kind === 'miss') noise('bandpass', 900, .7, .22, .35);
+    else if (kind === 'hit') { tone(160, 60, .22, .5); noise('lowpass', 700, .7, .3, .25); }
+    else if (kind === 'sunk') { tone(120, 40, .5, .6); noise('lowpass', 500, .6, .45, .6); }
+    else if (kind === 'place') tone(700, 600, .05, .1);
+    else if (kind === 'win') [523, 659, 784, 1047].forEach(function (f, k) { setTimeout(function () { tone(f, f, .25, .12); }, k * 110); });
+  }
+
+  // ---------- game state ----------
+  // G.opp: 'bot' | 'net'. My board: fleet, hitsOnMe (1 miss, 2 hit). Enemy board: view (0 ?,1 miss,2 hit,3 sunk,4 empty).
+  var G = null, token = 0, cellsMy = [], cellsEn = [];
+  function emptyGame(opp) {
+    return { opp: opp, phase: 'place', fleet: [], marksMe: new Int8Array(100), hitsMe: new Int8Array(100), view: new Int8Array(100),
+      enemyLeft: BS_FLEET.slice(), myLeft: BS_FLEET.slice(), turn: 'me', readyMe: false, readyThem: false, first: 'me',
+      sel: 0, vert: false, lastEn: -1, lastMe: -1, reveal: null, shots: 0, enemyShots: 0 };
+  }
+  function buildGrid(el, list, isEnemy) {
+    el.innerHTML = ''; list.length = 0;
+    var corner = document.createElement('div'); corner.className = 'lab'; el.appendChild(corner);
+    for (var c = 0; c < 10; c++) { var l = document.createElement('div'); l.className = 'lab'; l.textContent = BS_LETTERS[c]; el.appendChild(l); }
+    for (var r = 0; r < 10; r++) {
+      var n = document.createElement('div'); n.className = 'lab'; n.textContent = r + 1; el.appendChild(n);
+      for (c = 0; c < 10; c++) {
+        var b = document.createElement('button'); b.className = 'cell'; b.dataset.i = r * 10 + c;
+        b.setAttribute('aria-label', (isEnemy ? 'Выстрел: ' : 'Клетка ') + bsCellName(r * 10 + c));
+        el.appendChild(b); list.push(b);
+      }
+    }
+  }
+  buildGrid($('myGrid'), cellsMy, false); buildGrid($('enGrid'), cellsEn, true);
+  cellsMy.forEach(function (b) { b.addEventListener('click', onMyCell); b.addEventListener('mouseenter', previewPlace); b.addEventListener('mouseleave', clearPreview); });
+  cellsEn.forEach(function (b) { b.addEventListener('click', onShoot); });
+
+  function layout() {
+    var vw = window.innerWidth, vh = window.innerHeight, place = G && G.phase === 'place';
+    var cs;
+    if (place) cs = Math.floor(Math.min((vw - 40) / 11, (vh - 300) / 11, 40));
+    else if (vw >= 760) cs = Math.floor(Math.min((vw - 90) / 22, (vh - 170) / 11, 40));
+    else cs = Math.floor(Math.min((vw - 36) / 11, (vh - 210) / (11 * 1.6), 38));
+    cs = Math.max(18, cs);
+    $('enGrid').style.setProperty('--cs', cs + 'px');
+    var small = !place && vw < 760 ? Math.max(14, Math.floor(cs * .6)) : cs;
+    $('myGrid').style.setProperty('--cs', small + 'px');
+    // on phones the enemy board goes first (it's where you play)
+    $('boards').style.flexDirection = !place && vw < 760 ? 'column-reverse' : 'row';
+  }
+  window.addEventListener('resize', layout);
+
+  // ---------- placement ----------
+  function placedCount(len) { return G.fleet.filter(function (s) { return s.cells.length === len; }).length; }
+  function need(len) { return BS_FLEET.filter(function (x) { return x === len; }).length; }
+  function renderDock() {
+    var d = $('dock'); d.innerHTML = '';
+    var lens = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1], used = {};
+    lens.forEach(function (len, k) {
+      used[len] = (used[len] || 0) + 1;
+      var done = used[len] <= placedCount(len);
+      var b = document.createElement('button'); b.className = (G.vert ? 'vert ' : '') + (done ? 'done' : '');
+      b.setAttribute('aria-label', len + '-палубный'); b.dataset.len = len;
+      b.setAttribute('aria-pressed', String(!done && G.sel === len && firstFree(len) === k));
+      for (var t = 0; t < len; t++) b.appendChild(document.createElement('i'));
+      b.onclick = function () { if (!done) { G.sel = len; renderDock(); } };
+      d.appendChild(b);
+    });
+    var all = G.fleet.length === BS_FLEET.length;
+    $('readyBtn').disabled = !all;
+    $('placeHint').textContent = all ? 'Флот расставлен. Жми «Готово».' : 'Выбери корабль и тапни клетку — это нос корабля. Тап по поставленному кораблю убирает его.';
+    function firstFree(len) { var u = 0; for (var k = 0; k < lens.length; k++) if (lens[k] === len) { u++; if (u > placedCount(len)) return k; } return -1; }
+  }
+  function autoSelect() { if (G.sel && placedCount(G.sel) < need(G.sel)) return; G.sel = 0; for (var k = 0; k < BS_FLEET.length; k++) if (placedCount(BS_FLEET[k]) < need(BS_FLEET[k])) { G.sel = BS_FLEET[k]; break; } }
+  function occMap() { var o = new Int8Array(100); G.fleet.forEach(function (s) { s.cells.forEach(function (x) { o[x] = 1; }); }); return o; }
+  function onMyCell(e) {
+    if (!G || G.phase !== 'place' || G.readyMe) return;
+    var i = +e.currentTarget.dataset.i;
+    var own = G.fleet.findIndex(function (s) { return s.cells.indexOf(i) >= 0; });
+    if (own >= 0) { G.sel = G.fleet[own].cells.length; G.fleet.splice(own, 1); renderAll(); return; }
+    if (!G.sel) return;
+    var cells = bsShipCells((i / 10) | 0, i % 10, G.sel, G.vert);
+    if (!bsCanPlace(occMap(), cells)) { toast('Сюда нельзя: корабли не должны касаться и выходить за край'); return; }
+    G.fleet.push({ cells: cells }); sfx('place'); autoSelect(); renderAll();
+  }
+  function previewPlace(e) {
+    clearPreview();
+    if (!G || G.phase !== 'place' || G.readyMe || !G.sel) return;
+    var i = +e.currentTarget.dataset.i, cells = bsShipCells((i / 10) | 0, i % 10, G.sel, G.vert);
+    var ok = bsCanPlace(occMap(), cells);
+    (cells || [i]).forEach(function (x) { cellsMy[x].classList.add(ok ? 'pv-ok' : 'pv-bad'); });
+  }
+  function clearPreview() { cellsMy.forEach(function (b) { b.classList.remove('pv-ok', 'pv-bad'); }); }
+  $('rotBtn').onclick = function () { G.vert = !G.vert; renderDock(); };
+  $('rndBtn').onclick = function () { G.fleet = bsRandomFleet(); G.sel = 0; sfx('place'); renderAll(); };
+  $('clrBtn').onclick = function () { G.fleet = []; G.sel = 4; renderAll(); };
+  $('readyBtn').onclick = function () {
+    if (!bsFleetValid(G.fleet)) return;
+    G.readyMe = true;
+    if (G.opp === 'bot') { startBattle(); return; }
+    Net2P.send({ t: 'ready' }); save();
+    if (G.readyThem) startBattle(); else renderAll();
+  };
+
+  // ---------- battle ----------
+  function newGame(opp, first) {
+    token++;
+    G = emptyGame(opp); G.first = first || 'me'; G.sel = 4;
+    if (opp === 'bot') { G.bot = { fleet: bsRandomFleet(), hits: new Int8Array(100), view: new Int8Array(100), left: BS_FLEET.slice() }; G.readyThem = true; }
+    $('menu').hidden = true; $('game').hidden = false; $('endOv').hidden = true; $('lobbyOv').hidden = true;
+    renderAll(); layout();
+  }
+  function startBattle() {
+    G.phase = 'battle'; G.turn = G.first; clearPreview();
+    renderAll(); layout(); save();
+    toast(G.turn === 'me' ? 'Бой! Ты стреляешь первым' : 'Бой! Первым стреляет ' + (G.opp === 'bot' ? 'бот' : 'друг'));
+    if (G.turn === 'them' && G.opp === 'bot') botTurn();
+  }
+  function onShoot(e) {
+    if (!G || G.phase !== 'battle' || G.turn !== 'me' || G.waiting) return;
+    var i = +e.currentTarget.dataset.i;
+    if (G.view[i] !== 0) return;
+    G.shots++;
+    if (G.opp === 'bot') { gotAnswer(i, bsAnswer(G.bot.fleet, G.bot.hits, i)); return; }
+    G.waiting = i; Net2P.send({ t: 'shot', i: i }); renderAll();
+  }
+  // result of my shot at the enemy
+  function gotAnswer(i, a) {
+    G.waiting = null; G.lastEn = i;
+    if (a.res === 'miss') { G.view[i] = 1; G.turn = 'them'; sfx('miss'); flash(cellsEn[i], 'splash'); }
+    else if (a.res === 'hit') { G.view[i] = 2; sfx('hit'); flash(cellsEn[i], 'boom'); }
+    else {
+      a.ship.forEach(function (x) { G.view[x] = 3; });
+      bsAround(a.ship).forEach(function (x) { if (G.view[x] === 0) G.view[x] = 4; });
+      G.enemyLeft.splice(G.enemyLeft.indexOf(a.ship.length), 1);
+      sfx('sunk'); flash(cellsEn[i], 'boom');
+      toast(shipWord(a.ship.length) + ' потоплен!');
+    }
+    renderAll(); save();
+    if (a.all) { finish(true); return; }
+    if (G.turn === 'them' && G.opp === 'bot') botTurn();
+  }
+  // enemy shoots at me
+  function incoming(i) {
+    var a = bsAnswer(G.fleet, G.hitsMe, i);
+    G.lastMe = i; G.enemyShots++;
+    if (a.res === 'miss') { G.marksMe[i] = 1; G.turn = 'me'; sfx('miss'); flash(cellsMy[i], 'splash'); }
+    else {
+      G.marksMe[i] = 2; sfx(a.res === 'sunk' ? 'sunk' : 'hit'); flash(cellsMy[i], 'boom');
+      if (a.res === 'sunk') { bsAround(a.ship).forEach(function (x) { if (!G.marksMe[x]) G.marksMe[x] = 3; }); G.myLeft.splice(G.myLeft.indexOf(a.ship.length), 1); }
+    }
+    renderAll(); save();
+    if (a.all) finish(false);
+    return a;
+  }
+  function botTurn() {
+    var my = token;
+    G.botThinking = true; renderAll();
+    setTimeout(function () {
+      if (my !== token || !G || G.phase !== 'battle' || G.turn !== 'them') return;
+      var i = bsBotShot(G.bot.view, G.bot.left, S.level);
+      var a = incoming(i);
+      if (a.res === 'miss') G.bot.view[i] = 1;
+      else if (a.res === 'hit') G.bot.view[i] = 2;
+      else { a.ship.forEach(function (x) { G.bot.view[x] = 3; }); bsAround(a.ship).forEach(function (x) { if (!G.bot.view[x]) G.bot.view[x] = 4; }); G.bot.left.splice(G.bot.left.indexOf(a.ship.length), 1); }
+      G.botThinking = false;
+      if (G.phase === 'battle' && G.turn === 'them') botTurn(); else renderAll();
+    }, 700);
+  }
+  function flash(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+  function shipWord(n) { return ['', 'Однопалубный', 'Двухпалубный', 'Трёхпалубный', 'Четырёхпалубный'][n]; }
+  function finish(won) {
+    if (G.phase === 'over') return;
+    G.phase = 'over'; G.won = won;
+    if (G.opp === 'bot') G.reveal = G.bot.fleet;
+    else Net2P.send({ t: 'reveal', fleet: G.fleet });
+    renderAll(); save();
+    if (won) sfx('win');
+    setTimeout(function () {
+      if (!G || G.phase !== 'over') return;
+      $('endTitle').textContent = won ? 'Победа!' : 'Поражение'; $('endTitle').className = won ? '' : 'red';
+      $('endText').textContent = won ? 'Флот соперника на дне. Выстрелов: ' + G.shots + '.' : (G.opp === 'bot' ? 'Бот потопил твой флот' : 'Друг потопил твой флот') + '. Его оставшиеся корабли видны на поле.';
+      $('endAgain').hidden = G.opp === 'net' && Net2P.role() === 'guest';
+      if (G.opp === 'net' && Net2P.role() === 'guest') $('endText').textContent += ' Новую партию начинает хозяин игры.';
+      $('endOv').hidden = false;
+    }, 900);
+  }
+
+  // ---------- render ----------
+  function renderAll() {
+    if (!G) return;
+    var place = G.phase === 'place', s;
+    $('placePanel').hidden = !place || G.readyMe;
+    $('enSide').hidden = place;
+    var occ = occMap();
+    cellsMy.forEach(function (b, i) {
+      var m = G.marksMe[i];
+      b.className = 'cell' + (occ[i] ? (m === 2 && isSunkMine(i) ? ' sunk' : ' ship') : '') + (m === 1 ? ' miss' : m === 2 ? ' hit' : m === 3 ? ' near' : '') + (i === G.lastMe && !place ? ' last' : '');
+    });
+    var reveal = {};
+    if (G.reveal) G.reveal.forEach(function (sh) { sh.cells.forEach(function (x) { reveal[x] = 1; }); });
+    var myTurn = G.phase === 'battle' && G.turn === 'me' && G.waiting == null;
+    cellsEn.forEach(function (b, i) {
+      var v = G.view[i];
+      b.className = 'cell' + (v === 1 ? ' miss' : v === 2 ? ' hit' : v === 3 ? ' hit sunk' : v === 4 ? ' near' : '') + (v === 0 && reveal[i] ? ' reveal' : '') + (myTurn && v === 0 ? ' can' : '') + (i === G.lastEn ? ' last' : '');
+    });
+    $('enGrid').classList.toggle('off', G.phase === 'battle' && !myTurn);
+    $('myGrid').classList.toggle('off', false);
+    $('myLeft').textContent = place ? '' : 'Целы: ' + fleetText(G.myLeft);
+    $('enLeft').textContent = 'Осталось потопить: ' + fleetText(G.enemyLeft);
+    $('enTitle').textContent = G.opp === 'bot' ? 'Бот · ' + BS_LEVELS[S.level].name.toLowerCase() : 'Друг' + (Net2P.active() && !Net2P.online() ? ' (нет связи)' : '');
+    // status
+    var st = $('status'); st.className = 'status';
+    if (place) st.textContent = G.readyMe ? 'Ждём, пока друг расставит флот…' : 'Расставь свой флот';
+    else if (G.phase === 'over') { st.textContent = G.won ? 'Победа!' : 'Поражение'; if (!G.won) st.className = 'status red'; }
+    else if (G.waiting != null) st.textContent = 'Выстрел…';
+    else if (G.turn === 'me') st.textContent = 'Твой выстрел';
+    else { st.textContent = G.opp === 'bot' ? 'Стреляет бот…' : 'Стреляет друг…'; st.className = 'status red'; }
+    if (place) renderDock();
+  }
+  function isSunkMine(i) { var sh = G.fleet.find(function (s) { return s.cells.indexOf(i) >= 0; }); return sh && sh.cells.every(function (x) { return G.hitsMe[x]; }); }
+  function fleetText(left) {
+    if (!left.length) return 'ничего';
+    var cnt = {}; left.forEach(function (l) { cnt[l] = (cnt[l] || 0) + 1; });
+    return [4, 3, 2, 1].filter(function (l) { return cnt[l]; }).map(function (l) { return cnt[l] + '×' + '■'.repeat(l); }).join('  ');
+  }
+
+  // ---------- end / navigation ----------
+  $('endLook').onclick = function () { $('endOv').hidden = true; };
+  $('endAgain').onclick = function () { again(); };
+  function again() {
+    if (G && G.opp === 'net') { if (Net2P.role() === 'host') hostNewGame(true); return; }
+    newGame('bot', G && G.first === 'me' ? 'them' : 'me');       // первый выстрел чередуется
+  }
+  $('endMenu').onclick = toMenu; $('homeBtn').onclick = toMenu;
+  function toMenu() { Net2P.close(); token++; G = null; $('game').hidden = true; $('endOv').hidden = true; $('lobbyOv').hidden = true; $('menu').hidden = false; renderMenu(); }
+  $('playBtn').onclick = function () { sfx('place'); newGame('bot', 'me'); };
+  $('soundBtn').onclick = function () { S.sound = !S.sound; saveS(); renderMenu(); };
+  var toastT = null;
+  function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 2300); }
+
+  // ---------- online ----------
+  // Each side keeps its own fleet secret and answers shots at it. The host starts games and picks who shoots first.
+  var PREFIX = 'bs-10x10-v1-';
+  function lobby(title, text, o) {
+    o = o || {};
+    $('lbTitle').textContent = title; $('lbText').textContent = text || ''; $('lbText').hidden = !text;
+    $('lbCode').hidden = !o.code; $('lbCode').textContent = o.code || '';
+    $('lbLinkRow').hidden = !o.link; $('lbLink').value = o.link || '';
+    $('lbErr').hidden = !o.err; $('lbErr').textContent = o.err || ''; $('lbRetry').hidden = !o.err;
+    $('lobbyOv').hidden = false;
+  }
+  $('lbCopy').onclick = function () { var v = $('lbLink').value, b = $('lbCopy'); try { navigator.clipboard.writeText(v).then(function () { b.textContent = 'Скопировано'; setTimeout(function () { b.textContent = 'Копировать'; }, 1500); }, function () { $('lbLink').select(); }); } catch (e) { $('lbLink').select(); } };
+  $('lbCancel').onclick = toMenu;
+  var lastJoin = null;
+  $('lbRetry').onclick = function () { if (lastJoin) joinGame(lastJoin); else hostGame(); };
+  function saveKey() { return 'bs-game:' + Net2P.code() + ':' + Net2P.role(); }
+  function save() {
+    if (!G || G.opp !== 'net') return;
+    try {
+      localStorage.setItem(saveKey(), JSON.stringify({ phase: G.phase, fleet: G.fleet, marksMe: Array.from(G.marksMe), hitsMe: Array.from(G.hitsMe), view: Array.from(G.view),
+        enemyLeft: G.enemyLeft, myLeft: G.myLeft, turn: G.turn, readyMe: G.readyMe, readyThem: G.readyThem, first: G.first, shots: G.shots, gid: G.gid, won: G.won }));
+    } catch (e) {}
+  }
+  function restore(gid) {
+    try {
+      var d = JSON.parse(localStorage.getItem(saveKey()) || 'null');
+      if (!d || d.gid !== gid) return false;
+      G = emptyGame('net');
+      Object.assign(G, d); G.marksMe = Int8Array.from(d.marksMe); G.hitsMe = Int8Array.from(d.hitsMe); G.view = Int8Array.from(d.view);
+      $('menu').hidden = true; $('game').hidden = false; $('lobbyOv').hidden = true; renderAll(); layout();
+      return true;
+    } catch (e) { return false; }
+  }
+  var netFirst = 'host', gidSeq = 0;
+  function hostGame() {
+    lastJoin = null;
+    lobby('Создаю игру', 'Подключаюсь к серверу связи…');
+    Net2P.host({ prefix: PREFIX,
+      onReady: function (code, link) { lobby('Игра создана', link ? 'Отправь другу ссылку или код. Как только он зайдёт, начнётся расстановка.' : 'Скажи другу код: он вводит его в «Войти по коду».', { code: code, link: link }); },
+      onJoin: function (o) {
+        if (o.returning && G && G.opp === 'net') { Net2P.send({ t: 'resume', gid: G.gid, first: G.first === 'me' ? 'host' : 'guest' }); toast('Друг вернулся'); renderAll(); return; }
+        hostNewGame(false);
+      },
+      onPeer: function (on) { if (G) { renderAll(); if (on && G.waiting != null) Net2P.send({ t: 'shot', i: G.waiting }); } if (!on) toast('Связь с другом пропала'); },
+      onLeave: function () { toast('Друг вышел'); },
+      onData: onNet,
+      onFail: function (m) { lobby('Онлайн-игра', '', { err: m }); }
+    });
+  }
+  function hostNewGame(swap) {
+    if (swap) netFirst = netFirst === 'host' ? 'guest' : 'host';
+    var gid = Date.now().toString(36) + (++gidSeq);
+    Net2P.send({ t: 'new', first: netFirst, gid: gid });
+    newGame('net', netFirst === 'host' ? 'me' : 'them'); G.gid = gid; save();
+  }
+  function joinGame(code) {
+    lastJoin = code;
+    lobby('Онлайн-игра', 'Подключаюсь к игре ' + Net2P.cleanCode(code) + '…');
+    Net2P.join(code, { prefix: PREFIX,
+      onOpen: function () { lobby('Онлайн-игра', 'Подключено! Ждём начала…'); },
+      onPeer: function (on) { if (G) { renderAll(); if (on && G.waiting != null) Net2P.send({ t: 'shot', i: G.waiting }); } },
+      onData: onNet,
+      onFail: function (m) { lobby('Онлайн-игра', '', { err: m }); }
+    });
+  }
+  function onNet(d) {
+    if (d.t === 'new') { newGame('net', d.first === 'guest' ? 'me' : 'them'); G.gid = d.gid; save(); toast('Расставь флот'); }
+    else if (d.t === 'resume') { if (!restore(d.gid)) Net2P.send({ t: 'lost' }); else { toast('Снова в игре'); Net2P.send({ t: 'state', readyMe: G.readyMe }); } }
+    else if (d.t === 'lost') { if (Net2P.role() === 'host') hostNewGame(false); }
+    else if (d.t === 'state') { if (G && d.readyMe && !G.readyThem) { G.readyThem = true; if (G.readyMe && G.phase === 'place') startBattle(); } }
+    else if (!G) return;
+    else if (d.t === 'ready') { G.readyThem = true; save(); if (G.readyMe && G.phase === 'place') startBattle(); else { toast('Друг расставил флот'); renderAll(); } }
+    else if (d.t === 'shot') {
+      if (G.lastAns && G.lastAns.i === (d.i | 0)) { Net2P.send(G.lastAns); return; }
+      if (G.phase !== 'battle' || G.turn !== 'them') return;
+      var a = incoming(d.i | 0);
+      G.lastAns = { t: 'ans', i: d.i | 0, res: a.res, ship: a.ship, all: !!a.all };
+      Net2P.send(G.lastAns);
+    }
+    else if (d.t === 'ans') { if (G.waiting === d.i) gotAnswer(d.i, d); }
+    else if (d.t === 'reveal') { G.reveal = d.fleet; renderAll(); }
+  }
+  $('netCreate').onclick = hostGame;
+  $('netJoinBtn').onclick = function () { $('joinRow').hidden = !$('joinRow').hidden; if (!$('joinRow').hidden) $('joinCode').focus(); };
+  $('joinCode').addEventListener('input', function () { this.value = Net2P.cleanCode(this.value); });
+  $('joinCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('joinGo').click(); });
+  $('joinGo').onclick = function () { var c = Net2P.cleanCode($('joinCode').value); if (c.length === 5) joinGame(c); };
+  if (ONLINE && Net2P.hashCode()) { S.mode = 'net'; joinGame(Net2P.hashCode()); }
+  renderMenu();
+})();
+</script>
