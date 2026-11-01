@@ -51,6 +51,11 @@ a.game.current::after { content: "сейчас играете"; position: absolu
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
 .tags span { font: 800 11px/1 var(--body); padding: 5px 8px; border-radius: 999px; background: rgba(255,255,255,.07); }
 .foot { font: 700 12px/1.4 var(--body); color: var(--ink-dim); opacity: .7; }
+.foot .ok { color: var(--ok); }
+.install { flex-direction: row; align-items: center; gap: 14px; flex-wrap: wrap; }
+.install img { width: 52px; height: 52px; border-radius: 12px; flex: none; }
+.install div { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 4px; }
+.install b { font: 800 15px/1.2 var(--display); }
 
 /* game stage */
 #stage { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; background: #000; }
@@ -115,7 +120,12 @@ a.game.current::after { content: "сейчас играете"; position: absolu
       <div class="tags"><span>бот</span><span>вдвоём</span><span>онлайн</span></div>
     </a>
   </div>
-  <p class="foot">Версия от /*VER*/</p>
+  <section class="room install" id="install" hidden>
+    <img src="apple-touch-icon.png" alt="">
+    <div><b>Играть без интернета</b><p id="instText"></p></div>
+    <button class="btn main" id="instBtn" hidden>Установить</button>
+  </section>
+  <p class="foot">Версия от /*VER*/<span id="offState"></span></p>
 </main>
 </div>
 
@@ -294,7 +304,9 @@ a.game.current::after { content: "сейчас играете"; position: absolu
   function renderRoom() {
     var el = $('room'), s = R.state, html = '';
     el.classList.toggle('live', s === 'live');
-    if (s === 'idle') {
+    if (s === 'idle' && !navigator.onLine) {
+      html = '<h2><span class="dot off"></span>Нет интернета</h2><p>С ботами и вдвоём на одном экране играть можно. Комната и игра с другом онлайн заработают, когда появится сеть.</p>';
+    } else if (s === 'idle') {
       html = '<h2>Играть с другом</h2><p>Создай комнату и отправь другу одну ссылку. Потом выбирайте любые игры — он будет подключаться сам.</p>' +
         '<div class="row"><button class="btn main" id="mkRoom">Создать комнату</button><div class="join"><input id="joinCode" maxlength="5" placeholder="КОД" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Код комнаты"><button class="btn" id="joinGo">Войти</button></div></div>';
     } else if (s === 'creating') html = '<h2>Создаю комнату…</h2><p>Подключаюсь к серверу связи.</p>';
@@ -333,6 +345,36 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     });
   });
   setInterval(function () { if (ROOM.active()) { renderWho(); var p = document.querySelector('.room h2 .pill'); if (p && R.state === 'live') { var on = Net2P.online(); if ((p.textContent === 'друг здесь') !== on) renderRoom(); } } }, 2000);
+
+  addEventListener('online', function () { if (R.state === 'idle') renderRoom(); });
+  addEventListener('offline', function () { if (R.state === 'idle') renderRoom(); });
+
+  // ================= без интернета и установка на телефон =================
+  (function () {
+    var standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    var ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var prompt = null, saved = false;
+    function render() {
+      var card = $('install'), btn = $('instBtn'), t = $('instText');
+      if (standalone || !saved) { card.hidden = true; return; }
+      card.hidden = false; btn.hidden = !prompt;
+      t.textContent = prompt ? 'Все игры уже сохранены на этом устройстве. Установи их как приложение — иконка появится на главном экране, с ботами можно играть без сети.'
+        : ios ? 'Все игры уже сохранены. Чтобы открывать их как приложение, нажми в Safari «Поделиться» → «На экран „Домой“». С ботами можно играть без сети.'
+        : 'Все игры уже сохранены на этом устройстве: открой эту страницу без интернета, и с ботами можно играть. В меню браузера есть «Установить приложение» или «Добавить на главный экран».';
+    }
+    addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); prompt = e; render(); });
+    addEventListener('appinstalled', function () { prompt = null; standalone = true; render(); });
+    $('instBtn').onclick = function () { if (!prompt) return; prompt.prompt(); prompt.userChoice.then(function () { prompt = null; render(); }); };
+    function check() {
+      if (!window.caches || !('serviceWorker' in navigator)) return;
+      Promise.all(['./', 'tochki/', 'ttt/', 'battleship/', 'checkers/'].map(function (u) { return caches.match(u, { ignoreSearch: true }); })).then(function (rs) {
+        var ok = rs.every(Boolean);
+        if (ok && !saved) { saved = true; $('offState').innerHTML = ' · <span class="ok">✓ работает без интернета</span>'; render(); }
+        if (!ok) setTimeout(check, 1500);
+      }).catch(function () {});
+    }
+    if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.ready.then(check);
+  })();
 
   var h = Net2P.hashCode();
   if (h) joinRoom(h);
