@@ -4,60 +4,338 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@500;700;800&display=swap">
 <style>
-/* Layout: a short shelf of three game boxes; each card shows a miniature of its board. */
-:root { color-scheme: dark; --bg: #121726; --bg-2: #1a2136; --line: #2d3757; --ink: #eef1fb; --ink-dim: #9aa5c7; --gold: #ffd166;
+/* Layout: a shelf of game boxes under a "room" card; once a game is picked it fills the screen under a thin room bar. */
+:root { color-scheme: dark; --bg: #121726; --bg-2: #1a2136; --line: #2d3757; --ink: #eef1fb; --ink-dim: #9aa5c7; --gold: #ffd166; --ok: #5fd38a; --bad: #ff7a6b;
   --display: "Unbounded", "Trebuchet MS", system-ui, sans-serif; --body: "Manrope", "Segoe UI", system-ui, sans-serif; }
 * { box-sizing: border-box; }
-body { background: radial-gradient(110% 80% at 50% 30%, var(--bg-2), var(--bg) 70%); background-color: var(--bg); color: var(--ink); font-family: var(--body); min-height: 100vh;
-  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 32px; }
-main { width: min(100%, 900px); margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+html, body { height: 100%; }
+body { background: radial-gradient(110% 80% at 50% 30%, var(--bg-2), var(--bg) 70%); background-color: var(--bg); color: var(--ink); font-family: var(--body); }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+#home { position: fixed; inset: 0; overflow-y: auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px; z-index: 2; background: inherit; background-color: var(--bg); }
+main { width: min(100%, 980px); margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 h1 { margin: 0; font: 800 clamp(26px, 6vw, 40px)/1.05 var(--display); text-wrap: balance; }
-.lead { margin: -10px 0 0; font: 700 15px/1.45 var(--body); color: var(--ink-dim); max-width: 60ch; }
-.games { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-a.game { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 18px; background: var(--bg-2); border: 1px solid var(--line); color: inherit; text-decoration: none; transition: transform .15s, border-color .15s; }
+.lead { margin: -8px 0 0; font: 700 15px/1.45 var(--body); color: var(--ink-dim); max-width: 62ch; }
+
+/* room card */
+.room { background: var(--bg-2); border: 1px solid var(--line); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.room.live { border-color: var(--ok); box-shadow: 0 0 0 1px var(--ok) inset; }
+.room h2 { margin: 0; font: 800 17px/1.2 var(--display); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.room p { margin: 0; font: 600 14px/1.45 var(--body); color: var(--ink-dim); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn { border: 0; border-radius: 12px; padding: 11px 16px; font: 800 15px/1 var(--body); background: #2a3456; }
+.btn:hover { background: #36426d; }
+.btn.main { background: var(--gold); color: #2a1d00; }
+.btn.main:hover { background: #ffdc85; }
+.join { display: flex; gap: 6px; }
+.join input { width: 9.5em; border: 0; border-radius: 12px; padding: 10px 12px; font: 800 18px/1 var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--bg); background: var(--ink); }
+.code { font: 800 34px/1 var(--display); letter-spacing: .16em; background: var(--ink); color: var(--bg); border-radius: 12px; padding: 10px 14px 8px; }
+.linkrow { display: flex; gap: 6px; flex: 1; min-width: min(100%, 260px); }
+.linkrow input { flex: 1; min-width: 0; border: 0; border-radius: 10px; padding: 10px; font: 700 13px/1 var(--body); color: var(--bg); background: var(--ink-dim); }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ink-dim); display: inline-block; flex: none; }
+.dot.on { background: var(--ok); box-shadow: 0 0 0 4px rgba(95,211,138,.2); }
+.dot.off { background: var(--bad); }
+.pill { font: 800 12px/1 var(--body); padding: 6px 9px; border-radius: 999px; background: rgba(255,255,255,.08); }
+.err { background: #3a1620; color: #ffb3bc; border-radius: 12px; padding: 10px; font: 700 13.5px/1.4 var(--body); }
+
+/* games */
+.games { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+a.game { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 18px; background: var(--bg-2); border: 1px solid var(--line); color: inherit; text-decoration: none; transition: transform .15s, border-color .15s; }
 a.game:hover, a.game:focus-visible { transform: translateY(-3px); border-color: var(--gold); outline: none; }
+a.game.current { border-color: var(--ok); }
+a.game.current::after { content: "сейчас играете"; position: absolute; top: 10px; right: 10px; font: 800 11px/1 var(--body); background: var(--ok); color: #0c2a17; padding: 5px 7px; border-radius: 999px; }
 .art { aspect-ratio: 4 / 3; border-radius: 12px; display: grid; place-items: center; overflow: hidden; }
 .art svg { width: 78%; height: 78%; }
-.game h2 { margin: 0; font: 800 19px/1.15 var(--display); }
-.game p { margin: 0; font: 600 13.5px/1.45 var(--body); color: var(--ink-dim); }
+.game h3 { margin: 0; font: 800 17px/1.15 var(--display); }
+.game p { margin: 0; font: 600 13px/1.45 var(--body); color: var(--ink-dim); }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
-.tags span { font: 800 11.5px/1 var(--body); padding: 5px 8px; border-radius: 999px; background: rgba(255,255,255,.07); color: var(--ink); }
+.tags span { font: 800 11px/1 var(--body); padding: 5px 8px; border-radius: 999px; background: rgba(255,255,255,.07); }
 .foot { font: 700 12px/1.4 var(--body); color: var(--ink-dim); opacity: .7; }
+
+/* game stage */
+#stage { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; background: #000; }
+.sbar { flex: none; height: calc(42px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px));
+  display: flex; align-items: center; gap: 10px; background: #0d1120; border-bottom: 1px solid var(--line); }
+.sbar button { border: 0; border-radius: 9px; padding: 7px 12px; background: #2a3456; font: 800 13.5px/1 var(--body); }
+.sbar .ttl { font: 800 13px/1 var(--display); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sbar .who { display: flex; align-items: center; gap: 7px; font: 700 12.5px/1 var(--body); color: var(--ink-dim); white-space: nowrap; }
+#frame { flex: 1; width: 100%; border: 0; background: #000; }
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); transform: translateX(-50%); z-index: 30; background: var(--ink); color: var(--bg); font: 800 14px/1.25 var(--body); padding: 10px 16px; border-radius: 12px; max-width: calc(100% - 32px); text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
 </style>
+
+<div id="home">
 <main>
   <h1>Игры на двоих</h1>
-  <p class="lead">Играй с ботом или с другом по ссылке: создаёшь игру, отправляешь ссылку, друг заходит. Ничего устанавливать не нужно.</p>
-  <div class="games">
-    <a class="game" href="ttt/">
+  <p class="lead">Играй с ботом или с другом. Позови друга один раз — дальше выбирайте любые игры, новые коды не нужны.</p>
+
+  <section class="room" id="room" aria-live="polite"></section>
+
+  <div class="games" id="games">
+    <a class="game" href="tochki/" data-g="tochki" data-name="Точки">
+      <div class="art" style="background:#073a40">
+        <svg viewBox="0 0 120 90" aria-hidden="true"><g transform="translate(22 6)">
+          <g fill="#1595a0"><rect x="0" y="0" width="24" height="24" rx="4"/><rect x="26" y="0" width="24" height="24" rx="4"/><rect x="52" y="0" width="24" height="24" rx="4"/><rect x="0" y="26" width="24" height="24" rx="4"/><rect x="26" y="26" width="24" height="24" rx="4"/><rect x="52" y="26" width="24" height="24" rx="4"/><rect x="0" y="52" width="24" height="24" rx="4"/><rect x="26" y="52" width="24" height="24" rx="4"/><rect x="52" y="52" width="24" height="24" rx="4"/></g>
+          <g><polygon points="9,3 15,3 21,9 21,15 15,21 9,21 3,15 3,9" fill="#d3202f"/><circle cx="12" cy="12" r="5" fill="#e83a48"/><circle cx="12" cy="12" r="1.8" fill="#fff"/></g>
+          <g transform="translate(26 26)"><polygon points="9,3 15,3 21,9 21,15 15,21 9,21 3,15 3,9" fill="#d3202f"/><circle cx="12" cy="12" r="5" fill="#e83a48"/><circle cx="10" cy="12" r="1.6" fill="#fff"/><circle cx="14" cy="12" r="1.6" fill="#fff"/></g>
+          <g transform="translate(52 52)"><polygon points="9,3 15,3 21,9 21,15 15,21 9,21 3,15 3,9" fill="#23a82b"/><circle cx="12" cy="12" r="5" fill="#36c23f"/><circle cx="12" cy="10" r="1.6" fill="#fff"/><circle cx="10" cy="14" r="1.6" fill="#fff"/><circle cx="14" cy="14" r="1.6" fill="#fff"/></g>
+          <g transform="translate(52 0)"><polygon points="9,3 15,3 21,9 21,15 15,21 9,21 3,15 3,9" fill="#23a82b"/><circle cx="12" cy="12" r="5" fill="#36c23f"/><circle cx="12" cy="12" r="1.8" fill="#fff"/></g></g></svg>
+      </div>
+      <h3>Точки</h3>
+      <p>Тапай свои клетки, набирай точки — клетка взрывается и захватывает соседей. Цепные реакции решают всё.</p>
+      <div class="tags"><span>до 4 игроков</span><span>боты</span><span>онлайн</span></div>
+    </a>
+    <a class="game" href="ttt/" data-g="ttt" data-name="Крестики-нолики 3×3">
       <div class="art" style="background:#1f2843">
         <svg viewBox="0 0 120 90" aria-hidden="true"><g fill="#2d3757"><rect x="15" y="0" width="28" height="28" rx="5"/><rect x="46" y="0" width="28" height="28" rx="5"/><rect x="77" y="0" width="28" height="28" rx="5"/><rect x="15" y="31" width="28" height="28" rx="5"/><rect x="46" y="31" width="28" height="28" rx="5"/><rect x="77" y="31" width="28" height="28" rx="5"/><rect x="15" y="62" width="28" height="28" rx="5"/><rect x="46" y="62" width="28" height="28" rx="5"/><rect x="77" y="62" width="28" height="28" rx="5"/></g>
-          <path d="M21 6l16 16M37 6 21 22M52 37l16 16M68 37 52 53" stroke="#ff6b57" stroke-width="4.5" stroke-linecap="round"/><circle cx="91" cy="14" r="8" fill="none" stroke="#39d2c0" stroke-width="4"/><circle cx="29" cy="76" r="8" fill="none" stroke="#39d2c0" stroke-width="4"/><path d="M83 68l16 16M99 68 83 84" stroke="#ff6b57" stroke-width="4.5" stroke-linecap="round"/></svg>
+          <path d="M21 6l16 16M37 6 21 22M52 37l16 16M68 37 52 53M83 68l16 16M99 68 83 84" stroke="#ff6b57" stroke-width="4.5" stroke-linecap="round"/><circle cx="91" cy="14" r="8" fill="none" stroke="#39d2c0" stroke-width="4"/><circle cx="29" cy="76" r="8" fill="none" stroke="#39d2c0" stroke-width="4"/></svg>
       </div>
-      <h2>Крестики-нолики 3×3</h2>
+      <h3>Крестики-нолики 3×3</h3>
       <p>Девять досок в одной. Куда сходил — туда отправил соперника. Собери три доски в ряд.</p>
       <div class="tags"><span>бот</span><span>вдвоём</span><span>онлайн</span></div>
     </a>
-    <a class="game" href="battleship/">
+    <a class="game" href="battleship/" data-g="battleship" data-name="Морской бой">
       <div class="art" style="background:#f8fafd;background-image:linear-gradient(#b9d3ee 1px,transparent 1px),linear-gradient(90deg,#b9d3ee 1px,transparent 1px);background-size:12px 12px">
         <svg viewBox="0 0 120 90" aria-hidden="true"><rect x="10" y="10" width="100" height="70" fill="#fff" stroke="#1d4ea0" stroke-width="2.5"/>
           <rect x="20" y="20" width="40" height="10" fill="rgba(29,78,160,.15)" stroke="#1d4ea0" stroke-width="2.5"/><rect x="80" y="20" width="10" height="30" fill="rgba(29,78,160,.15)" stroke="#1d4ea0" stroke-width="2.5"/><rect x="30" y="50" width="20" height="10" fill="rgba(211,58,53,.15)" stroke="#d33a35" stroke-width="2.5"/>
           <path d="M33 53l4 4M37 53l-4 4M43 53l4 4M47 53l-4 4" stroke="#d33a35" stroke-width="2"/><circle cx="65" cy="65" r="2" fill="#5d6a80"/><circle cx="95" cy="68" r="2" fill="#5d6a80"/><circle cx="20" cy="70" r="2" fill="#5d6a80"/></svg>
       </div>
-      <h2>Морской бой</h2>
-      <p>Поле 10×10, классический флот. Попал — стреляй ещё. Потопи все корабли соперника первым.</p>
+      <h3>Морской бой</h3>
+      <p>Поле 10×10, классический флот. Попал — стреляй ещё. Потопи весь флот соперника первым.</p>
       <div class="tags"><span>бот</span><span>онлайн</span></div>
     </a>
-    <a class="game" href="checkers/">
+    <a class="game" href="checkers/" data-g="checkers" data-name="Русские шашки">
       <div class="art" style="background:#2b2119">
         <svg viewBox="0 0 120 90" aria-hidden="true"><g transform="translate(25 5)"><rect width="80" height="80" fill="#ead6b0"/>
-          <g fill="#8b5a36"><rect x="10" y="0" width="10" height="10"/><rect x="30" y="0" width="10" height="10"/><rect x="50" y="0" width="10" height="10"/><rect x="70" y="0" width="10" height="10"/><rect x="0" y="10" width="10" height="10"/><rect x="20" y="10" width="10" height="10"/><rect x="40" y="10" width="10" height="10"/><rect x="60" y="10" width="10" height="10"/><rect x="10" y="20" width="10" height="10"/><rect x="30" y="20" width="10" height="10"/><rect x="50" y="20" width="10" height="10"/><rect x="70" y="20" width="10" height="10"/><rect x="0" y="30" width="10" height="10"/><rect x="20" y="30" width="10" height="10"/><rect x="40" y="30" width="10" height="10"/><rect x="60" y="30" width="10" height="10"/><rect x="10" y="40" width="10" height="10"/><rect x="30" y="40" width="10" height="10"/><rect x="50" y="40" width="10" height="10"/><rect x="70" y="40" width="10" height="10"/><rect x="0" y="50" width="10" height="10"/><rect x="20" y="50" width="10" height="10"/><rect x="40" y="50" width="10" height="10"/><rect x="60" y="50" width="10" height="10"/><rect x="10" y="60" width="10" height="10"/><rect x="30" y="60" width="10" height="10"/><rect x="50" y="60" width="10" height="10"/><rect x="70" y="60" width="10" height="10"/><rect x="0" y="70" width="10" height="10"/><rect x="20" y="70" width="10" height="10"/><rect x="40" y="70" width="10" height="10"/><rect x="60" y="70" width="10" height="10"/></g>
+          <g fill="#8b5a36"><path d="M10 0h10v10H10zM30 0h10v10H30zM50 0h10v10H50zM70 0h10v10H70zM0 10h10v10H0zM20 10h10v10H20zM40 10h10v10H40zM60 10h10v10H60zM10 20h10v10H10zM30 20h10v10H30zM50 20h10v10H50zM70 20h10v10H70zM0 30h10v10H0zM20 30h10v10H20zM40 30h10v10H40zM60 30h10v10H60zM10 40h10v10H10zM30 40h10v10H30zM50 40h10v10H50zM70 40h10v10H70zM0 50h10v10H0zM20 50h10v10H20zM40 50h10v10H40zM60 50h10v10H60zM10 60h10v10H10zM30 60h10v10H30zM50 60h10v10H50zM70 60h10v10H70zM0 70h10v10H0zM20 70h10v10H20zM40 70h10v10H40zM60 70h10v10H60z"/></g>
           <g fill="#2b2420"><circle cx="15" cy="5" r="4"/><circle cx="35" cy="5" r="4"/><circle cx="5" cy="15" r="4"/><circle cx="45" cy="15" r="4"/><circle cx="55" cy="25" r="4"/></g>
           <g fill="#f6f1e7"><circle cx="5" cy="75" r="4"/><circle cx="45" cy="75" r="4"/><circle cx="35" cy="65" r="4"/><circle cx="65" cy="55" r="4"/><circle cx="25" cy="45" r="4"/></g></g></svg>
       </div>
-      <h2>Русские шашки</h2>
+      <h3>Русские шашки</h3>
       <p>Доска 8×8. Бить обязательно, простая бьёт назад, дамка — на любое расстояние.</p>
       <div class="tags"><span>бот</span><span>вдвоём</span><span>онлайн</span></div>
     </a>
   </div>
   <p class="foot">Версия от /*VER*/</p>
 </main>
+</div>
+
+<div id="stage" hidden>
+  <div class="sbar">
+    <button id="backBtn">← Игры</button>
+    <span class="ttl" id="stTitle"></span>
+    <span class="who" id="stWho"></span>
+  </div>
+  <iframe id="frame" title="Игра" allow="autoplay; clipboard-write"></iframe>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>/*NET*/</script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var NAMES = {}; Array.prototype.forEach.call(document.querySelectorAll('a.game'), function (a) { NAMES[a.dataset.g] = a.dataset.name; });
+  var toastT = null;
+  function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 2600); }
+
+  // ================= room =================
+  // R.state: idle | creating | waiting (host, no friend yet) | joining | live | error
+  var R = { state: 'idle', role: null, code: null, link: '', err: '', inst: null, game: null, seq: 0, retry: 0 };
+  var PREFIX = 'room-games-v1-';
+
+  // ---- the bridge: a stand-in for PeerJS inside the game frames, carried over the room connection ----
+  var listening = {}, remoteListen = {}, pending = {}, conns = {}, connSeq = 0;
+  function rsend(m) { Net2P.send(m); }
+  function cloneInto(win, d) { try { return win.JSON.parse(JSON.stringify(d)); } catch (e) { return d; } }
+  function Emitter() { this._h = {}; }
+  Emitter.prototype.on = function (ev, fn) { (this._h[ev] = this._h[ev] || []).push(fn); return this; };
+  Emitter.prototype._emit = function (ev, a) { (this._h[ev] || []).slice().forEach(function (fn) { try { fn(a); } catch (e) { console.error(e); } }); };
+  function BConn(peer, id) { Emitter.call(this); this.peer = peer; this.id = id; this.open = false; this.inst = peer.inst; }
+  BConn.prototype = Object.create(Emitter.prototype);
+  BConn.prototype.send = function (d) { if (!this.open) return; rsend({ t: 'b', k: 'data', inst: this.inst, id: this.id, d: d }); };
+  BConn.prototype.close = function () { if (!conns[this.id] && !pending[this.id]) return; delete conns[this.id]; delete pending[this.id]; var was = this.open; this.open = false; rsend({ t: 'b', k: 'close', inst: this.inst, id: this.id }); if (was) this._emit('close'); };
+  function peerFor(win) {
+    function BPeer(id, opts) {
+      if (!(this instanceof BPeer)) return new BPeer(id, opts);
+      Emitter.call(this);
+      if (id && typeof id === 'object') id = null;
+      var self = this;
+      this.win = win; this.inst = R.inst; this.destroyed = false; this.id = id || ('g' + Math.random().toString(36).slice(2, 9));
+      if (id) { listening[this.inst] = this; rsend({ t: 'b', k: 'listen', inst: this.inst }); }
+      setTimeout(function () { if (!self.destroyed) self._emit('open', self.id); }, 0);
+    }
+    BPeer.prototype = Object.create(Emitter.prototype);
+    BPeer.prototype.connect = function () {
+      var c = new BConn(this, 'c' + (++connSeq) + Math.random().toString(36).slice(2, 6));
+      pending[c.id] = c;
+      if (remoteListen[c.inst]) rsend({ t: 'b', k: 'conn', inst: c.inst, id: c.id });
+      return c;
+    };
+    BPeer.prototype.destroy = function () {
+      if (this.destroyed) return; this.destroyed = true;
+      if (listening[this.inst] === this) { delete listening[this.inst]; rsend({ t: 'b', k: 'unlisten', inst: this.inst }); }
+      var self = this;
+      Object.keys(conns).concat(Object.keys(pending)).forEach(function (k) { var c = conns[k] || pending[k]; if (c && c.peer === self) c.close(); });
+    };
+    BPeer.prototype.reconnect = function () {}; BPeer.prototype.disconnect = function () {};
+    return BPeer;
+  }
+  function onBridge(m) {
+    if (m.inst !== R.inst) return;
+    if (m.k === 'listen') {
+      remoteListen[m.inst] = true;
+      Object.keys(pending).forEach(function (k) { var c = pending[k]; if (c.inst === m.inst) rsend({ t: 'b', k: 'conn', inst: c.inst, id: c.id }); });
+    } else if (m.k === 'unlisten') remoteListen[m.inst] = false;
+    else if (m.k === 'conn') {
+      var lp = listening[m.inst]; if (!lp || lp.destroyed || conns[m.id]) return;
+      var c = new BConn(lp, m.id); conns[m.id] = c; c.open = true;
+      lp._emit('connection', c);
+      rsend({ t: 'b', k: 'accept', inst: m.inst, id: m.id });
+      setTimeout(function () { c._emit('open'); }, 0);
+    } else if (m.k === 'accept') {
+      var pc = pending[m.id]; if (!pc) return;
+      delete pending[m.id]; conns[m.id] = pc; pc.open = true; pc._emit('open');
+    } else if (m.k === 'data') {
+      var dc = conns[m.id]; if (dc && dc.open) dc._emit('data', cloneInto(dc.peer.win, m.d));
+    } else if (m.k === 'close') {
+      var cc = conns[m.id] || pending[m.id]; if (!cc) return;
+      delete conns[m.id]; delete pending[m.id]; var was = cc.open; cc.open = false; if (was) cc._emit('close');
+    }
+  }
+  function dropBridge(closeConns) {
+    // links from the old friend connection are gone: tell the game they closed; it will accept the friend again
+    Object.keys(conns).forEach(function (k) { var c = conns[k]; delete conns[k]; if (c.open) { c.open = false; c._emit('close'); } });
+    if (closeConns) { pending = {}; listening = {}; }
+    remoteListen = {};
+  }
+
+  window.ROOM = {
+    active: function () { return R.state === 'live' || R.state === 'waiting'; },
+    peerFor: peerFor,
+    home: function () { showHome(); }
+  };
+
+  // ---- room connection ----
+  function createRoom() {
+    var saved = null; try { saved = sessionStorage.getItem('room-host-code'); } catch (e) {}
+    R = Object.assign(R, { state: 'creating', role: 'host', err: '' }); renderRoom();
+    Net2P.host({ prefix: PREFIX, code: saved,
+      onReady: function (code, link) {
+        R.code = code; R.link = location.origin + location.pathname + '#' + code; R.state = R.state === 'live' ? 'live' : 'waiting';
+        try { sessionStorage.setItem('room-host-code', code); } catch (e) {}
+        renderRoom();
+      },
+      onJoin: function (o) {
+        R.state = 'live'; renderRoom(); dropBridge(false);
+        toast(o.returning ? 'Друг вернулся в комнату' : 'Друг в комнате! Выбирайте игру');
+        rsend({ t: 'pick', inst: R.inst, g: R.game });          // what's open now (or nothing)
+        Object.keys(listening).forEach(function (inst) { rsend({ t: 'b', k: 'listen', inst: inst }); });
+      },
+      onPeer: function (on) { renderRoom(); },
+      onLeave: function () { toast('Друг вышел из комнаты'); renderRoom(); },
+      onData: onRoomData,
+      onFail: function (m) { R.state = 'error'; R.err = m; renderRoom(); }
+    });
+  }
+  function joinRoom(code) {
+    R = Object.assign(R, { state: 'joining', role: 'guest', code: Net2P.cleanCode(code), err: '' }); renderRoom();
+    Net2P.join(code, { prefix: PREFIX,
+      onOpen: function () { R.state = 'live'; R.retry = 0; renderRoom(); toast('Ты в комнате друга'); },
+      onPeer: function () { renderRoom(); },
+      onData: onRoomData,
+      onFail: function (m) {
+        // the friend may just be reloading the page: retry for a while
+        if (R.role === 'guest' && R.retry < 20 && /потеряна|вышел/.test(m)) {
+          R.retry++; R.state = 'joining'; R.err = ''; renderRoom();
+          setTimeout(function () { if (R.role === 'guest' && R.state === 'joining') joinRoom(R.code); }, 3000); return;
+        }
+        R.state = 'error'; R.err = m; renderRoom();
+      }
+    });
+  }
+  function leaveRoom() {
+    Net2P.close(); try { sessionStorage.removeItem('room-host-code'); } catch (e) {}
+    R = { state: 'idle', role: null, code: null, link: '', err: '', inst: null, game: null, seq: R.seq, retry: 0 };
+    dropBridge(true); unloadGame(); history.replaceState(null, '', location.pathname); renderRoom(); showHome();
+  }
+  function onRoomData(m) {
+    if (m.t === 'b') { onBridge(m); return; }
+    if (m.t === 'pick') { if (m.g) loadGame(m.g, m.inst, true); else if (R.game) { unloadGame(); showHome(); } }
+    else if (m.t === 'want' && R.role === 'host') pick(m.g);
+  }
+  function pick(g) {
+    if (R.role === 'host') { var inst = R.code + '-' + (++R.seq) + '-' + Date.now().toString(36); rsend({ t: 'pick', inst: inst, g: g }); loadGame(g, inst, false); }
+    else { rsend({ t: 'want', g: g }); toast('Открываю у обоих…'); }
+  }
+
+  // ---- game frame ----
+  function loadGame(g, inst, announced) {
+    if (R.inst !== inst) { dropBridge(true); }
+    R.inst = inst; R.game = g;
+    var src = g + '/' + (R.role === 'guest' ? '#' + R.code : '');
+    $('frame').src = 'about:blank';
+    setTimeout(function () { $('frame').src = src; }, 30);
+    $('stTitle').textContent = NAMES[g] || g;
+    showStage();
+    if (announced && R.role === 'guest') toast('Друг открыл «' + (NAMES[g] || g) + '»');
+    renderRoom();
+  }
+  function unloadGame() { $('frame').src = 'about:blank'; R.game = null; R.inst = null; $('stage').hidden = true; }
+  function showStage() { $('stage').hidden = false; $('home').hidden = true; renderWho(); }
+  function showHome() { $('home').hidden = false; renderRoom(); }
+  $('backBtn').onclick = showHome;
+
+  // ---- render ----
+  function renderWho() {
+    var w = $('stWho');
+    if (!ROOM.active() && R.state !== 'joining') { w.innerHTML = ''; return; }
+    var on = Net2P.online();
+    w.innerHTML = '<span class="dot ' + (on ? 'on' : 'off') + '"></span>' + (on ? 'друг в комнате' : 'нет связи') + ' · ' + R.code;
+  }
+  function renderRoom() {
+    var el = $('room'), s = R.state, html = '';
+    el.classList.toggle('live', s === 'live');
+    if (s === 'idle') {
+      html = '<h2>Играть с другом</h2><p>Создай комнату и отправь другу одну ссылку. Потом выбирайте любые игры — он будет подключаться сам.</p>' +
+        '<div class="row"><button class="btn main" id="mkRoom">Создать комнату</button><div class="join"><input id="joinCode" maxlength="5" placeholder="КОД" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Код комнаты"><button class="btn" id="joinGo">Войти</button></div></div>';
+    } else if (s === 'creating') html = '<h2>Создаю комнату…</h2><p>Подключаюсь к серверу связи.</p>';
+    else if (s === 'waiting') {
+      html = '<h2>Комната создана <span class="pill">ждём друга</span></h2><p>Отправь другу ссылку или код. Как только он откроет её, вы окажетесь в одной комнате.</p>' +
+        '<div class="row"><div class="code">' + R.code + '</div><div class="linkrow"><input id="roomLink" readonly value="' + R.link + '" aria-label="Ссылка для друга"><button class="btn" id="copyBtn">Копировать</button></div></div>' +
+        '<div class="row"><button class="btn" id="leaveBtn">Закрыть комнату</button></div>';
+    } else if (s === 'joining') html = '<h2>Вхожу в комнату ' + (R.code || '') + '…</h2><p>' + (R.retry ? 'Связь прервалась, переподключаюсь…' : 'Подключаюсь к другу.') + '</p><div class="row"><button class="btn" id="leaveBtn">Отмена</button></div>';
+    else if (s === 'live') {
+      var on = Net2P.online();
+      html = '<h2><span class="dot ' + (on ? 'on' : 'off') + '"></span>Комната ' + R.code + ' <span class="pill">' + (on ? 'друг здесь' : 'нет связи с другом') + '</span></h2>' +
+        '<p>' + (R.game ? 'Сейчас: «' + NAMES[R.game] + '». Выбери другую игру — она откроется у обоих.' : 'Выбери игру ниже — она откроется у вас обоих.') + '</p>' +
+        '<div class="row">' + (R.game ? '<button class="btn main" id="resumeBtn">Вернуться к игре</button>' : '') +
+        (R.role === 'host' ? '<button class="btn" id="copyBtn2">Скопировать ссылку</button>' : '') + '<button class="btn" id="leaveBtn">Выйти из комнаты</button></div>';
+    } else if (s === 'error') html = '<h2>Не получилось</h2><p class="err">' + R.err + '</p><div class="row"><button class="btn main" id="retryBtn">Попробовать ещё раз</button><button class="btn" id="leaveBtn">Отмена</button></div>';
+    el.innerHTML = html;
+    var on = function (id, fn) { var b = $(id); if (b) b.onclick = fn; };
+    on('mkRoom', createRoom);
+    on('joinGo', function () { var c = Net2P.cleanCode($('joinCode').value); if (c.length === 5) { history.replaceState(null, '', '#' + c); joinRoom(c); } else $('joinCode').focus(); });
+    var jc = $('joinCode'); if (jc) { jc.addEventListener('input', function () { this.value = Net2P.cleanCode(this.value); }); jc.addEventListener('keydown', function (e) { if (e.key === 'Enter') $('joinGo').click(); }); }
+    on('leaveBtn', leaveRoom);
+    on('resumeBtn', showStage);
+    on('retryBtn', function () { if (R.role === 'guest') joinRoom(R.code); else createRoom(); });
+    var copy = function (btn) { try { navigator.clipboard.writeText(R.link).then(function () { btn.textContent = 'Скопировано'; }, function () { var i = $('roomLink'); if (i) i.select(); }); } catch (e) {} };
+    on('copyBtn', function () { copy(this); }); on('copyBtn2', function () { copy(this); });
+    Array.prototype.forEach.call(document.querySelectorAll('a.game'), function (a) { a.classList.toggle('current', a.dataset.g === R.game && s === 'live'); });
+    renderWho();
+  }
+  // a game card: inside a room it opens the game for both; otherwise it's a normal link (solo play)
+  Array.prototype.forEach.call(document.querySelectorAll('a.game'), function (a) {
+    a.addEventListener('click', function (e) {
+      if (R.state !== 'live') return;
+      e.preventDefault();
+      if (R.game === a.dataset.g && R.inst) { showStage(); return; }
+      pick(a.dataset.g);
+    });
+  });
+  setInterval(function () { if (ROOM.active()) { renderWho(); var p = document.querySelector('.room h2 .pill'); if (p && R.state === 'live') { var on = Net2P.online(); if ((p.textContent === 'друг здесь') !== on) renderRoom(); } } }, 2000);
+
+  var h = Net2P.hashCode();
+  if (h) joinRoom(h);
+  else { var saved = null; try { saved = sessionStorage.getItem('room-host-code'); } catch (e) {} if (saved) createRoom(); else renderRoom(); }
+})();
+</script>

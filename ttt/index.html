@@ -1,5 +1,41 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}[hidden]{display:none!important}</style><script>window.GAMES_ONLINE=true;window.TTT_ONLINE=true;</script></head><body>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}[hidden]{display:none!important}</style><script>window.GAMES_ONLINE=true;window.TTT_ONLINE=true;window.BGC_ONLINE=true;</script><script>// Подключение игры к «комнате» (главная страница). Работает, только если игра открыта внутри главной.
+// Подменяет PeerJS мостом комнаты и подстраивает интерфейс: код не нужен, друг подключается сам.
+(function () {
+  try {
+    if (window.parent !== window && window.parent.ROOM && window.parent.ROOM.active()) {
+      window.IN_ROOM = true;
+      window.Peer = window.parent.ROOM.peerFor(window);
+    }
+  } catch (e) {}
+  if (!window.IN_ROOM) return;
+  document.addEventListener('DOMContentLoaded', function () {
+    var css = document.createElement('style');
+    css.textContent = '#lbCode,#lbLinkRow,#netJoinBtn,#onJoin,#joinRow{display:none!important}';
+    document.head.appendChild(css);
+    var cr = document.getElementById('netCreate') || document.getElementById('onCreate');
+    if (cr) cr.textContent = 'Начать с другом';
+    if (!location.hash) { var m = document.getElementById('m-net'); if (m) m.click(); }
+    // «В меню», «Меню», «← все игры», «Отмена» в ожидании — назад к списку игр комнаты (партия не рвётся)
+    document.addEventListener('click', function (e) {
+      var t = e.target && e.target.closest && e.target.closest('#homeBtn,#endMenu,#lbCancel,a[href="../"]');
+      if (!t) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      window.parent.ROOM.home();
+    }, true);
+    var lt = document.getElementById('lbText');
+    if (lt) {
+      var fix = function () {
+        var x = lt.textContent || '';
+        if (/Отправь другу|Скажи другу/.test(x)) lt.textContent = 'Друг в комнате подключится сам, как только у него откроется эта игра.';
+        else if (/Подключаюсь к игре/.test(x)) lt.textContent = 'Ждём, пока друг выберет настройки и нажмёт «Начать с другом»…';
+      };
+      new MutationObserver(fix).observe(lt, { childList: true, characterData: true, subtree: true });
+      fix();
+    }
+  });
+})();
+</script></head><body>
 <title>Крестики-нолики 3×3</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -187,7 +223,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
         <li>Побеждает тот, кто соберёт <b>три своих доски в ряд</b> на большом поле. Если так не вышел никто — ничья.</li>
       </ol>
     </div>
-    <p class="hint" style="font-size:11.5px"><a href="../" style="color:var(--ink-dim)">← все игры</a> · <span style="opacity:.7">версия от 01.11.2026 18:52</span></p>
+    <p class="hint" style="font-size:11.5px"><a href="../" style="color:var(--ink-dim)">← все игры</a> · <span style="opacity:.7">версия от 01.11.2026 19:45</span></p>
   </div>
 </section>
 
@@ -780,7 +816,7 @@ onmessage = function (e) {
     var peer = new window.Peer(PREFIX + n.code, peerOpts()); n.peer = peer;
     peer.on('open', function () {
       if (NET !== n) return; n.ready = true;
-      var link = /^https?:/.test(location.protocol) ? location.origin + location.pathname + location.search + '#' + n.code : '';
+      var link = !window.IN_ROOM && /^https?:/.test(location.protocol) ? location.origin + location.pathname + location.search + '#' + n.code : '';
       lobby('Игра создана', link ? 'Отправь другу ссылку или код. Партия начнётся, как только он зайдёт.' : 'Скажи другу код: он вводит его в «Войти по коду».', { code: n.code, link: link });
     });
     peer.on('connection', function (conn) {
@@ -846,7 +882,7 @@ onmessage = function (e) {
     peer.on('open', function () {
       if (NET !== n) return;
       var conn = peer.connect(PREFIX + n.code, { reliable: true, serialization: 'json' }); n.conn = conn;
-      var tm = setTimeout(function () { if (NET === n && !n.opened) guestFail('Не получилось соединиться напрямую. Похоже, сеть блокирует прямое подключение (бывает в мобильном интернете и рабочем Wi-Fi). Попробуй другую сеть.'); }, 15000);
+      var tm = window.IN_ROOM ? 0 : setTimeout(function () { if (NET === n && !n.opened) guestFail('Не получилось соединиться напрямую. Похоже, сеть блокирует прямое подключение (бывает в мобильном интернете и рабочем Wi-Fi). Попробуй другую сеть.'); }, 15000);
       conn.on('open', function () { if (NET !== n) return; n.opened = true; n.seen = Date.now(); clearTimeout(tm); conn.send({ t: 'hello', cid: cid() }); });
       conn.on('data', function (d) { if (NET === n) guestData(d); });
       conn.on('close', function () { if (NET === n && !n.failed) guestFail(n.bye ? 'Хозяин игры вышел.' : 'Связь с игрой потеряна.'); });

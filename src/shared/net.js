@@ -32,7 +32,7 @@ var Net2P = (function () {
     if (!id) { id = Math.random().toString(36).slice(2) + Date.now().toString(36); try { localStorage.setItem(key, id); } catch (e) {} }
     return id;
   }
-  function shareLink(code) { return /^https?:/.test(location.protocol) ? location.origin + location.pathname + location.search + '#' + code : ''; }
+  function shareLink(code) { return !window.IN_ROOM && /^https?:/.test(location.protocol) ? location.origin + location.pathname + location.search + '#' + code : ''; }
   function setOnline(v) { if (!N || N.online === v) return; N.online = v; N.o.onPeer && N.o.onPeer(v); }
 
   setInterval(function () {
@@ -75,7 +75,7 @@ var Net2P = (function () {
 
   function host(o) {
     close();
-    N = { role: 'host', code: genCode(), o: o, online: false };
+    N = { role: 'host', code: o.code ? cleanCode(o.code) : genCode(), o: o, online: false, tries: 0 };
     var n = N;
     loadPeer().then(function () { if (N === n) openHost(); }).catch(function () { fail('Не загрузилась связь. Проверь интернет.'); });
   }
@@ -87,7 +87,12 @@ var Net2P = (function () {
     peer.on('disconnected', function () { setTimeout(function () { if (N === n && !peer.destroyed) try { peer.reconnect(); } catch (e) {} }, 1500); });
     peer.on('error', function (e) {
       if (N !== n) return;
-      if (e.type === 'unavailable-id' && !n.ready) { try { peer.destroy(); } catch (x) {} n.code = genCode(); openHost(); return; }
+      if (e.type === 'unavailable-id' && !n.ready) {
+        // свой прежний код (после перезагрузки страницы) сервер может отдать не сразу — пробуем ещё немного
+        try { peer.destroy(); } catch (x) {}
+        if (n.o.code && ++n.tries < 6) { setTimeout(function () { if (N === n) openHost(); }, 1500); return; }
+        n.code = genCode(); openHost(); return;
+      }
       if (!n.ready) fail('Нет связи с сервером. Проверь интернет и попробуй ещё раз.');
     });
   }
@@ -104,7 +109,7 @@ var Net2P = (function () {
       if (N !== n) return;
       var conn = peer.connect(n.o.prefix + n.code, { reliable: true, serialization: 'json' });
       n.conn = conn; wire(conn);
-      var tm = setTimeout(function () { if (N === n && !n.opened) fail('Не получилось соединиться напрямую. Похоже, сеть блокирует прямое подключение (бывает в мобильном интернете и рабочем Wi-Fi). Попробуй другую сеть.'); }, 15000);
+      var tm = window.IN_ROOM ? 0 : setTimeout(function () { if (N === n && !n.opened) fail('Не получилось соединиться напрямую. Похоже, сеть блокирует прямое подключение (бывает в мобильном интернете и рабочем Wi-Fi). Попробуй другую сеть.'); }, 15000);
       conn.on('open', function () { if (N !== n) return; n.seen = Date.now(); clearTimeout(tm); try { conn.send({ _t: 'hello', cid: cid(n.o.prefix) }); } catch (e) {} });
     });
     peer.on('error', function (e) {

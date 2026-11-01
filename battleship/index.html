@@ -1,5 +1,41 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}[hidden]{display:none!important}</style><script>window.GAMES_ONLINE=true;window.TTT_ONLINE=true;</script></head><body>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}[hidden]{display:none!important}</style><script>window.GAMES_ONLINE=true;window.TTT_ONLINE=true;window.BGC_ONLINE=true;</script><script>// Подключение игры к «комнате» (главная страница). Работает, только если игра открыта внутри главной.
+// Подменяет PeerJS мостом комнаты и подстраивает интерфейс: код не нужен, друг подключается сам.
+(function () {
+  try {
+    if (window.parent !== window && window.parent.ROOM && window.parent.ROOM.active()) {
+      window.IN_ROOM = true;
+      window.Peer = window.parent.ROOM.peerFor(window);
+    }
+  } catch (e) {}
+  if (!window.IN_ROOM) return;
+  document.addEventListener('DOMContentLoaded', function () {
+    var css = document.createElement('style');
+    css.textContent = '#lbCode,#lbLinkRow,#netJoinBtn,#onJoin,#joinRow{display:none!important}';
+    document.head.appendChild(css);
+    var cr = document.getElementById('netCreate') || document.getElementById('onCreate');
+    if (cr) cr.textContent = 'Начать с другом';
+    if (!location.hash) { var m = document.getElementById('m-net'); if (m) m.click(); }
+    // «В меню», «Меню», «← все игры», «Отмена» в ожидании — назад к списку игр комнаты (партия не рвётся)
+    document.addEventListener('click', function (e) {
+      var t = e.target && e.target.closest && e.target.closest('#homeBtn,#endMenu,#lbCancel,a[href="../"]');
+      if (!t) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      window.parent.ROOM.home();
+    }, true);
+    var lt = document.getElementById('lbText');
+    if (lt) {
+      var fix = function () {
+        var x = lt.textContent || '';
+        if (/Отправь другу|Скажи другу/.test(x)) lt.textContent = 'Друг в комнате подключится сам, как только у него откроется эта игра.';
+        else if (/Подключаюсь к игре/.test(x)) lt.textContent = 'Ждём, пока друг выберет настройки и нажмёт «Начать с другом»…';
+      };
+      new MutationObserver(fix).observe(lt, { childList: true, characterData: true, subtree: true });
+      fix();
+    }
+  });
+})();
+</script></head><body>
 <title>Морской бой</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -161,7 +197,7 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
         <li>Побеждает тот, кто первым потопит весь флот соперника.</li>
       </ol>
     </div>
-    <p class="hint"><a href="../" style="color:var(--pen)">← все игры</a> · <span style="opacity:.7">версия от 01.11.2026 18:52</span></p>
+    <p class="hint"><a href="../" style="color:var(--pen)">← все игры</a> · <span style="opacity:.7">версия от 01.11.2026 19:45</span></p>
   </div>
 </section>
 
@@ -244,7 +280,7 @@ var Net2P = (function () {
     if (!id) { id = Math.random().toString(36).slice(2) + Date.now().toString(36); try { localStorage.setItem(key, id); } catch (e) {} }
     return id;
   }
-  function shareLink(code) { return /^https?:/.test(location.protocol) ? location.origin + location.pathname + location.search + '#' + code : ''; }
+  function shareLink(code) { return !window.IN_ROOM && /^https?:/.test(location.protocol) ? location.origin + location.pathname + location.search + '#' + code : ''; }
   function setOnline(v) { if (!N || N.online === v) return; N.online = v; N.o.onPeer && N.o.onPeer(v); }
 
   setInterval(function () {
@@ -287,7 +323,7 @@ var Net2P = (function () {
 
   function host(o) {
     close();
-    N = { role: 'host', code: genCode(), o: o, online: false };
+    N = { role: 'host', code: o.code ? cleanCode(o.code) : genCode(), o: o, online: false, tries: 0 };
     var n = N;
     loadPeer().then(function () { if (N === n) openHost(); }).catch(function () { fail('Не загрузилась связь. Проверь интернет.'); });
   }
@@ -299,7 +335,12 @@ var Net2P = (function () {
     peer.on('disconnected', function () { setTimeout(function () { if (N === n && !peer.destroyed) try { peer.reconnect(); } catch (e) {} }, 1500); });
     peer.on('error', function (e) {
       if (N !== n) return;
-      if (e.type === 'unavailable-id' && !n.ready) { try { peer.destroy(); } catch (x) {} n.code = genCode(); openHost(); return; }
+      if (e.type === 'unavailable-id' && !n.ready) {
+        // свой прежний код (после перезагрузки страницы) сервер может отдать не сразу — пробуем ещё немного
+        try { peer.destroy(); } catch (x) {}
+        if (n.o.code && ++n.tries < 6) { setTimeout(function () { if (N === n) openHost(); }, 1500); return; }
+        n.code = genCode(); openHost(); return;
+      }
       if (!n.ready) fail('Нет связи с сервером. Проверь интернет и попробуй ещё раз.');
     });
   }
@@ -316,7 +357,7 @@ var Net2P = (function () {
       if (N !== n) return;
       var conn = peer.connect(n.o.prefix + n.code, { reliable: true, serialization: 'json' });
       n.conn = conn; wire(conn);
-      var tm = setTimeout(function () { if (N === n && !n.opened) fail('Не получилось соединиться напрямую. Похоже, сеть блокирует прямое подключение (бывает в мобильном интернете и рабочем Wi-Fi). Попробуй другую сеть.'); }, 15000);
+      var tm = window.IN_ROOM ? 0 : setTimeout(function () { if (N === n && !n.opened) fail('Не получилось соединиться напрямую. Похоже, сеть блокирует прямое подключение (бывает в мобильном интернете и рабочем Wi-Fi). Попробуй другую сеть.'); }, 15000);
       conn.on('open', function () { if (N !== n) return; n.seen = Date.now(); clearTimeout(tm); try { conn.send({ _t: 'hello', cid: cid(n.o.prefix) }); } catch (e) {} });
     });
     peer.on('error', function (e) {

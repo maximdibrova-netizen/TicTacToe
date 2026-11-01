@@ -575,7 +575,7 @@ onmessage = function (e) {
     var peer = new window.Peer(PREFIX + n.code, peerOpts()); n.peer = peer;
     peer.on('open', function () {
       if (NET !== n) return; n.ready = true;
-      var link = /^https?:/.test(location.protocol) ? location.origin + location.pathname + location.search + '#' + n.code : '';
+      var link = !window.IN_ROOM && /^https?:/.test(location.protocol) ? location.origin + location.pathname + location.search + '#' + n.code : '';
       lobby('Игра создана', link ? 'Отправь другу ссылку или код. Партия начнётся, как только он зайдёт.' : 'Скажи другу код: он вводит его в «Войти по коду».', { code: n.code, link: link });
     });
     peer.on('connection', function (conn) {
@@ -641,7 +641,7 @@ onmessage = function (e) {
     peer.on('open', function () {
       if (NET !== n) return;
       var conn = peer.connect(PREFIX + n.code, { reliable: true, serialization: 'json' }); n.conn = conn;
-      var tm = setTimeout(function () { if (NET === n && !n.opened) guestFail('Не получилось соединиться напрямую. Похоже, сеть блокирует прямое подключение (бывает в мобильном интернете и рабочем Wi-Fi). Попробуй другую сеть.'); }, 15000);
+      var tm = window.IN_ROOM ? 0 : setTimeout(function () { if (NET === n && !n.opened) guestFail('Не получилось соединиться напрямую. Похоже, сеть блокирует прямое подключение (бывает в мобильном интернете и рабочем Wi-Fi). Попробуй другую сеть.'); }, 15000);
       conn.on('open', function () { if (NET !== n) return; n.opened = true; n.seen = Date.now(); clearTimeout(tm); conn.send({ t: 'hello', cid: cid() }); });
       conn.on('data', function (d) { if (NET === n) guestData(d); });
       conn.on('close', function () { if (NET === n && !n.failed) guestFail(n.bye ? 'Хозяин игры вышел.' : 'Связь с игрой потеряна.'); });
