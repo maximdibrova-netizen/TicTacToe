@@ -4,7 +4,7 @@
 считает статистику ходов для первых PLIES полуходов и сохраняет:
   src/chess/db/pos-XX.json  — позиции (шард по первым двум hex-символам ключа): { ключ: [[ход, всего, 1-0, ½, 0-1], ...], ... }
                               у части позиций ещё "ключ~g": [номера лучших партий]
-  src/chess/db/games-NN.json — эти партии: { id: [белые, рейтинг, чёрные, рейтинг, год, турнир, результат, "ходы SAN"] }
+  src/chess/db/games-NNN.json — эти партии: { id: [белые, рейтинг, чёрные, рейтинг, год, турнир, результат, "ходы SAN"] }
   src/chess/db/names.json   — названия дебютов (lichess-org/chess-openings, CC0): { ключ: ["ECO", "название"] }
   src/chess/db/meta.json    — сколько партий, какие годы, какие выпуски
 Ключ позиции: crc32(fen) и crc32(fen+fen) в hex, fen = расстановка + чья очередь + рокировки (без взятия на проходе).
@@ -15,11 +15,11 @@ import chess
 
 FROM, TO = int(sys.argv[1]), int(sys.argv[2])
 NAMES_DIR = sys.argv[3] if len(sys.argv) > 3 else None
-PLIES, MIN_ELO, MIN_GAMES, TOP_GAMES, MAX_MOVES = 24, 2300, 3, 4, 14
+PLIES, MIN_ELO, MIN_GAMES, TOP_GAMES, MAX_MOVES = 24, 2300, 3, 3, 14
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src', 'chess', 'db')
 SKIP_EVENT = re.compile(r'blitz|rapid|bullet|armageddon|titled|online|chess\.com|lichess|960|fischer|blind|simul|speed|tiebreak|tie-break|playoff|cct|meltwater|freestyle|basque|'
                         r'clutch|showdown|champions chess|global chess|pro chess|esports|e-sports|lightning|banter|airthings|aimchess|julius baer|goldmoney|'
-                        r'chessable|opera euro|new in chess classic|carlsen invitational|charity cup|crypto|ftx|levitov|arena|bundesliga online|hybrid|virtual|internet|\bicc\b|kings tournament|fast|quick|knockout cup', re.I)
+                        r'chessable|opera euro|new in chess classic|carlsen inv|legends of chess|corr|iccf|gcl|chess24|charity cup|crypto|ftx|levitov|arena|bundesliga online|hybrid|virtual|internet|\bicc\b|kings tournament|fast|quick|knockout cup', re.I)
 
 def key(fen):
     b = fen.encode()
@@ -52,6 +52,9 @@ def handle(h, movetext):
     try: we, be = int(h.get('WhiteElo', '0') or 0), int(h.get('BlackElo', '0') or 0)
     except ValueError: skipped += 1; return
     res = h.get('Result', '*')
+    site = h.get('Site', '').strip().upper()
+    # TWIC помечает игру по интернету (и заочную) местом «… INT»
+    if site == 'INT' or site.endswith(' INT'): skipped += 1; return
     if we < MIN_ELO or be < MIN_ELO or res not in ('1-0', '0-1', '1/2-1/2') or SKIP_EVENT.search(h.get('Event', '') + ' ' + h.get('Site', '')):
         skipped += 1; return
     sans = tokens(movetext)
@@ -127,14 +130,14 @@ for k, st in stats.items():
     if n < MIN_GAMES: continue
     mv = sorted(([s] + v for s, v in st.items()), key=lambda x: -x[1])[:MAX_MOVES]
     shards[k[:2]][k] = mv
-    if n >= 8:
+    if n >= 20:
         g = [gid for _, gid in tops.get(k, [])]; shards[k[:2]][k + '~g'] = g; used.update(g)
 for sh, d in shards.items():
     json.dump(d, open(os.path.join(OUT, 'pos-%s.json' % sh), 'w'), separators=(',', ':'), ensure_ascii=False)
 gshards = collections.defaultdict(dict)
-for gid in used: gshards[gid % 64][gid] = games[gid]
+for gid in used: gshards[gid % 256][gid] = games[gid]
 for sh, d in gshards.items():
-    json.dump(d, open(os.path.join(OUT, 'games-%02d.json' % sh), 'w'), separators=(',', ':'), ensure_ascii=False)
+    json.dump(d, open(os.path.join(OUT, 'games-%03d.json' % sh), 'w'), separators=(',', ':'), ensure_ascii=False)
 # названия дебютов
 names = {}
 if NAMES_DIR:

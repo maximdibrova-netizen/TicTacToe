@@ -711,7 +711,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   function loadGames(ids, cb) {
     var out = [], left = ids.length;
     ids.forEach(function (id, i) {
-      var sh = ('0' + (id % 64)).slice(-2);
+      var sh = ('00' + (id % 256)).slice(-3);
       var done = function () { var d = DB.games[sh] && DB.games[sh][id]; out[i] = d ? { id: id, d: d } : null; if (!--left) cb(out); };
       if (DB.games[sh]) done(); else getJSON('db/games-' + sh + '.json', function (d) { DB.games[sh] = d || {}; done(); });
     });
@@ -724,7 +724,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   });
   // партия мастеров открывается на доске для анализа (на том же ходу)
   function openMasterGame(id) {
-    var sh = ('0' + (id % 64)).slice(-2), d = DB.games[sh] && DB.games[sh][id]; if (!d) return;
+    var sh = ('00' + (id % 256)).slice(-3), d = DB.games[sh] && DB.games[sh][id]; if (!d) return;
     if (!G.analysis && !G.over) { toast('Партию мастеров можно открыть после игры или на доске для анализа'); return; }
     var at = pathTo(G.cur).length;
     newGame({ w: 'me', b: 'me' }, { analysis: true });
