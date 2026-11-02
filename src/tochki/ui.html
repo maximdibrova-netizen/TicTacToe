@@ -1,3 +1,4 @@
+<style>:root{--gc-bg:#07525a;--gc-active:#07525a;--gc-accent:#e8bb63;}</style>
 <title>BGC Точки</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -479,6 +480,7 @@ body.no-eval #boardWrap { top: calc(56px + env(safe-area-inset-top, 0px)); botto
   </div>
 </div>
 
+<script>/*CLOCK*/</script>
 <script id="core">
 /*CORE*/
 </script>
@@ -849,7 +851,7 @@ onmessage = function (e) {
 
   function layout() {
     if (!G) return;
-    var vw = window.innerWidth, vh = window.innerHeight;
+    var vw = window.innerWidth, vh = window.innerHeight - (GC && GC.enabled()?68:0);
     var R = Math.max(64, Math.min(104, Math.min(vw, vh) * .13)) + 22;
     var ev = !document.body.classList.contains('no-eval');
     var availW = vw - 32, availH = vh - (ev ? 68 + 160 : 56 + 118) - 12;
@@ -912,6 +914,7 @@ onmessage = function (e) {
     if (on && G && G.over) for (var k = 0; k < G.hist.length; k++) if (!G.evals[k]) queueEval(k);
   }
   function renderLive() {
+    if (GC) GC.sync();
     syncEvalUi();
     for (var i = 0; i < G.B.n; i++) drawCell(i, G.cnt, G.own);
     var tap = canTap(), idleNow = liveIdle();
@@ -984,11 +987,13 @@ onmessage = function (e) {
   }
 
   // ----- move pipeline: logic is applied at once, the animation plays from a queue -----
-  function decide(i, p) {                     // the authority (offline or host) accepts a move
+  function decide(i, p) {
+    if (GC && !GC.before()) return;                     // the authority (offline or host) accepts a move
     if (NET && NET.role === 'host') netBroadcast({ t: 'move', i: i, p: p, n: G.hist.length });
     commit(i, p);
   }
   function commit(i, p) {
+    if (GC && !GC.before()) return;
     clearHint();
     var pre = { cnt: G.cnt.slice(), own: G.own.slice(), mask: G.mask };
     var frames = applyMove(G.B, G.cnt, G.own, i, p, true);
@@ -1648,6 +1653,8 @@ onmessage = function (e) {
     if (G) { renderCornersGame(G.cnt, G.own, G.mask, G.over ? -1 : G.turn); setStatus(); } else lobbyRender();
   }
   function hostOnData(conn, d) {
+    if (GC && GC.receive(d)) return;
+    if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     if (!d || typeof d !== 'object') return;
     if (d.t === 'hello') {
       var cid = String(d.cid || ''), seat = -1, q;
@@ -1832,6 +1839,8 @@ onmessage = function (e) {
     if (Date.now() - (n.seen || Date.now()) > 9000) { guestFail('Связь с игрой потеряна.'); try { n.conn.close(); } catch (e) {} }
   }, 2000);
   function guestOnData(d) {
+    if (GC && GC.receive(d)) return;
+    if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     if (!d || typeof d !== 'object') return;
     var n = NET;
     n.seen = Date.now();
@@ -1875,6 +1884,12 @@ onmessage = function (e) {
   }
 
   // a shared link (…/#CODE) drops the friend straight into the game
+
+  var GC = GameClock.attach({id:"tochki", labels:["Фиолетовые", "Зелёные", "Синие", "Красные"],
+    state:function(){return G?{game:G,turn:(G.turn),moves:G.moves,over:!!(G.over),ready:true,active:[0,1,2,3].filter(function(i){return !!(G.mask&(1<<i));})}:null;}, role:function(){return NET && NET.role;},
+    send:function(m){netBroadcast(m);}, menu:toMenu,
+    expire:function(i){if(!G)return;token++;G.over=true; G.winner=nextAlive(G.mask,i); stopAnims();}
+  });
   (function autoJoin() {
     if (!ONLINE) return;
     var m = /^#([A-Za-z0-9]{5})$/.exec(location.hash || '');
@@ -1884,3 +1899,6 @@ onmessage = function (e) {
   renderMenu();
 })();
 </script>
+
+<style>.gc-bar{position:absolute;top:4px;left:50%;transform:translateX(-50%);width:min(65%,480px)}.gc-face{padding:3px}.gc-face span{font-size:10px}</style>
+<style>body.gc-timed .topbar{top:60px}body.gc-timed #boardWrap,body.gc-timed.no-eval #boardWrap{top:128px}.gc-bar{width:min(calc(100% - 170px),480px)}</style>

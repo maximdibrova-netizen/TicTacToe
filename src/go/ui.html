@@ -1,3 +1,4 @@
+<style>:root{--gc-bg:#665037;--gc-active:#665037;--gc-accent:#e8bb63;}</style>
 <title>Го</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -165,6 +166,7 @@ h1 { margin: 0; text-align: center; font: 800 clamp(32px, 9vw, 44px)/1 var(--dis
   <div class="btns"><button id="askYes">Согласен</button><button id="askNo" class="alt">Нет</button></div></div></div>
 <div class="toast" id="toast" hidden></div>
 
+<script>/*CLOCK*/</script>
 <script>/*NET*/</script>
 <script>/*REVIEW*/</script>
 <script id="core">/*CORE*/</script>
@@ -318,13 +320,14 @@ onmessage = function (e) {
     if (!G) return;
     var W = Math.min(window.innerWidth - 24, 760);
     var other = $('topRow').offsetHeight + $('status').offsetHeight + $('passRow').offsetHeight + $('rvMount').offsetHeight + $('barRow').offsetHeight + 5 * 8 + 20;
-    var B = Math.max(200, Math.min(W, window.innerHeight - other));
+    var B = Math.max(200, Math.min(W, window.innerHeight - (GC && GC.enabled()?68:0) - other));
     document.documentElement.style.setProperty('--B', Math.floor(B) + 'px');
     RV.refresh();
   }
   window.addEventListener('resize', layout);
   function geom() { var N = G.N, m = S.coords ? 1.05 : .62; return { N: N, m: m, size: N - 1 + 2 * m }; }
   function render() {
+    if (GC) GC.sync();
     if (!G) return;
     var d = RV.display(), s = d.s, g = geom(), N = g.N, m = g.m, out = [];
     var X = function (c) { return (m + c).toFixed(3); };
@@ -436,10 +439,12 @@ onmessage = function (e) {
     decide(mv);
   }
   function decide(mv) {
+    if (GC && !GC.before()) return;
     if (net() && Net2P.role() === 'host') Net2P.send({ t: 'move', mv: mv, n: G.line.length - 1 });
     apply(mv);
   }
   function apply(mv) {
+    if (GC && !GC.before()) return;
     var n = playMove(G.s, mv); if (!n) return;
     G.line.push({ s: n, mv: mv, by: G.s.turn }); G.s = n; G.netPending = false; hover = -1;
     if (mv >= 0) clack(.6);
@@ -587,6 +592,8 @@ onmessage = function (e) {
     toast('Ты играешь ' + (hostSide === 1 ? 'чёрными' : 'белыми'));
   }
   function hostData(d) {
+    if (GC && GC.receive(d)) return;
+    if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     if (d.t === 'try') {
       var ok = G && !G.s.over && !G.undoVote && G.kind[G.s.turn] === 'net' && d.n === G.line.length - 1 && playMove(G.s, d.mv);
       if (ok) decide(d.mv); else Net2P.send({ t: 'nack' });
@@ -609,6 +616,8 @@ onmessage = function (e) {
   function guestKinds(hs) { var k = {}; k[hs] = 'net'; k[3 - hs] = 'me'; return k; }
   function guestCoords(hostOn) { if (hostOn) setCoords(true, true); else if (S.coords) Net2P.send({ t: 'coords', on: true }); }
   function guestData(d) {
+    if (GC && GC.receive(d)) return;
+    if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     if (d.t === 'start') { newGame(guestKinds(d.hostSide), d.N, d.komi); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 1 ? 'белыми' : 'чёрными')); }
     else if (d.t === 'sync') {
       newGame(guestKinds(d.hostSide), d.N, d.komi); rebuild(d.moves); G.endShown = G.s.over; if (d.dead) G.dead = Uint8Array.from(d.dead);
@@ -666,6 +675,12 @@ onmessage = function (e) {
   $('joinCode').addEventListener('input', function () { this.value = Net2P.cleanCode(this.value); });
   $('joinCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('joinGo').click(); });
   $('joinGo').onclick = function () { var c = Net2P.cleanCode($('joinCode').value); if (c.length === 5) joinGame(c); };
+
+  var GC = GameClock.attach({id:"go", labels:["Чёрные", "Белые"],
+    state:function(){return G?{game:G,turn:(G.s.turn-1),moves:G.line.length-1,over:!!(G.s.over),ready:true}:null;}, role:function(){return Net2P.role();},
+    send:function(m){Net2P.send(m);}, menu:toMenu,
+    expire:function(i){if(!G)return;token++;G.s.over=true; G.s.resign=i+1;}
+  });
   if (ONLINE && Net2P.hashCode()) { S.mode = 'net'; joinGame(Net2P.hashCode()); }
   renderMenu();
 })();

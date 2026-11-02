@@ -1,3 +1,4 @@
+<style>:root{--gc-bg:#4b3425;--gc-active:#4b3425;--gc-accent:#e8bb63;}</style>
 <title>Русские шашки</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -174,6 +175,7 @@ body.nocoord .coord { display: none; }
   <div class="btns"><button id="askYes">Согласен</button><button id="askNo" class="alt">Нет</button></div></div></div>
 <div class="toast" id="toast" hidden></div>
 
+<script>/*CLOCK*/</script>
 <script>/*NET*/</script>
 <script>/*REVIEW*/</script>
 <script id="core">/*CORE*/</script>
@@ -284,7 +286,7 @@ onmessage = function (e) {
       n.style.top = 'calc(var(--B) * .045 + var(--B) / 8 * ' + (k + .5) + ')'; n.style.left = 'calc(var(--B) * .014)'; n.style.transform = 'translateY(-50%)'; wrap.appendChild(n);
     }
   }
-  function layout() { var extra = $('rvMount').offsetHeight + 8, B = Math.max(240, Math.min(window.innerWidth - 40, window.innerHeight - 200 - extra, 620)); document.documentElement.style.setProperty('--B', Math.floor(B / 8) * 8 + 'px'); if (window.RVready) RV.refresh(); }
+  function layout() { var extra = $('rvMount').offsetHeight + 8, B = Math.max(240, Math.min(window.innerWidth - 40, window.innerHeight - (GC && GC.enabled()?68:0) - 200 - extra, 620)); document.documentElement.style.setProperty('--B', Math.floor(B / 8) * 8 + 'px'); if (window.RVready) RV.refresh(); }
   window.addEventListener('resize', layout);
   function mySide() { return G.kind[1] === 'me' && G.kind[-1] !== 'me' ? 1 : G.kind[-1] === 'me' && G.kind[1] !== 'me' ? -1 : 0; }
 
@@ -325,6 +327,7 @@ onmessage = function (e) {
   });
 
   function render() {
+    if (GC) GC.sync();
     var d = RV.display(), live = d.mode === 'live', s = live ? G.s : d.s, part = live ? G.part : G.vpart;
     var all = (live ? canTap() : RV.canPlay()) ? ckMoves(s) : [], must = {}, from = {};
     all.forEach(function (m) { from[m.path[0]] = 1; if (m.caps.length) must[m.path[0]] = 1; });
@@ -415,10 +418,12 @@ onmessage = function (e) {
     decide(path);
   }
   function decide(path) {
+    if (GC && !GC.before()) return;
     if (Net2P.active() && Net2P.role() === 'host') Net2P.send({ t: 'move', path: path, n: G.moves.length });
     apply(path);
   }
   function apply(path) {
+    if (GC && !GC.before()) return;
     var mv = findMove(G.s, path); if (!mv) return;
     var before = G.s.b.slice(), my = token;
     G.busy = true; G.part = null;
@@ -572,6 +577,8 @@ onmessage = function (e) {
     toast('Ты играешь ' + (hostSide === 1 ? 'белыми' : 'чёрными'));
   }
   function hostData(d) {
+    if (GC && GC.receive(d)) return;
+    if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     if (d.t === 'try') {
       var ok = G && !G.over && !G.undoVote && G.kind[G.s.side] === 'net' && d.n === G.moves.length && findMove(G.s, d.path);
       if (ok) decide(d.path); else Net2P.send({ t: 'nack' });
@@ -593,6 +600,8 @@ onmessage = function (e) {
   function guestCoords(hostOn) { if (hostOn) setCoords(true, true); else if (S.coords) Net2P.send({ t: 'coords', on: true }); }
   function guestKinds(hs) { var k = {}; k[hs] = 'net'; k[-hs] = 'me'; return k; }
   function guestData(d) {
+    if (GC && GC.receive(d)) return;
+    if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     if (d.t === 'start') { newGame(guestKinds(d.hostSide)); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 1 ? 'чёрными' : 'белыми')); }
     else if (d.t === 'sync') { newGame(guestKinds(d.hostSide)); G.moves = d.moves.slice(); G.s = replay(G.moves); G.line = lineOf(G.moves); G.over = !!G.s.winner; G.endShown = G.over; guestCoords(d.coords); RV.sync(); render(); turnLoop(); }
     else if (d.t === 'coords') setCoords(d.on, true);
@@ -646,6 +655,12 @@ onmessage = function (e) {
   $('joinCode').addEventListener('input', function () { this.value = Net2P.cleanCode(this.value); });
   $('joinCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('joinGo').click(); });
   $('joinGo').onclick = function () { var c = Net2P.cleanCode($('joinCode').value); if (c.length === 5) joinGame(c); };
+
+  var GC = GameClock.attach({id:"checkers", labels:["Белые", "Чёрные"],
+    state:function(){return G?{game:G,turn:(G.s.side===1?0:1),moves:G.moves.length,over:!!(G.over || G.s.winner),ready:true}:null;}, role:function(){return Net2P.role();},
+    send:function(m){Net2P.send(m);}, menu:toMenu,
+    expire:function(i){if(!G)return;token++;G.over=true; G.s.winner=i===0?-1:1;}
+  });
   if (ONLINE && Net2P.hashCode()) { S.mode = 'net'; joinGame(Net2P.hashCode()); }
   window.RVready = true;
   renderMenu();

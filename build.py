@@ -5,6 +5,9 @@ src = os.path.join(here, 'src')
 ver = datetime.datetime.now(zoneinfo.ZoneInfo('Europe/Vienna')).strftime('%d.%m.%Y %H:%M')
 read = lambda *p: open(os.path.join(src, *p), encoding='utf-8').read()
 net, room, review = read('shared', 'net.js'), read('shared', 'room-client.js'), read('shared', 'review.js')
+clock = read('shared', 'clock-core.js') + '\n' + read('shared', 'clock.js')
+clock_css = read('shared', 'clock.css')
+
 def head(extra='', root=''):
     # root: путь до корня сайта ('' для главной, '../' для игр) — манифест, иконки и работа без интернета
     app = ('<link rel="manifest" href="{r}manifest.webmanifest"><meta name="theme-color" content="#121726">'
@@ -18,11 +21,11 @@ def head(extra='', root=''):
             'body{margin:0;font:14px system-ui}[hidden]{display:none!important}</style>'
             '<script>window.GAMES_ONLINE=true;window.TTT_ONLINE=true;window.BGC_ONLINE=true;</script>' + extra + '</head><body>\n')
 def build(name):
-    page = read(name, 'ui.html').replace('/*CORE*/', read(name, 'core.js')).replace('/*NET*/', net).replace('/*REVIEW*/', review).replace('/*VER*/', ver)
+    page = read(name, 'ui.html').replace('/*CORE*/', read(name, 'core.js')).replace('/*CLOCK*/', clock).replace('/*NET*/', net).replace('/*REVIEW*/', review).replace('/*VER*/', ver)
     d = os.path.join(here, name); os.makedirs(d, exist_ok=True)
-    open(os.path.join(d, 'index.html'), 'w', encoding='utf-8').write(head('<script>' + room + '</script>', '../') + page + '\n</body></html>\n')
+    open(os.path.join(d, 'index.html'), 'w', encoding='utf-8').write(head('<style>' + clock_css + '</style><script>' + room + '</script>', '../') + page + '\n</body></html>\n')
     print('собрано:', name + '/index.html')
-GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go']
+GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go', 'chess']
 for g in GAMES: build(g)
 hub = read('hub.html').replace('/*NET*/', net).replace('/*VER*/', ver)
 open(os.path.join(here, 'index.html'), 'w', encoding='utf-8').write(head() + hub + '\n</body></html>\n')

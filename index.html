@@ -78,6 +78,11 @@ a.game.current::after { content: "сейчас играете"; position: absolu
   <section class="room" id="room" aria-live="polite"></section>
 
   <div class="games" id="games">
+    <a class="game" href="chess/" data-g="chess" data-name="Шахматы">
+      <div class="art" style="background:#81966a;font:72px Georgia;color:#fffced;text-align:center">♞</div>
+      <h3>Шахматы</h3><p>Классические правила, собственные фигуры и отдельное время для каждого игрока.</p>
+      <div class="tags"><span>бот</span><span>вдвоём</span><span>онлайн</span><span>часы</span></div>
+    </a>
     <a class="game" href="tochki/" data-g="tochki" data-name="Точки">
       <div class="art" style="background:#073a40">
         <svg viewBox="0 0 120 90" aria-hidden="true"><g transform="translate(22 6)">
@@ -138,7 +143,7 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     <div><b>Играть без интернета</b><p id="instText"></p></div>
     <button class="btn main" id="instBtn" hidden>Установить</button>
   </section>
-  <p class="foot">Версия от 02.11.2026 21:44<span id="offState"></span></p>
+  <p class="foot">Версия от 02.11.2026 22:46<span id="offState"></span></p>
 </main>
 </div>
 
@@ -514,7 +519,7 @@ var Net2P = (function () {
     $('instBtn').onclick = function () { if (!prompt) return; prompt.prompt(); prompt.userChoice.then(function () { prompt = null; render(); }); };
     function check() {
       if (!window.caches || !('serviceWorker' in navigator)) return;
-      Promise.all(['./', 'tochki/', 'ttt/', 'battleship/', 'checkers/', 'go/'].map(function (u) { return caches.match(u, { ignoreSearch: true }); })).then(function (rs) {
+      Promise.all(['./', 'tochki/', 'ttt/', 'battleship/', 'checkers/', 'go/', 'chess/'].map(function (u) { return caches.match(u, { ignoreSearch: true }); })).then(function (rs) {
         var ok = rs.every(Boolean);
         if (ok && !saved) { saved = true; $('offState').innerHTML = ' · <span class="ok">✓ работает без интернета</span>'; render(); }
         if (!ok) setTimeout(check, 1500);

@@ -1,5 +1,6 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="../manifest.webmanifest"><meta name="theme-color" content="#121726"><link rel="icon" href="../icon-192.png"><link rel="apple-touch-icon" href="../apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="Игры"><script>if("serviceWorker" in navigator&&window.isSecureContext)addEventListener("load",function(){navigator.serviceWorker.register("../sw.js").catch(function(){})});</script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}[hidden]{display:none!important}</style><script>window.GAMES_ONLINE=true;window.TTT_ONLINE=true;window.BGC_ONLINE=true;</script><script>// Подключение игры к «комнате» (главная страница). Работает, только если игра открыта внутри главной.
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="../manifest.webmanifest"><meta name="theme-color" content="#121726"><link rel="icon" href="../icon-192.png"><link rel="apple-touch-icon" href="../apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="Игры"><script>if("serviceWorker" in navigator&&window.isSecureContext)addEventListener("load",function(){navigator.serviceWorker.register("../sw.js").catch(function(){})});</script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}[hidden]{display:none!important}</style><script>window.GAMES_ONLINE=true;window.TTT_ONLINE=true;window.BGC_ONLINE=true;</script><style>.gc-settings{margin:12px 0;padding:14px;border:1px solid currentColor;border-radius:10px;font:600 13px/1.5 system-ui;color:inherit;width:100%;box-sizing:border-box;text-align:left}.gc-settings p{font-size:12px;opacity:.8;margin:8px 0}.gc-row{display:flex;align-items:center;gap:6px;margin:8px 0}.gc-row>span{flex:1;min-width:72px}.gc-row input{width:62px;padding:7px 3px;border:1px solid #888;border-radius:4px;background:#fff;color:#222;font:inherit}.gc-settings input[type=checkbox]{width:18px;height:18px;vertical-align:middle}.gc-presets{display:flex;gap:5px;flex-wrap:wrap}.gc-presets button{padding:7px;border:1px solid #888;border-radius:4px;background:transparent;color:inherit;font:inherit}.gc-bar{display:flex;justify-content:center;gap:6px;width:min(100%,500px);flex-shrink:0;z-index:4;margin:0 auto 6px}.gc-face{background:var(--gc-bg,#293248);color:var(--gc-ink,#f4f1e8);border:2px solid transparent;box-shadow:inset 0 2px 6px #0004;border-radius:7px;padding:5px 12px;min-width:0;flex:1;text-align:center}.gc-face span{font:600 11px/1.2 system-ui;display:block}.gc-face strong{font:600 clamp(19px,5vw,29px)/1.1 'Consolas',monospace;font-variant-numeric:tabular-nums}.gc-face small{opacity:.7}.gc-active{border-color:var(--gc-accent,#e6b85b);background:var(--gc-active,#4b4a37)}.gc-low strong{color:#ff6969}.gc-result{position:fixed;inset:0;z-index:100;background:#000b;display:grid;place-items:center;padding:20px;color:#f8f4e9}.gc-result>div{max-width:400px;background:#292b2d;border-radius:12px;padding:24px;text-align:center}.gc-result button{padding:12px 25px;font:inherit;cursor:pointer}.gc-bar[hidden],.gc-result[hidden],.gc-options[hidden]{display:none!important}
+</style><script>// Подключение игры к «комнате» (главная страница). Работает, только если игра открыта внутри главной.
 // Подменяет PeerJS мостом комнаты и подстраивает интерфейс: код не нужен, друг подключается сам.
 (function () {
   try {
@@ -36,6 +37,7 @@
   });
 })();
 </script></head><body>
+<style>:root{--gc-bg:#273451;--gc-active:#273451;--gc-accent:#e8bb63;}</style>
 <title>Крестики-нолики 3×3</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -238,7 +240,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
         <li>Побеждает тот, кто соберёт <b>три своих доски в ряд</b> на большом поле. Если так не вышел никто — ничья.</li>
       </ol>
     </div>
-    <p class="hint" style="font-size:11.5px"><a href="../" style="color:var(--ink-dim)">← все игры</a> · <span style="opacity:.7">версия от 02.11.2026 21:44</span></p>
+    <p class="hint" style="font-size:11.5px"><a href="../" style="color:var(--ink-dim)">← все игры</a> · <span style="opacity:.7">версия от 02.11.2026 22:46</span></p>
   </div>
 </section>
 
@@ -551,6 +553,93 @@ var Review = function (o) {
     statusHtml: statusHtml
   };
 };
+</script>
+<script>// Часы Фишера. Перед сменой хода сначала проверяется просрочка.
+function FischerClock(left, inc, turn, now) {
+  this.left = left.slice(); this.inc = inc.slice(); this.turn = turn;
+  this.at = now; this.running = true; this.flag = null;
+}
+FischerClock.prototype.tick = function(now) {
+  if (this.running) {
+    this.left[this.turn] = Math.max(0, this.left[this.turn] - Math.max(0, now - this.at));
+    if (!this.left[this.turn]) { this.flag = this.turn; this.running = false; }
+  }
+  this.at = now;
+};
+FischerClock.prototype.move = function(next, now) {
+  this.tick(now); if (this.flag !== null || !this.running) return false;
+  this.left[this.turn] += this.inc[this.turn]; this.turn = next; return true;
+};
+FischerClock.prototype.stop = function(now) { this.tick(now); this.running = false; };
+if (typeof module !== 'undefined') module.exports = FischerClock;
+
+// Общие часы. Состояние партии предоставляет маленький адаптер каждой игры.
+var GameClock = (function () {
+  function attach(a) {
+    var model = null, game = null, lastMove = 0, ended = false, received = 0, lastSend = 0;
+    var root = document.createElement('div'); root.className = 'gc-settings';
+    root.innerHTML = '<label><input type="checkbox" id="gc-enabled"> Играть на время</label><div class="gc-options" hidden><p>Для каждого игрока: минуты + секунды после каждого хода.</p>' + a.labels.map(function(n,i) {
+      return '<div class="gc-row"><span>'+n+'</span><label><input type="number" min="0.1" max="180" step="0.1" value="5" id="gc-min-'+i+'" aria-label="'+n+': минуты"> мин</label><b>+</b><label><input type="number" min="0" max="120" step="1" value="3" id="gc-inc-'+i+'" aria-label="'+n+': прибавка"> сек</label></div>';
+    }).join('') + '<div class="gc-presets"><button type="button" data-time="1,0">1+0 всем</button><button type="button" data-time="3,2">3+2 всем</button><button type="button" data-time="5,3">5+3 всем</button><button type="button" data-time="10,5">10+5 всем</button></div><p>Онлайн: настройки хозяина для всех. Время идёт при разрыве связи и просмотре истории. Отмена хода не возвращает время. По просрочке партия заканчивается.</p></div>';
+    var menu = document.querySelector('#menu .col, #menu .menu-col') || document.querySelector('#menu');
+    var play=menu.querySelector('#playBtn'); if(play){var anchor=play;while(anchor.parentElement!==menu)anchor=anchor.parentElement;menu.insertBefore(root,anchor);}else menu.appendChild(root);
+    var enabled = root.querySelector('#gc-enabled'), options = root.querySelector('.gc-options');
+    function config() { return {enabled: enabled.checked, left:a.labels.map(function(_,i){return Math.max(6000,Math.min(10800000,(+document.getElementById('gc-min-'+i).value||5)*60000));}), inc:a.labels.map(function(_,i){return Math.max(0,Math.min(120000,(+document.getElementById('gc-inc-'+i).value||0)*1000));})}; }
+    function save() { options.hidden=!enabled.checked; try {localStorage.setItem('clock-'+a.id,JSON.stringify(config()));}catch(e){} }
+    try { var saved=JSON.parse(localStorage.getItem('clock-'+a.id)); if(saved){enabled.checked=!!saved.enabled;a.labels.forEach(function(_,i){document.getElementById('gc-min-'+i).value=(saved.left[i]||300000)/60000;document.getElementById('gc-inc-'+i).value=(saved.inc[i]||0)/1000;});} } catch(e){}
+    options.hidden=!enabled.checked; root.addEventListener('change',save);
+    root.querySelectorAll('[data-time]').forEach(function(b){b.onclick=function(){var v=b.dataset.time.split(',');a.labels.forEach(function(_,i){document.getElementById('gc-min-'+i).value=v[0];document.getElementById('gc-inc-'+i).value=v[1];});save();};});
+    var bar=document.createElement('div');bar.className='gc-bar';bar.hidden=true; document.getElementById('game').prepend(bar);
+    var result=document.createElement('div');result.className='gc-result';result.hidden=true;result.setAttribute('role','dialog');result.setAttribute('aria-label','Партия завершена по времени');
+    result.innerHTML='<div><h2>Время вышло</h2><p></p><button type="button">В меню</button></div>';document.body.appendChild(result);
+    result.querySelector('button').onclick=function(){result.hidden=true;a.menu();sync();};
+    function guest(){return a.role()==='guest';}
+    function expire() {
+      if(!model || model.flag===null || ended)return;
+      ended=true;a.expire(model.flag);result.querySelector('p').textContent=a.labels[model.flag]+' — поражение по времени. Партия окончена.';result.hidden=false;
+    }
+    function packet(){return model?{left:model.left.slice(),inc:model.inc.slice(),turn:model.turn,running:model.running,flag:model.flag}:null;}
+    function publish(){if(a.role()==='host'){a.send({t:'clock-v1',clock:packet()});lastSend=Date.now();}}
+    function sync() {
+      var s=a.state(),now=Date.now();
+      if(!s){game=null;model=null;bar.hidden=true;result.hidden=true;return;}
+      if(game!==s.game){game=s.game;lastMove=s.moves;ended=false;result.hidden=true;received=0;var c=config();model=!guest()&&c.enabled&&s.ready?new FischerClock(c.left,c.inc,s.turn,now):null;}
+      if(!model&&!guest()&&s.ready&&!s.over){var c=config();if(c.enabled)model=new FischerClock(c.left,c.inc,s.turn,now);}
+      if(model&&!guest()) {
+        if(s.moves>lastMove)model.move(s.turn,now);else model.tick(now);
+        // При отмене хода сохраняем потраченное время, не добавляем прибавку.
+        if(s.moves<lastMove){model.turn=s.turn;if(model.flag===null)model.running=!s.over;}
+        if(s.over)model.stop(now);
+        lastMove=s.moves;expire();
+        if(now-lastSend>500)publish();
+      }
+      draw();
+    }
+    function draw(){
+      bar.hidden=!model;var timed=!!model;if(document.body.classList.contains('gc-timed')!==timed){document.body.classList.toggle('gc-timed',timed);setTimeout(function(){window.dispatchEvent(new Event('resize'));},0);}if(!model)return;
+      var now=Date.now(),s=a.state();
+      bar.innerHTML=a.labels.map(function(label,i){
+        if(s&&s.active&&s.active.indexOf(i)<0)return '';
+        var ms=model.left[i];if(guest()&&model.running&&i===model.turn)ms=Math.max(0,ms-(now-received));
+        var sec=Math.ceil(ms/1000),text=Math.floor(sec/60)+':'+('0'+sec%60).slice(-2);
+        return '<div class="gc-face '+(model.running&&i===model.turn?'gc-active ':'')+(ms<10000?'gc-low':'')+'"><span>'+label+' <small>+'+model.inc[i]/1000+'</small></span><strong>'+text+'</strong></div>';
+      }).join('');
+    }
+    function receive(d){
+      if(!d||d.t!=='clock-v1')return false;
+      if(!guest())return true;
+      sync();var c=d.clock;
+      if(c&&Array.isArray(c.left)&&c.left.length===a.labels.length&&Array.isArray(c.inc)&&Number.isInteger(c.turn)&&c.turn>=0&&c.turn<a.labels.length&&c.left.every(function(x){return Number.isFinite(x)&&x>=0;})) {
+        model=new FischerClock(c.left,c.inc,c.turn,Date.now());model.running=!!c.running;model.flag=c.flag;received=Date.now();expire();
+      }else model=null;
+      draw();return true;
+    }
+    function before(){sync();return !(model&&model.flag!==null);}
+    setInterval(sync,100);
+    return {sync:sync,before:before,receive:receive,publish:publish,enabled:function(){return !!model;}};
+  }
+  return {attach:attach};
+})();
 </script>
 <script id="core">
 // ===== Крестики-нолики 3×3 из 3×3: правила и бот (общий код для страницы и воркера) =====
@@ -901,7 +990,7 @@ onmessage = function (e) {
     var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.id = 'bigLine'; svg.setAttribute('viewBox', '0 0 100 100'); big.appendChild(svg);
   }
   function layout() {
-    var cd = S.coords ? 22 : 0, top = 52 + 30 + 58 + 40 + $('rvMount').offsetHeight + 8 + cd, w = window.innerWidth - 24 - cd, h = window.innerHeight - top;
+    var cd = S.coords ? 22 : 0, top = 52 + 30 + 58 + 40 + $('rvMount').offsetHeight + 8 + cd, w = window.innerWidth - 24 - cd, h = window.innerHeight - (GC && GC.enabled()?68:0) - top;
     var B = Math.max(240, Math.min(w, h, 640));
     document.documentElement.style.setProperty('--B', B + 'px');
     $('big').style.marginLeft = cd ? '16px' : ''; $('big').style.marginBottom = cd ? '12px' : '';
@@ -949,6 +1038,7 @@ onmessage = function (e) {
     active: function () { return !!G && !$('game').hidden && $('endOv').hidden && $('lobbyOv').hidden; }
   });
   function render(full) {
+    if (GC) GC.sync();
     var d = RV.display(), liveView = d.mode === 'live', s = liveView ? G.s : d.s;
     var last = liveView ? (G.moves.length ? G.moves[G.moves.length - 1] : -1) : (d.e && typeof d.e.mv === 'number' ? d.e.mv : -1);
     var tap = liveView ? canTap() : RV.canPlay();
@@ -1021,10 +1111,12 @@ onmessage = function (e) {
   }
   // the authority (offline or the host) accepts a move
   function decide(i) {
+    if (GC && !GC.before()) return;
     if (NET && NET.role === 'host') netBroadcast({ t: 'move', i: i, n: G.moves.length });
     apply(i);
   }
   function apply(i) {
+    if (GC && !GC.before()) return;
     var p = G.s.turn, res = play(G.s, i);
     G.moves.push(i);
     G.line.push({ s: snapOf(G.s, G.moves.slice()), mv: i, by: p }); RV.sync();
@@ -1214,6 +1306,8 @@ onmessage = function (e) {
     });
   }
   function hostData(conn, d) {
+    if (GC && GC.receive(d)) return;
+    if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     var n = NET; if (!d || typeof d !== 'object') return;
     if (d.t === 'hello') {
       if (n.conn && n.conn !== conn && n.cid && n.cid !== d.cid && n.peerOnline !== false) { try { conn.send({ t: 'full' }); } catch (e) {} return; }
@@ -1277,6 +1371,8 @@ onmessage = function (e) {
     });
   }
   function guestData(d) {
+    if (GC && GC.receive(d)) return;
+    if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     var n = NET; if (!d || typeof d !== 'object') return;
     n.seen = Date.now(); if (n.peerOnline === false) { n.peerOnline = true; if (G) render(); }
     if (d.t === 'ping') { netSend({ t: 'pong' }); return; }
@@ -1344,6 +1440,12 @@ onmessage = function (e) {
   $('askYes').onclick = function () { answerAsk(true); };
   $('askNo').onclick = function () { answerAsk(false); };
 
+
+  var GC = GameClock.attach({id:"ttt", labels:["Крестики", "Нолики"],
+    state:function(){return G?{game:G,turn:(G.s.turn-1),moves:G.moves.length,over:!!(G.over || G.s.winner),ready:true}:null;}, role:function(){return NET && NET.role;},
+    send:function(m){netBroadcast(m);}, menu:toMenu,
+    expire:function(i){if(!G)return;token++;G.over=true; G.s.winner=i===0?2:1;}
+  });
   (function autoJoin() { if (!ONLINE) return; var m = /^#([A-Za-z0-9]{5})$/.exec(location.hash || ''); if (m) { S.mode = 'net'; renderMenu(); guestJoin(m[1]); } })();
   window.RVready = true;
   renderMenu();

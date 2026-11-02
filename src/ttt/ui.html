@@ -1,3 +1,4 @@
+<style>:root{--gc-bg:#273451;--gc-active:#273451;--gc-accent:#e8bb63;}</style>
 <title>Крестики-нолики 3×3</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -262,6 +263,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 <div class="toast" id="toast" hidden></div>
 
 <script>/*REVIEW*/</script>
+<script>/*CLOCK*/</script>
 <script id="core">
 /*CORE*/
 </script>
@@ -398,7 +400,7 @@ onmessage = function (e) {
     var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.id = 'bigLine'; svg.setAttribute('viewBox', '0 0 100 100'); big.appendChild(svg);
   }
   function layout() {
-    var cd = S.coords ? 22 : 0, top = 52 + 30 + 58 + 40 + $('rvMount').offsetHeight + 8 + cd, w = window.innerWidth - 24 - cd, h = window.innerHeight - top;
+    var cd = S.coords ? 22 : 0, top = 52 + 30 + 58 + 40 + $('rvMount').offsetHeight + 8 + cd, w = window.innerWidth - 24 - cd, h = window.innerHeight - (GC && GC.enabled()?68:0) - top;
     var B = Math.max(240, Math.min(w, h, 640));
     document.documentElement.style.setProperty('--B', B + 'px');
     $('big').style.marginLeft = cd ? '16px' : ''; $('big').style.marginBottom = cd ? '12px' : '';
@@ -446,6 +448,7 @@ onmessage = function (e) {
     active: function () { return !!G && !$('game').hidden && $('endOv').hidden && $('lobbyOv').hidden; }
   });
   function render(full) {
+    if (GC) GC.sync();
     var d = RV.display(), liveView = d.mode === 'live', s = liveView ? G.s : d.s;
     var last = liveView ? (G.moves.length ? G.moves[G.moves.length - 1] : -1) : (d.e && typeof d.e.mv === 'number' ? d.e.mv : -1);
     var tap = liveView ? canTap() : RV.canPlay();
@@ -518,10 +521,12 @@ onmessage = function (e) {
   }
   // the authority (offline or the host) accepts a move
   function decide(i) {
+    if (GC && !GC.before()) return;
     if (NET && NET.role === 'host') netBroadcast({ t: 'move', i: i, n: G.moves.length });
     apply(i);
   }
   function apply(i) {
+    if (GC && !GC.before()) return;
     var p = G.s.turn, res = play(G.s, i);
     G.moves.push(i);
     G.line.push({ s: snapOf(G.s, G.moves.slice()), mv: i, by: p }); RV.sync();
@@ -711,6 +716,8 @@ onmessage = function (e) {
     });
   }
   function hostData(conn, d) {
+    if (GC && GC.receive(d)) return;
+    if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     var n = NET; if (!d || typeof d !== 'object') return;
     if (d.t === 'hello') {
       if (n.conn && n.conn !== conn && n.cid && n.cid !== d.cid && n.peerOnline !== false) { try { conn.send({ t: 'full' }); } catch (e) {} return; }
@@ -774,6 +781,8 @@ onmessage = function (e) {
     });
   }
   function guestData(d) {
+    if (GC && GC.receive(d)) return;
+    if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     var n = NET; if (!d || typeof d !== 'object') return;
     n.seen = Date.now(); if (n.peerOnline === false) { n.peerOnline = true; if (G) render(); }
     if (d.t === 'ping') { netSend({ t: 'pong' }); return; }
@@ -841,6 +850,12 @@ onmessage = function (e) {
   $('askYes').onclick = function () { answerAsk(true); };
   $('askNo').onclick = function () { answerAsk(false); };
 
+
+  var GC = GameClock.attach({id:"ttt", labels:["Крестики", "Нолики"],
+    state:function(){return G?{game:G,turn:(G.s.turn-1),moves:G.moves.length,over:!!(G.over || G.s.winner),ready:true}:null;}, role:function(){return NET && NET.role;},
+    send:function(m){netBroadcast(m);}, menu:toMenu,
+    expire:function(i){if(!G)return;token++;G.over=true; G.s.winner=i===0?2:1;}
+  });
   (function autoJoin() { if (!ONLINE) return; var m = /^#([A-Za-z0-9]{5})$/.exec(location.hash || ''); if (m) { S.mode = 'net'; renderMenu(); guestJoin(m[1]); } })();
   window.RVready = true;
   renderMenu();
