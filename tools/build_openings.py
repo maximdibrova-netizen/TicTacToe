@@ -19,7 +19,7 @@ PLIES, MIN_ELO, MIN_GAMES, TOP_GAMES, MAX_MOVES = 24, 2300, 3, 3, 14
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src', 'chess', 'db')
 SKIP_EVENT = re.compile(r'blitz|rapid|bullet|armageddon|titled|online|chess\.com|lichess|960|fischer|blind|simul|speed|tiebreak|tie-break|playoff|cct|meltwater|freestyle|basque|'
                         r'clutch|showdown|champions chess|global chess|pro chess|esports|e-sports|lightning|banter|airthings|aimchess|julius baer|goldmoney|'
-                        r'chessable|opera euro|new in chess classic|carlsen inv|legends of chess|corr|iccf|gcl|chess24|charity cup|crypto|ftx|levitov|arena|bundesliga online|hybrid|virtual|internet|\bicc\b|kings tournament|fast|quick|knockout cup', re.I)
+                        r'chessable|lindores|tal mem|\bbl\b|opera euro|new in chess classic|carlsen inv|legends of chess|corr|iccf|gcl|chess24|charity cup|crypto|ftx|levitov|arena|bundesliga online|hybrid|virtual|internet|\bicc\b|kings tournament|fast|quick|knockout cup', re.I)
 
 def key(fen):
     b = fen.encode()
