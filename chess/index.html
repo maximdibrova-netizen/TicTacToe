@@ -252,7 +252,7 @@ body.blind.peek .sq .pc { visibility: visible; }
         <li>Можно сдаться. На время — проигрывает тот, у кого кончились часы.</li>
       </ol>
     </div>
-    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 02.11.2026 23:55</span></p>
+    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 03.11.2026 00:47</span></p>
   </div>
 </section>
 
@@ -4481,7 +4481,7 @@ function chessBot(chess) {
   function loadGames(ids, cb) {
     var out = [], left = ids.length;
     ids.forEach(function (id, i) {
-      var sh = ('0' + (id % 64)).slice(-2);
+      var sh = ('00' + (id % 256)).slice(-3);
       var done = function () { var d = DB.games[sh] && DB.games[sh][id]; out[i] = d ? { id: id, d: d } : null; if (!--left) cb(out); };
       if (DB.games[sh]) done(); else getJSON('db/games-' + sh + '.json', function (d) { DB.games[sh] = d || {}; done(); });
     });
@@ -4494,7 +4494,7 @@ function chessBot(chess) {
   });
   // партия мастеров открывается на доске для анализа (на том же ходу)
   function openMasterGame(id) {
-    var sh = ('0' + (id % 64)).slice(-2), d = DB.games[sh] && DB.games[sh][id]; if (!d) return;
+    var sh = ('00' + (id % 256)).slice(-3), d = DB.games[sh] && DB.games[sh][id]; if (!d) return;
     if (!G.analysis && !G.over) { toast('Партию мастеров можно открыть после игры или на доске для анализа'); return; }
     var at = pathTo(G.cur).length;
     newGame({ w: 'me', b: 'me' }, { analysis: true });
