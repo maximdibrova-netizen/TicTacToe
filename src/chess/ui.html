@@ -4,14 +4,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@500;700;800&display=swap">
 <style>
-/* Layout: a classic brown board on the same navy table as the home page; player cards above, history and tools below. */
+/* Layout: a classic brown board on the navy table of the home page. Wide screens: board on the left, analysis panel on the right (like Lichess);
+   phones: the panel goes under the board. One dark look by choice. */
 :root {
   color-scheme: dark;
-  --bg: #121726; --bg-2: #1a2136; --line: #2d3757; --panel: #1f2843;
+  --bg: #121726; --bg-2: #1a2136; --bg-3: #222b47; --line: #2d3757;
   --ink: #eef1fb; --ink-dim: #9aa5c7; --gold: #ffd166; --ok: #7fd36b; --bad: #ff6b6b;
   --light: #f0d9b5; --dark: #b58863; --frame: #2b2f45;
   --btn: #2a3456; --btn-hi: #36426d;
-  --rv-accent: #ffd166; --rv-btn: #2a3456;
   --gc-bg: #1f2843; --gc-active: #2f3a62; --gc-accent: #ffd166;
   --display: "Unbounded", "Trebuchet MS", system-ui, sans-serif; --body: "Manrope", "Segoe UI", system-ui, sans-serif;
 }
@@ -19,12 +19,13 @@
 html, body { height: 100%; }
 body { margin: 0; background: radial-gradient(110% 80% at 50% 40%, var(--bg-2), var(--bg) 70%); background-color: var(--bg); color: var(--ink); font-family: var(--body); overflow: hidden; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
 button { font: inherit; color: inherit; cursor: pointer; }
-button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
-.screen { position: fixed; inset: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.screen { position: fixed; inset: 0; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
 #menu { overflow-y: auto; display: grid; place-items: center; padding-block: 18px; }
 .col { width: min(100%, 440px); display: flex; flex-direction: column; gap: 12px; }
 .logo { display: flex; align-items: center; justify-content: center; gap: 12px; }
-.logo svg { width: 58px; height: 58px; flex: none; filter: drop-shadow(0 4px 8px rgba(0,0,0,.4)); }
+.logo span { width: 58px; height: 58px; flex: none; filter: drop-shadow(0 4px 8px rgba(0,0,0,.4)); }
+.logo span svg { width: 100%; height: 100%; }
 h1 { margin: 0; font: 800 clamp(30px, 8vw, 40px)/1 var(--display); }
 .sub { margin: -4px 0 4px; text-align: center; font: 700 14px/1.3 var(--body); color: var(--ink-dim); }
 .card { background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
@@ -35,6 +36,8 @@ h1 { margin: 0; font: 800 clamp(30px, 8vw, 40px)/1 var(--display); }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
 .play { border: 0; border-radius: 16px; padding: 14px; background: var(--gold); color: #2a1d00; font: 800 20px/1 var(--display); box-shadow: 0 5px 0 #b8892c; }
 .play:active { transform: translateY(3px); box-shadow: 0 2px 0 #b8892c; }
+.ghost { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: transparent; font: 800 15px/1 var(--body); color: var(--ink); }
+.ghost:hover { background: var(--bg-2); }
 .rules { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font: 600 13.5px/1.4 var(--body); color: var(--ink-dim); }
 .rules b { color: var(--ink); }
 .hint { margin: 0; font: 700 12.5px/1.4 var(--body); color: var(--ink-dim); text-align: center; text-wrap: balance; }
@@ -43,8 +46,12 @@ h1 { margin: 0; font: 800 clamp(30px, 8vw, 40px)/1 var(--display); }
 .join input { flex: 1; min-width: 0; border: 0; border-radius: 11px; padding: 10px 12px; font: 800 18px/1 var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--bg); background: var(--ink); }
 .join button { border: 0; border-radius: 11px; padding: 0 16px; font: 800 15px/1 var(--body); background: var(--gold); color: #2a1d00; }
 
-#game { display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 8px; padding-block: max(10px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-bottom, 0px)); }
+/* ---------- game ---------- */
+#game { display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 8px; padding-block: max(8px, env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-bottom, 0px)); }
 #game > * { flex-shrink: 0; }
+.gc-bar { width: var(--W); max-width: 100%; margin: 0; }
+#main { display: flex; gap: 18px; align-items: flex-start; justify-content: center; }
+#left { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .top { width: var(--W); max-width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .pl { display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: 12px; border: 1.5px solid transparent; min-width: 0; }
 .pl.on { border-color: var(--gold); background: rgba(255, 209, 102, .1); }
@@ -71,25 +78,75 @@ h1 { margin: 0; font: 800 clamp(30px, 8vw, 40px)/1 var(--display); }
 .sq .pc { width: 100%; height: 100%; pointer-events: none; }
 .sq .pc svg { width: 100%; height: 100%; display: block; }
 .sq.moving .pc { position: relative; z-index: 3; transition: transform .16s ease-out; }
+#arrows { position: absolute; left: var(--cd); top: 0; width: var(--B); height: var(--B); pointer-events: none; z-index: 4; }
 .coord { position: absolute; font: 800 calc(var(--B) * .03)/1 var(--body); color: var(--ink-dim); pointer-events: none; }
 body.nocoord .coord { display: none; }
 body.blind .sq .pc { visibility: hidden; }
 body.blind.peek .sq .pc { visibility: visible; }
-.blindRow { width: var(--W); max-width: 100%; display: flex; gap: 6px; }
-.blindRow input { flex: 1; min-width: 0; border: 0; border-radius: 11px; padding: 10px 12px; font: 800 16px/1 var(--body); color: var(--bg); background: var(--ink); }
-.blindRow button { border: 0; border-radius: 11px; padding: 0 14px; font: 800 14px/1 var(--body); background: var(--gold); color: #2a1d00; }
-#moves { width: var(--W); max-width: 100%; max-height: 40px; overflow-x: auto; overflow-y: hidden; white-space: nowrap; font: 700 12.5px/1 var(--body); color: var(--ink-dim); scrollbar-width: none; padding: 2px 0; }
-#moves::-webkit-scrollbar { display: none; }
-#moves b { color: var(--ink); font-weight: 800; margin-right: 3px; }
-#moves .cur { color: var(--gold); }
-#rvMount { width: var(--W); max-width: 100%; }
-.bar { display: flex; gap: 6px; }
-.bar button { border: 0; border-radius: 12px; width: 46px; height: 44px; background: var(--btn); display: grid; place-items: center; }
+.bar { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.bar button { border: 0; border-radius: 12px; width: 44px; height: 42px; background: var(--btn); display: grid; place-items: center; }
 .bar button:hover:not(:disabled) { background: var(--btn-hi); }
 .bar button:disabled { opacity: .35; cursor: default; }
 .bar button.on { background: var(--ink); color: var(--bg); }
-.bar svg { width: 22px; height: 22px; }
+.bar svg { width: 21px; height: 21px; }
 .bar .txt { font: 800 12px/1 var(--display); }
+.bar .half { font: 800 17px/1 var(--display); }
+
+/* ---------- analysis panel ---------- */
+#side { width: var(--SW); height: var(--SH); background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; }
+.tabs { display: flex; flex: none; border-bottom: 1px solid var(--line); }
+.tabs button { flex: 1; border: 0; background: transparent; padding: 11px 6px 10px; font: 800 13px/1 var(--body); color: var(--ink-dim); border-bottom: 2.5px solid transparent; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--gold); }
+.tabs button:disabled { opacity: .35; cursor: default; }
+.pane { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 12px; font: 600 14px/1.5 var(--body); }
+.pane[hidden] { display: none; }
+.navrow { flex: none; display: flex; gap: 4px; padding: 6px; border-top: 1px solid var(--line); justify-content: center; }
+.navrow button { border: 0; border-radius: 9px; width: 46px; height: 32px; background: var(--btn); display: grid; place-items: center; }
+.navrow button:disabled { opacity: .3; cursor: default; }
+.navrow button svg { width: 18px; height: 18px; }
+.navrow .back { width: auto; padding: 0 10px; background: var(--gold); color: #2a1d00; font: 800 12.5px/1 var(--body); white-space: nowrap; }
+.muted { color: var(--ink-dim); font-weight: 700; font-size: 13px; }
+/* notation */
+.mv { display: inline-block; padding: 1px 4px; margin: 1px 0; border-radius: 6px; cursor: pointer; font-weight: 800; color: var(--ink); }
+.mv:hover { background: var(--btn); }
+.mv.cur { background: var(--gold); color: #2a1d00; }
+.mn { color: var(--ink-dim); font-weight: 800; margin-left: 3px; }
+.var { display: block; margin: 3px 0 3px 10px; padding-left: 8px; border-left: 2px solid var(--line); font-size: 12.5px; }
+.var .mv { font-weight: 700; color: #c9d1ee; }
+.var .mv.cur { color: #2a1d00; }
+.res { display: block; margin-top: 6px; font-weight: 800; color: var(--gold); }
+/* engine */
+.eng-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.eng-eval { font: 800 24px/1 var(--display); font-variant-numeric: tabular-nums; min-width: 78px; }
+.eng-info { flex: 1; min-width: 0; font: 700 12px/1.3 var(--body); color: var(--ink-dim); }
+.switch { border: 0; border-radius: 999px; width: 46px; height: 26px; background: var(--btn); position: relative; flex: none; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--ink-dim); transition: left .15s, background .15s; }
+.switch[aria-checked="true"] { background: var(--ok); }
+.switch[aria-checked="true"]::after { left: 23px; background: #fff; }
+.ebar { position: relative; height: 12px; border-radius: 6px; overflow: hidden; background: #3a3a3a; margin-bottom: 10px; }
+.ebar i { position: absolute; left: 0; top: 0; bottom: 0; width: 50%; background: #f3f0e6; transition: width .3s; }
+.ebar::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--gold); opacity: .7; }
+.pv { display: flex; gap: 8px; padding: 7px 6px; border-radius: 9px; cursor: pointer; font: 700 13px/1.35 var(--body); }
+.pv:hover { background: var(--bg-3); }
+.pv b { flex: none; min-width: 50px; font: 800 13px/1.35 var(--display); font-variant-numeric: tabular-nums; }
+.pv span { color: #c9d1ee; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+/* explorer */
+.op-name { font: 800 14px/1.3 var(--body); margin-bottom: 8px; }
+.op-name small { color: var(--ink-dim); font-weight: 800; margin-right: 6px; }
+.ex-row { display: grid; grid-template-columns: 52px 52px 1fr; gap: 8px; align-items: center; padding: 5px 6px; border-radius: 8px; cursor: pointer; font: 800 13px/1 var(--body); }
+.ex-row:hover { background: var(--bg-3); }
+.ex-row .n { color: var(--ink-dim); font-variant-numeric: tabular-nums; text-align: right; font-size: 12px; }
+.wdl { display: flex; height: 16px; border-radius: 4px; overflow: hidden; font: 800 10px/16px var(--body); }
+.wdl i { display: block; text-align: center; font-style: normal; overflow: hidden; white-space: nowrap; }
+.wdl .w { background: #f3f0e6; color: #222; } .wdl .d { background: #8a8f9e; color: #111; } .wdl .b { background: #2b2b2b; color: #eee; }
+.ex-h { margin: 12px 0 4px; font: 800 11px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); }
+.gm { padding: 7px 6px; border-radius: 8px; cursor: pointer; font: 700 12.5px/1.35 var(--body); }
+.gm:hover { background: var(--bg-3); }
+.gm b { font-weight: 800; }
+.gm small { display: block; color: var(--ink-dim); font-weight: 700; }
+.src { margin-top: 10px; font: 700 11.5px/1.4 var(--body); color: var(--ink-dim); }
+
+/* ---------- dialogs ---------- */
 .ov { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(10, 13, 24, .72); backdrop-filter: blur(3px); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px; overflow-y: auto; }
 .dlg { width: min(100%, 380px); background: var(--bg-2); border: 1px solid var(--line); border-radius: 20px; padding: 20px 18px 18px; display: flex; flex-direction: column; gap: 12px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
 .dlg h3 { margin: 0; font: 800 24px/1.15 var(--display); text-wrap: balance; }
@@ -105,17 +162,16 @@ body.blind.peek .sq .pc { visibility: visible; }
 .linkrow input { flex: 1; min-width: 0; border: 0; border-radius: 10px; padding: 9px 10px; font: 700 12.5px/1 var(--body); color: var(--bg); background: var(--ink-dim); }
 .linkrow button { border: 0; border-radius: 10px; padding: 0 12px; font: 800 13px/1 var(--body); background: var(--btn-hi); white-space: nowrap; }
 .err { background: #3a1620; color: #ffb3bc; border-radius: 12px; padding: 10px; font: 700 13.5px/1.4 var(--body); }
-.toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 14px); transform: translateX(-50%); z-index: 30; background: var(--ink); color: var(--bg); font: 800 14px/1.25 var(--body); padding: 10px 16px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.4); max-width: calc(100% - 32px); text-align: center; }
-.gc-bar { width: var(--W); max-width: 100%; margin: 0; }
+.toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 14px); transform: translateX(-50%); z-index: 70; background: var(--ink); color: var(--bg); font: 800 14px/1.25 var(--body); padding: 10px 16px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.4); max-width: calc(100% - 32px); text-align: center; }
 @media (prefers-reduced-motion: reduce) { .sq.moving .pc { transition: none; } }
 </style>
 
 <section class="screen" id="menu">
   <div class="col">
     <div class="logo"><span id="logoPiece"></span><h1>Шахматы</h1></div>
-    <p class="sub">классические правила · бот, вдвоём или онлайн</p>
+    <p class="sub">классические правила · Stockfish · база партий мастеров</p>
     <div class="card"><h2>Режим</h2>
-      <div class="seg" id="modeSeg"><button data-v="bot" id="m-bot">С ботом</button><button data-v="duo" id="m-duo">Вдвоём</button><button data-v="net" id="m-net">Онлайн</button></div>
+      <div class="seg" id="modeSeg"><button data-v="bot" id="m-bot">Со Stockfish</button><button data-v="duo" id="m-duo">Вдвоём</button><button data-v="net" id="m-net">Онлайн</button></div>
     </div>
     <div class="card" id="sideCard"><h2>Я играю</h2>
       <div class="seg" id="sideSeg"><button data-v="w" id="s-w">Белыми</button><button data-v="b" id="s-b">Чёрными</button><button data-v="r" id="s-r">Случайно</button></div>
@@ -123,19 +179,20 @@ body.blind.peek .sq .pc { visibility: visible; }
     <div class="card"><h2>Доска</h2>
       <div class="seg" style="--cols:2" id="blindSeg"><button data-v="0" id="bl-off">Обычная</button><button data-v="1" id="bl-on">Вслепую</button></div>
       <div class="seg" style="--cols:2" id="coordSeg"><button data-v="1">Координаты</button><button data-v="0">Без координат</button></div>
-      <p class="hint" id="blindHint">Вслепую фигур на доске не видно: держи позицию в голове. Ходи тапами по полям или пиши ход текстом (e4, Кf3, e2e4). Кнопка с глазом — подсмотреть, пока держишь.</p>
+      <p class="hint" id="blindHint">Вслепую фигур на доске не видно: держи позицию в голове. Ходы видны в нотации справа. Кнопка с глазом — подсмотреть, пока держишь.</p>
     </div>
     <div class="card" id="netCard" hidden><h2>Онлайн с другом</h2>
       <div class="seg" style="--cols:2"><button id="netCreate">Создать игру</button><button id="netJoinBtn">Войти по коду</button></div>
       <div class="join" id="joinRow" hidden><input id="joinCode" maxlength="5" placeholder="КОД" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Код игры"><button id="joinGo">Войти</button></div>
-      <p class="hint">Цвет хозяина берётся из «Я играю». В реванше цвета меняются. «Вслепую» у каждого своё.</p>
+      <p class="hint">Цвет хозяина берётся из «Я играю». В реванше цвета меняются. Во время онлайн-партии движка и базы нет — после конца разбор у обоих.</p>
     </div>
     <button class="play" id="playBtn">Играть</button>
+    <button class="ghost" id="anaBtn">Доска для анализа</button>
     <div class="card"><h2>Правила</h2>
       <ol class="rules">
         <li>Белые ходят первыми. Цель — <b>мат</b>: король под ударом, и спасти его нечем.</li>
         <li>Есть рокировка, взятие на проходе и превращение пешки (выбираешь фигуру).</li>
-        <li><b>Ничья:</b> пат, троекратное повторение, 50 ходов без взятий и ходов пешкой, мало материала для мата.</li>
+        <li><b>Ничья:</b> по согласию, пат, троекратное повторение, 50 ходов без взятий и ходов пешкой, мало материала для мата.</li>
         <li>Можно сдаться. На время — проигрывает тот, у кого кончились часы.</li>
       </ol>
     </div>
@@ -144,58 +201,84 @@ body.blind.peek .sq .pc { visibility: visible; }
 </section>
 
 <section class="screen" id="game" hidden>
-  <div class="top" id="topRow">
-    <div class="pl" id="plA"><span class="ic" id="icA"></span><div><div class="nm" id="nmA"></div><div class="cap" id="capA"></div></div></div>
-    <div class="pl r" id="plB"><span class="ic" id="icB"></span><div><div class="nm" id="nmB"></div><div class="cap" id="capB"></div></div></div>
-  </div>
-  <div class="status" id="status"></div>
-  <div class="wrap" id="wrap"><div id="board" aria-label="Шахматная доска"></div></div>
-  <div class="blindRow" id="blindRow" hidden><input id="sanIn" placeholder="Ход: e4, Кf3, e2e4, O-O" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Ход текстом"><button id="sanGo">Ход</button></div>
-  <div id="moves" aria-label="Запись партии"></div>
-  <div id="rvMount"></div>
-  <div class="bar" id="barRow">
-    <button id="homeBtn" aria-label="В меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"><path d="M3.5 11 12 3.8 20.5 11M6 9v11h12V9"/></svg></button>
-    <button id="againBtn" aria-label="Новая партия"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v5h-5"/></svg></button>
-    <button id="undoBtn" aria-label="Отменить ход"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
-    <button id="resignBtn" aria-label="Сдаться"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg></button>
-    <button id="peekBtn" aria-label="Подсмотреть фигуры (держи)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
-    <button id="coordBtn" aria-label="Координаты"><span class="txt">a1</span></button>
-    <button id="soundBtn" aria-label="Звук"></button>
+  <div id="main">
+    <div id="left">
+      <div class="top" id="topRow">
+        <div class="pl" id="plA"><span class="ic" id="icA"></span><div><div class="nm" id="nmA"></div><div class="cap" id="capA"></div></div></div>
+        <div class="pl r" id="plB"><span class="ic" id="icB"></span><div><div class="nm" id="nmB"></div><div class="cap" id="capB"></div></div></div>
+      </div>
+      <div class="status" id="status"></div>
+      <div class="wrap" id="wrap"><div id="board" aria-label="Шахматная доска"></div><svg id="arrows" aria-hidden="true"></svg></div>
+      <div class="bar" id="barRow">
+        <button id="homeBtn" aria-label="В меню" title="В меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"><path d="M3.5 11 12 3.8 20.5 11M6 9v11h12V9"/></svg></button>
+        <button id="againBtn" aria-label="Новая партия" title="Новая партия"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v5h-5"/></svg></button>
+        <button id="undoBtn" aria-label="Отменить ход" title="Отменить ход"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+        <button id="drawBtn" aria-label="Предложить ничью" title="Предложить ничью"><span class="half">½</span></button>
+        <button id="resignBtn" aria-label="Сдаться" title="Сдаться"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg></button>
+        <button id="flipBtn" aria-label="Перевернуть доску" title="Перевернуть доску"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/></svg></button>
+        <button id="peekBtn" aria-label="Подсмотреть фигуры (держи)" title="Подсмотреть (держи)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <button id="coordBtn" aria-label="Координаты" title="Координаты (C)"><span class="txt">a1</span></button>
+        <button id="soundBtn" aria-label="Звук" title="Звук"></button>
+      </div>
+    </div>
+    <aside id="side" aria-label="Анализ">
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-eng" data-tab="eng" aria-selected="false">Движок</button>
+        <button role="tab" id="tab-db" data-tab="db" aria-selected="false">Дебюты</button>
+        <button role="tab" id="tab-nota" data-tab="nota" aria-selected="true">Нотация</button>
+      </div>
+      <div class="pane" id="pane-eng" hidden>
+        <div class="eng-head"><div class="eng-eval" id="engEval">—</div><div class="eng-info" id="engInfo">Stockfish 19</div><button class="switch" id="engSwitch" role="switch" aria-checked="true" aria-label="Движок включён"></button></div>
+        <div class="ebar"><i id="engBar"></i></div>
+        <div id="engLines"></div>
+      </div>
+      <div class="pane" id="pane-db" hidden><div id="dbBox"></div></div>
+      <div class="pane" id="pane-nota"><div id="nota"></div></div>
+      <div class="navrow">
+        <button id="nvFirst" aria-label="К началу"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5v14M18 6l-7 6 7 6"/></svg></button>
+        <button id="nvPrev" aria-label="Ход назад"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <button id="nvNext" aria-label="Ход вперёд"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+        <button id="nvLast" aria-label="К последнему ходу"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 5v14M6 6l7 6-7 6"/></svg></button>
+        <button class="back" id="nvLive" hidden>↩ к партии</button>
+      </div>
+    </aside>
   </div>
 </section>
 
 <div class="ov" id="endOv" hidden><div class="dlg"><h3 id="endTitle"></h3><p id="endText"></p>
-  <div class="btns"><button id="endAgain">Ещё раз</button><button id="endLook" class="alt">Разбор партии</button><button id="endUndo" class="alt">Отменить ход</button><button id="endMenu" class="alt">Меню</button></div></div></div>
+  <div class="btns"><button id="endAgain">Ещё раз</button><button id="endLook" class="alt">Анализ партии</button><button id="endUndo" class="alt">Отменить ход</button><button id="endMenu" class="alt">Меню</button></div></div></div>
 <div class="ov" id="promoOv" hidden><div class="dlg"><h3>Превращение пешки</h3><div class="promo" id="promoChoices"></div><div class="btns"><button id="promoCancel" class="alt">Отмена</button></div></div></div>
-<div class="ov" id="confirmOv" hidden><div class="dlg"><h3>Сдаться?</h3><p>Партия закончится, победа достанется сопернику.</p>
-  <div class="btns"><button id="cfYes">Сдаться</button><button id="cfNo" class="alt">Играть дальше</button></div></div></div>
+<div class="ov" id="confirmOv" hidden><div class="dlg"><h3 id="cfTitle">Сдаться?</h3><p id="cfText"></p>
+  <div class="btns"><button id="cfYes">Да</button><button id="cfNo" class="alt">Нет</button></div></div></div>
 <div class="ov" id="lobbyOv" hidden><div class="dlg"><h3 id="lbTitle">Онлайн-игра</h3><p id="lbText"></p><div class="code" id="lbCode" hidden></div>
   <div class="linkrow" id="lbLinkRow" hidden><input id="lbLink" readonly aria-label="Ссылка для друга"><button id="lbCopy">Копировать</button></div>
   <p class="err" id="lbErr" hidden></p><div class="btns"><button id="lbRetry" hidden>Попробовать ещё раз</button><button id="lbCancel" class="alt">Отмена</button></div></div></div>
-<div class="ov" id="askOv" hidden><div class="dlg"><h3>Друг просит отменить ход</h3><p id="askText"></p><p id="askTimer" style="font-size:12.5px"></p>
+<div class="ov" id="askOv" hidden><div class="dlg"><h3 id="askTitle">Друг просит отменить ход</h3><p id="askText"></p><p id="askTimer" style="font-size:12.5px"></p>
   <div class="btns"><button id="askYes">Согласен</button><button id="askNo" class="alt">Нет</button></div></div></div>
 <div class="toast" id="toast" hidden></div>
 
 <script>/*CLOCK*/</script>
 <script>/*NET*/</script>
-<script>/*REVIEW*/</script>
 <script>/*PIECES*/</script>
 <script id="core">/*CORE*/</script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var ONLINE = !!window.GAMES_ONLINE;
-  var NAME = { w: 'Белые', b: 'Чёрные' }, NAME_GEN = { w: 'белых', b: 'чёрных' };
+  var NAME = { w: 'Белые', b: 'Чёрные' };
   var FILES = 'abcdefgh';
-  var RU = { k: 'Кр', q: 'Ф', r: 'Л', b: 'С', n: 'К', p: '' }, PNAME = { p: 'пешка', n: 'конь', b: 'слон', r: 'ладья', q: 'ферзь', k: 'король' };
+  var RU = { k: 'Кр', q: 'Ф', r: 'Л', b: 'С', n: 'К' }, PNAME = { p: 'пешка', n: 'конь', b: 'слон', r: 'ладья', q: 'ферзь', k: 'король' };
   var VAL = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+  var START = new Chess().fen();
   var ICON_SND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>';
   var ICON_MUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></svg>';
   function pieceSVG(color, type) { return PIECES[color + type.toUpperCase()]; }
+  function ruSan(san) { return String(san).replace(/^([KQRBN])/, function (m) { return RU[m.toLowerCase()]; }).replace(/=([QRBN])/, function (m, p) { return '=' + RU[p.toLowerCase()]; }); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   $('logoPiece').innerHTML = pieceSVG('w', 'n');
 
   // ---------- settings ----------
-  var S = { mode: 'bot', side: 'w', blind: false, coords: true, sound: true };
+  var S = { mode: 'bot', side: 'w', blind: false, coords: true, sound: true, tab: 'nota', engine: true };
   try { var sv = JSON.parse(localStorage.getItem('chess-set') || 'null'); if (sv) Object.assign(S, sv); } catch (e) {}
   if (!ONLINE && S.mode === 'net') S.mode = 'bot';
   function saveS() { try { localStorage.setItem('chess-set', JSON.stringify(S)); } catch (e) {} }
@@ -215,7 +298,7 @@ body.blind.peek .sq .pc { visibility: visible; }
     $('soundBtn').innerHTML = S.sound ? ICON_SND : ICON_MUTE;
     $('coordBtn').classList.toggle('on', !!S.coords);
     document.body.classList.toggle('nocoord', !S.coords);
-    document.body.classList.toggle('blind', !!S.blind);
+    document.body.classList.toggle('blind', !!S.blind && !(G && G.analysis));
   }
 
   // ---------- sound: wood on wood ----------
@@ -232,15 +315,60 @@ body.blind.peek .sq .pc { visibility: visible; }
       o.connect(fl); fl.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + .15);
     } catch (e) {}
   }
-  function sfx(san) {
-    if (/#|\+/.test(san)) { knock(520, .14); knock(700, .1, .09); }
-    else if (/x/.test(san)) knock(300, .18);
-    else knock(440, .14);
-  }
+  function sfx(san) { if (/#|\+/.test(san)) { knock(520, .14); knock(700, .1, .09); } else if (/x/.test(san)) knock(300, .18); else knock(440, .14); }
 
-  // ---------- positions ----------
-  // Позиция для разбора — неизменяемый снимок: { fen, turn, over, res, path: [SAN…] }
-  function chessOf(path) { var c = new Chess(); for (var k = 0; k < path.length; k++) { try { c.move(path[k]); } catch (e) { break; } } return c; }
+  // ---------- Stockfish (WASM, в отдельном потоке) ----------
+  // Один движок играет, второй анализирует, чтобы анализ не мешал боту.
+  function Engine() {
+    var w = null, ready = false, queue = [], self = { onLine: null, broken: false };
+    function start() {
+      if (w || self.broken) return;
+      try { w = new Worker('sf/stockfish-19-lite-single.js'); } catch (e) { self.broken = true; return; }
+      w.onmessage = function (e) { var line = String(e.data); if (line === 'uciok') { ready = true; queue.splice(0).forEach(function (c) { w.postMessage(c); }); } if (self.onLine) self.onLine(line); };
+      w.onerror = function () { self.broken = true; };
+      w.postMessage('uci');
+    }
+    self.send = function (c) { start(); if (!w) return; if (ready || c === 'uci') w.postMessage(c); else queue.push(c); };
+    return self;
+  }
+  // оценка в UCI — для стороны, которая ходит; переводим к белым
+  function parseInfo(line, turn) {
+    var m = /\bmultipv (\d+)/.exec(line), d = /\bdepth (\d+)/.exec(line), cp = /\bscore cp (-?\d+)/.exec(line), mt = /\bscore mate (-?\d+)/.exec(line), pv = /\bpv (.+)$/.exec(line);
+    if (!pv || (!cp && !mt)) return null;
+    var sgn = turn === 'w' ? 1 : -1;
+    return { k: m ? +m[1] : 1, depth: d ? +d[1] : 0, cp: cp ? sgn * +cp[1] : null, mate: mt ? sgn * +mt[1] : null, pv: pv[1].split(' ') };
+  }
+  function evalText(r) {
+    if (!r) return '—';
+    if (r.mate != null) return (r.mate > 0 ? '#' : '#−') + Math.abs(r.mate);
+    var v = r.cp / 100; return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2);
+  }
+  function evalPct(r) { if (!r) return 50; if (r.mate != null) return r.mate > 0 ? 100 : 0; return 100 / (1 + Math.exp(-r.cp / 250)); }
+  function pvSan(fen, uci, max) {
+    var c = new Chess(fen), out = [], n = 0;
+    for (var i = 0; i < uci.length && n < (max || 12); i++) {
+      var u = uci[i]; var mv;
+      var num = +c.fen().split(' ')[5];
+      try { mv = c.move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] }); } catch (e) { break; }
+      out.push({ san: mv.san, color: mv.color, num: num }); n++;
+    }
+    return out;
+  }
+  function moveNumOf(fen) { var p = fen.split(' '); return { n: +p[5], c: p[1] }; }
+
+  // ---------- the game tree ----------
+  // Узел: { san, lan, fen, parent, ch: [], by } — корень без хода. Основная линия = партия; ch[1..] — варианты.
+  function node(parent, mv, fen) { return { san: mv ? mv.san : null, lan: mv ? mv.lan : null, fen: fen, parent: parent, ch: [], by: mv ? mv.color : null }; }
+  function pathTo(n) { var out = []; for (var t = n; t && t.parent; t = t.parent) out.push(t); return out.reverse(); }
+  function chessOf(n) { var c = new Chess(); pathTo(n).forEach(function (x) { c.move(x.san); }); return c; }
+  function mainTip() { var t = G.root; while (t.ch.length) t = t.ch[0]; return t; }
+  function onMain(n) { for (var t = n; t.parent; t = t.parent) if (t.parent.ch[0] !== t) return false; return true; }
+  function addChild(parent, mv, fen, asMain) {
+    for (var i = 0; i < parent.ch.length; i++) if (parent.ch[i].san === mv.san) return parent.ch[i];
+    var n = node(parent, mv, fen);
+    if (asMain) parent.ch.unshift(n); else parent.ch.push(n);
+    return n;
+  }
   function outcomeOf(c) {
     if (c.isCheckmate()) return { w: c.turn() === 'w' ? 'b' : 'w', t: 'мат' };
     if (c.isStalemate()) return { w: 'd', t: 'пат' };
@@ -249,61 +377,49 @@ body.blind.peek .sq .pc { visibility: visible; }
     if (c.isDraw()) return { w: 'd', t: 'правило 50 ходов' };
     return null;
   }
-  function snapOf(c, path) { var oc = outcomeOf(c); return { fen: c.fen(), turn: c.turn(), over: !!oc, res: oc, path: path, check: c.isCheck() }; }
-  function lineOf(list) {
-    var c = new Chess(), L = [{ s: snapOf(c, []), mv: null, by: '' }];
-    for (var k = 0; k < list.length; k++) { var by = c.turn(); try { c.move(list[k]); } catch (e) { break; } L.push({ s: snapOf(c, list.slice(0, k + 1)), mv: list[k], by: by }); }
-    return L;
-  }
-  function ruSan(san) { return san.replace(/^([KQRBN])/, function (m) { return RU[m.toLowerCase()]; }).replace(/=([QRBN])/, function (m, p) { return '=' + RU[p.toLowerCase()]; }); }
+  function resText(r) { if (!r) return ''; return r.w === 'd' ? 'Ничья — ' + r.t : 'Победили ' + NAME[r.w].toLowerCase() + ' — ' + r.t; }
 
   // ---------- game ----------
-  // G.kind.w / G.kind.b: 'me' | 'bot' | 'net'. G.moves — ходы в SAN; G.c — живая партия (chess.js).
-  var G = null, token = 0, sqEls = [];
+  // G.kind.w / G.kind.b: 'me' | 'bot' | 'net'. G.c — живая партия (chess.js, с историей для повторений).
+  // G.tip — последний ход партии в дереве, G.cur — позиция на доске. G.analysis — свободная доска (ходят обе стороны).
+  var G = null, token = 0, sqEls = {};
   function net() { return Net2P.active(); }
   function mySide() { return G.kind.w === 'me' && G.kind.b !== 'me' ? 'w' : G.kind.b === 'me' && G.kind.w !== 'me' ? 'b' : ''; }
-  function newGame(kind) {
-    token++;
-    G = { kind: kind, c: new Chess(), moves: [], line: lineOf([]), sel: null, vsel: null, busy: false, over: false, result: null, endShown: false };
+  function newGame(kind, opts) {
+    token++; opts = opts || {};
+    G = { kind: kind, c: new Chess(), root: node(null, null, START), sel: null, busy: false, over: false, result: null, endShown: false, analysis: !!opts.analysis, drawOffer: null, drawAsked: -1 };
+    G.tip = G.cur = G.root;
     G.flip = mySide() === 'b';
+    if (G.analysis) G.over = true;
     $('menu').hidden = true; $('game').hidden = false;
     ['endOv', 'lobbyOv', 'askOv', 'confirmOv', 'promoOv'].forEach(function (id) { $(id).hidden = true; });
-    buildBoard(); RV.reset(); layout(); render(); turnLoop();
+    renderMenu(); buildBoard(); if (kind.w === 'bot' || kind.b === 'bot') botEng.send('ucinewgame');
+    if (G.analysis && S.tab === 'nota') S.tab = 'eng';
+    if (net() && !G.over && S.tab !== 'nota') S.tab = 'nota';
+    layout(); render(); turnLoop();
   }
   function startLocal() {
     if (S.mode === 'duo') { newGame({ w: 'me', b: 'me' }); return; }
     var side = S.side === 'r' ? (Math.random() < .5 ? 'w' : 'b') : S.side, k = {}; k[side] = 'me'; k[side === 'w' ? 'b' : 'w'] = 'bot'; newGame(k);
   }
+  // партия из списка ходов (SAN) — для онлайна, отмены, «играть отсюда»
   function rebuild(list) {
-    G.c = chessOf(list); G.moves = G.c.history(); G.line = lineOf(G.moves);
-    var oc = outcomeOf(G.c); G.over = !!oc; G.result = oc;
+    var keep = G.root, c = new Chess(); G.c = c; G.root = node(null, null, START); var t = G.root;
+    for (var k = 0; k < list.length; k++) { var mv; try { mv = c.move(list[k]); } catch (e) { break; } var n = node(t, mv, c.fen()); t.ch.push(n); t = n; }
+    G.tip = G.cur = t; G.sel = null;
+    var oc = outcomeOf(c); G.over = !!oc || G.analysis; G.result = oc;
   }
-  function canTap() { return G && !G.over && !G.busy && G.kind[G.c.turn()] === 'me' && !(net() && (G.netPending || G.undoVote)) && !RV.viewing(); }
-
-  // ---------- analysis module: history and variations (no engine yet) ----------
-  var RV = Review({
-    mount: $('rvMount'), status: $('status'), noBar: true,
-    line: function () { return G ? G.line : lineOf([]); },
-    play: function (s, mv) { var c = chessOf(s.path); try { c.move(mv); } catch (e) { return null; } return snapOf(c, s.path.concat([c.history().slice(-1)[0]])); },
-    over: function (s) { return !!s.over; },
-    toMove: function (s) { return s.turn; },
-    me: function () { return mySide() || 'w'; },
-    side: function (x) { return NAME[x] || ''; },
-    same: function (a, b) { return a === b; },
-    moveText: function (e) { return ruSan(e.mv); },
-    overText: function (s) { return resText(s.res); },
-    engine: function () { return !!G && (!net() || G.over); },
-    evalOn: function () { return false; },
-    analyze: function (s, cb) { cb({ p: .5, best: null }); },
-    redraw: function () { if (!G) return; G.vsel = null; render(); if (!RV.viewing()) turnLoop(); },
-    relayout: function () { layout(); },
-    active: function () { return !!G && !$('game').hidden && $('endOv').hidden && $('lobbyOv').hidden && document.activeElement !== $('sanIn'); }
-  });
-  function resText(r) { if (!r) return ''; return r.w === 'd' ? 'Ничья — ' + r.t : 'Победили ' + NAME[r.w].toLowerCase() + ' — ' + r.t; }
+  function moves() { return pathTo(G.tip).map(function (n) { return n.san; }); }
+  function viewing() { return G && G.cur !== G.tip; }
+  function engineOK() { return !!G && (!net() || G.over); }            // онлайн движок и база — только после партии
+  function canVary() { return !!G && engineOK() && (G.analysis || G.over || viewing()); }
+  function canTapLive() { return G && !G.over && !G.busy && G.kind[G.c.turn()] === 'me' && !(net() && (G.netPending || G.undoVote)) && !viewing(); }
+  function canTap() { return canTapLive() || canVary(); }
+  function curChess() { return viewing() || G.over ? chessOf(G.cur) : G.c; }
 
   // ---------- clock (shared) ----------
   var GC = GameClock.attach({ id: 'chess', labels: ['Белые', 'Чёрные'],
-    state: function () { return G ? { game: G, turn: G.c.turn() === 'w' ? 0 : 1, moves: G.moves.length, over: !!G.over, ready: true } : null; },
+    state: function () { return G && !G.analysis ? { game: G, turn: G.c.turn() === 'w' ? 0 : 1, moves: G.c.history().length, over: !!G.over, ready: true } : null; },
     role: function () { return Net2P.role(); }, send: function (m) { Net2P.send(m); }, menu: toMenu,
     expire: function (i) { if (!G) return; token++; G.over = true; G.result = { w: i === 0 ? 'b' : 'w', t: 'время ' + (i === 0 ? 'белых' : 'чёрных') + ' вышло' }; G.endShown = true; render(); }
   });
@@ -328,259 +444,497 @@ body.blind.peek .sq .pc { visibility: visible; }
   function hubH() { return window.hubH ? window.hubH() : 0; }
   function layout() {
     if (!G) return;
-    var cd = S.coords ? 18 : 0;
-    var other = $('topRow').offsetHeight + $('status').offsetHeight + ($('blindRow').hidden ? 0 : $('blindRow').offsetHeight + 8) + $('moves').offsetHeight + $('rvMount').offsetHeight + $('barRow').offsetHeight + (GC.enabled() ? 64 : 0) + 6 * 8 + 24 + hubH();
-    var B = Math.max(232, Math.min(window.innerWidth - 32 - cd, window.innerHeight - other - cd, 640));
-    B = Math.floor(B / 8) * 8;
+    var cd = S.coords ? 18 : 0, vw = window.innerWidth, vh = window.innerHeight, wide = vw >= 860;
+    var head = $('topRow').offsetHeight + $('status').offsetHeight, bar = $('barRow').offsetHeight || 42, clock = GC.enabled() ? 60 : 0, B, SW, SH;
+    if (wide) {
+      SW = Math.min(380, Math.max(300, vw * .3));
+      B = Math.min(vh - hubH() - head - bar - clock - 3 * 8 - 28 - cd, vw - SW - 18 - 48 - cd, 760);
+    } else {
+      var panel = Math.max(170, Math.min(260, vh * .27));
+      B = Math.min(vw - 24 - cd, vh - hubH() - head - bar - clock - panel - 5 * 8 - 24 - cd, 640);
+      SH = panel;
+    }
+    B = Math.max(232, Math.floor(B / 8) * 8);
+    var W = B + cd;
     document.documentElement.style.setProperty('--B', B + 'px');
     document.documentElement.style.setProperty('--cd', cd + 'px');
-    document.documentElement.style.setProperty('--W', (B + cd) + 'px');
+    document.documentElement.style.setProperty('--W', W + 'px');
+    $('main').style.flexDirection = wide ? 'row' : 'column';
+    $('main').style.alignItems = wide ? 'flex-start' : 'center';
+    document.documentElement.style.setProperty('--SW', (wide ? SW : W) + 'px');
+    document.documentElement.style.setProperty('--SH', (wide ? head + 8 + W + 8 + bar : SH) + 'px');
   }
-  window.addEventListener('resize', layout);
+  window.addEventListener('resize', function () { layout(); });
 
   function render() {
     if (!G) return;
-    var d = RV.display(), live = d.mode === 'live', s = live ? snapOf(G.c, G.moves) : d.s, c = live ? G.c : new Chess(s.fen);
-    var sel = live ? G.sel : G.vsel, can = live ? canTap() : RV.canPlay();
+    var c = curChess(), live = !viewing() && !G.over;
+    var can = canTap(), sel = G.sel;
     var legal = sel && can ? c.moves({ square: sel, verbose: true }) : [];
-    var tg = {}; legal.forEach(function (m) { tg[m.to] = m.captured || /e/.test(m.flags) ? 'cap' : 'go'; });
-    var lastM = null;
-    if (live) { var h = G.c.history({ verbose: true }); lastM = h[h.length - 1] || null; }
-    else if (d.e && d.e.mv) { var pc = chessOf(d.prev ? d.prev.path : []); try { lastM = pc.move(d.e.mv); } catch (e) { lastM = null; } }
+    var tg = {}; legal.forEach(function (m) { tg[m.to] = m.captured ? 'cap' : 'go'; });
+    var last = G.cur.lan ? { from: G.cur.lan.slice(0, 2), to: G.cur.lan.slice(2, 4) } : null;
     var checkSq = null;
-    if (c.isCheck()) { var board = c.board(); for (var r = 0; r < 8; r++) for (var f = 0; f < 8; f++) { var p = board[r][f]; if (p && p.type === 'k' && p.color === c.turn()) checkSq = p.square; } }
-    var blind = !!S.blind;
+    if (c.isCheck()) c.board().forEach(function (row) { row.forEach(function (p) { if (p && p.type === 'k' && p.color === c.turn()) checkSq = p.square; }); });
+    var blind = !!S.blind && !G.analysis;
     for (var sq in sqEls) {
       var el = sqEls[sq], p2 = c.get(sq), key = p2 ? p2.color + p2.type : '';
       if (el._k !== key) { el.firstChild.innerHTML = p2 ? pieceSVG(p2.color, p2.type) : ''; el._k = key; }
       el.classList.toggle('sel', sq === sel);
       el.classList.toggle('tgt', !!tg[sq] && !blind);
       el.classList.toggle('cap', tg[sq] === 'cap');
-      el.classList.toggle('last', !!lastM && (lastM.from === sq || lastM.to === sq));
+      el.classList.toggle('last', !!last && (last.from === sq || last.to === sq));
       el.classList.toggle('check', sq === checkSq && !blind);
       el.setAttribute('aria-label', sq + (p2 && !blind ? ', ' + (p2.color === 'w' ? 'белый ' : 'чёрный ') + PNAME[p2.type] : ''));
     }
-    // player cards: you (or the side at the bottom) on the left
     var bottom = G.flip ? 'b' : 'w', top = bottom === 'w' ? 'b' : 'w';
     fill('A', bottom, c); fill('B', top, c);
-    renderMoves(live ? G.moves.length : (d.mode === 'view' ? d.k : -1));
-    if (live) setStatus(c, lastM);
-    var viewOff = RV.viewing() && !net();
-    $('undoBtn').disabled = viewOff ? false : (undoTarget() < 0 || !!G.undoVote);
-    var lbl = net() ? 'Попросить отменить ход' : viewOff ? 'Играть с этой позиции' : 'Отменить ход';
+    setStatus(c);
+    var viewOff = viewing() && !net();
+    $('undoBtn').disabled = G.analysis ? G.cur === G.root : viewOff ? false : (undoTarget() < 0 || !!G.undoVote);
+    var lbl = net() ? 'Попросить отменить ход' : G.analysis ? 'Убрать последний ход' : viewOff ? 'Играть с этой позиции' : 'Отменить ход';
     $('undoBtn').setAttribute('aria-label', lbl); $('undoBtn').title = lbl;
     $('againBtn').hidden = net() && Net2P.role() === 'guest';
-    $('resignBtn').disabled = G.over || !mySideOrTurn();
+    $('resignBtn').disabled = G.over || G.analysis; $('resignBtn').hidden = G.analysis;
+    $('drawBtn').disabled = G.over || !canOfferDraw(); $('drawBtn').hidden = G.analysis;
     $('peekBtn').hidden = !blind;
-    $('blindRow').hidden = !blind || !(live ? canTap() : RV.canPlay());
     $('coordBtn').classList.toggle('on', !!S.coords);
+    renderSide();
     GC.sync();
   }
-  function mySideOrTurn() { return mySide() || (G && G.c.turn()); }
   function fill(slot, side, c) {
     $('ic' + slot).innerHTML = pieceSVG(side, 'k');
     $('nm' + slot).textContent = who(side);
-    // взятые фигуры соперника и перевес по материалу
     var cnt = { w: { p: 0, n: 0, b: 0, r: 0, q: 0 }, b: { p: 0, n: 0, b: 0, r: 0, q: 0 } }, mat = { w: 0, b: 0 };
     c.board().forEach(function (row) { row.forEach(function (p) { if (p && p.type !== 'k') { cnt[p.color][p.type]++; mat[p.color] += VAL[p.type]; } }); });
-    var start = { p: 8, n: 2, b: 2, r: 2, q: 1 }, opp = side === 'w' ? 'b' : 'w', html = '';
-    if (!S.blind) ['q', 'r', 'b', 'n', 'p'].forEach(function (t) { for (var k = 0; k < Math.max(0, start[t] - cnt[opp][t]); k++) html += '<span>' + pieceSVG(opp, t) + '</span>'; });
+    var start = { p: 8, n: 2, b: 2, r: 2, q: 1 }, opp = side === 'w' ? 'b' : 'w', html = '', blind = S.blind && !G.analysis;
+    if (!blind) ['q', 'r', 'b', 'n', 'p'].forEach(function (t) { for (var k = 0; k < Math.max(0, start[t] - cnt[opp][t]); k++) html += '<span>' + pieceSVG(opp, t) + '</span>'; });
     var adv = mat[side] - mat[opp];
-    $('cap' + slot).innerHTML = html + (adv > 0 && !S.blind ? '<b>+' + adv + '</b>' : '');
-    $('pl' + slot).classList.toggle('on', !G.over && c.turn() === side);
+    $('cap' + slot).innerHTML = html + (adv > 0 && !blind ? '<b>+' + adv + '</b>' : '');
+    $('pl' + slot).classList.toggle('on', !G.over && !viewing() && c.turn() === side);
   }
   function who(side) {
+    if (G.analysis) return NAME[side];
     var k = G.kind[side];
-    if (k === 'bot') return 'Бот';
+    if (k === 'bot') return 'Stockfish 19';
     if (k === 'net') return 'Друг' + (net() && !Net2P.online() ? ' (нет связи)' : '');
     return mySide() ? 'Ты' : NAME[side];
   }
-  function renderMoves(cur) {
-    var out = '';
-    for (var i = 0; i < G.moves.length; i++) {
-      if (i % 2 === 0) out += '<b>' + (i / 2 + 1) + '.</b>';
-      out += '<span' + (i + 1 === cur ? ' class="cur"' : '') + '>' + ruSan(G.moves[i]) + '</span> ';
-    }
-    var m = $('moves'); m.innerHTML = out || '<span>Ходов пока нет</span>';
-    var curEl = m.querySelector('.cur'); if (curEl) m.scrollLeft = curEl.offsetLeft - m.clientWidth / 2; else m.scrollLeft = m.scrollWidth;
-  }
-  function setStatus(c, lastM) {
+  function setStatus(c) {
     var st = $('status');
+    if (G.analysis) { st.textContent = 'Анализ · ходят ' + NAME[c.turn()].toLowerCase(); return; }
+    if (viewing()) { st.textContent = (G.over || !net() ? 'Анализ' : 'Просмотр') + ' · ' + (G.cur === G.root ? 'начало партии' : 'ход ' + Math.ceil(pathTo(G.cur).length / 2) + (onMain(G.cur) ? '' : ' (вариант)')); return; }
     if (G.over) { st.textContent = resText(G.result); return; }
     if (G.undoVote) { st.textContent = 'Ждём ответа про отмену хода'; return; }
+    if (G.drawOffer === 'me') { st.textContent = 'Ничья предложена, ждём ответа'; return; }
     var side = c.turn(), k = G.kind[side], chk = c.isCheck() ? ' · шах!' : '';
-    var lastTxt = S.blind && lastM ? (G.kind[lastM.color] === 'me' && mySide() ? 'Ты: ' : (G.kind[lastM.color] === 'bot' ? 'Бот: ' : G.kind[lastM.color] === 'net' ? 'Друг: ' : NAME[lastM.color] + ': ')) + ruSan(lastM.san) + ' · ' : '';
-    if (k === 'bot') st.textContent = lastTxt + 'Бот думает…';
+    var lastTxt = S.blind && G.tip.san ? (G.kind[G.tip.by] === 'bot' ? 'Stockfish: ' : G.kind[G.tip.by] === 'net' ? 'Друг: ' : mySide() ? 'Ты: ' : NAME[G.tip.by] + ': ') + ruSan(G.tip.san) + ' · ' : '';
+    if (k === 'bot') st.textContent = lastTxt + 'Stockfish думает…';
     else if (k === 'net') st.textContent = lastTxt + 'Ходит друг…';
     else st.textContent = lastTxt + (mySide() ? 'Твой ход' : 'Ходят ' + NAME[side].toLowerCase()) + chk;
   }
 
+  // ---------- the side panel: engine / openings / notation ----------
+  Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function (b) { b.onclick = function () { if (b.disabled) return; S.tab = b.dataset.tab; saveS(); renderSide(); }; });
+  function renderSide() {
+    if (!G) return;
+    var ok = engineOK();
+    if (!ok && S.tab !== 'nota') S.tab = 'nota';
+    ['eng', 'db', 'nota'].forEach(function (t) {
+      var b = $('tab-' + t); b.setAttribute('aria-selected', String(S.tab === t)); $('pane-' + t).hidden = S.tab !== t;
+      if (t !== 'nota') { b.disabled = !ok; b.title = ok ? '' : 'В онлайн-партии — после её конца'; }
+    });
+    renderNav(); renderNota();
+    if (S.tab === 'eng') analyse(); else stopAnalysis();
+    if (S.tab === 'db') explore();
+    drawArrows();
+  }
+  function renderNav() {
+    $('nvFirst').disabled = $('nvPrev').disabled = G.cur === G.root;
+    $('nvNext').disabled = !G.cur.ch.length; $('nvLast').disabled = G.cur === G.tip && !G.cur.ch.length;
+    $('nvLive').hidden = !(viewing() && !G.over && !G.analysis);
+  }
+  function go(n) { if (!n || !G) return; G.cur = n; G.sel = null; render(); if (!viewing()) turnLoop(); }
+  $('nvFirst').onclick = function () { go(G.root); };
+  $('nvPrev').onclick = function () { go(G.cur.parent); };
+  $('nvNext').onclick = function () { go(G.cur.ch[0]); };
+  $('nvLast').onclick = function () { var t = G.cur; if (onMain(t)) { go(G.tip.ch.length ? mainTip() : G.tip); return; } while (t.ch.length) t = t.ch[0]; go(t); };
+  $('nvLive').onclick = function () { go(G.tip); };
+  document.addEventListener('keydown', function (e) {
+    if (!G || $('game').hidden || !$('endOv').hidden || !$('lobbyOv').hidden || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA/.test((e.target || {}).tagName || '')) return;
+    var k = e.key;
+    if (k === 'ArrowLeft') $('nvPrev').click(); else if (k === 'ArrowRight') $('nvNext').click();
+    else if (k === 'ArrowUp' || k === 'Home') $('nvFirst').click(); else if (k === 'ArrowDown' || k === 'End') $('nvLast').click();
+    else if (/^[cCсС]$/.test(k)) { $('coordBtn').click(); return; } else if (/^[fFаА]$/.test(k)) { $('flipBtn').click(); return; } else return;
+    e.preventDefault();
+  });
+
+  // notation: main line inline, variations as indented blocks
+  var notaIds = [], notaTok = 0;
+  function mvHtml(n, forceNum) {
+    var num = moveNumOf(n.parent.fen), id = notaIds.push(n) - 1;
+    var pre = n.by === 'w' ? '<span class="mn">' + num.n + '.</span>' : forceNum ? '<span class="mn">' + num.n + '…</span>' : '';
+    return pre + '<span class="mv' + (n === G.cur ? ' cur' : '') + '" data-n="' + id + '">' + ruSan(n.san) + '</span> ';
+  }
+  // ход, потом его альтернативы (варианты) отдельными строками, потом дальше по линии
+  function lineHtml(n, needNum) {
+    var out = '';
+    while (n) {
+      out += mvHtml(n, needNum); needNum = false;
+      var alts = n.parent.ch.indexOf(n) === 0 ? n.parent.ch.slice(1) : [];
+      if (alts.length) { alts.forEach(function (a) { out += '<span class="var">' + lineHtml(a, true) + '</span>'; }); needNum = true; }
+      n = n.ch[0];
+    }
+    return out;
+  }
+  function renderNota() {
+    notaIds = [];
+    var html = G.root.ch.length ? lineHtml(G.root.ch[0], true) : '<span class="muted">Ходов пока нет.' + (G.analysis ? ' Сделай ход за любую сторону.' : '') + '</span>';
+    if (G.over && G.result && !G.analysis) html += '<span class="res">' + (G.result.w === 'd' ? '½–½' : G.result.w === 'w' ? '1–0' : '0–1') + ' · ' + esc(resText(G.result)) + '</span>';
+    var box = $('nota'); box.innerHTML = html;
+    var cur = box.querySelector('.mv.cur'); if (cur && S.tab === 'nota') { var pane = $('pane-nota'), r = cur.offsetTop - pane.clientHeight / 2; pane.scrollTop = Math.max(0, r); }
+  }
+  $('nota').addEventListener('click', function (e) { var t = e.target.closest('.mv'); if (t) go(notaIds[+t.dataset.n]); });
+
+  // engine tab
+  var anEng = Engine(), botEng = Engine(), AN = { fen: null, lines: [], busy: false, want: null, depth: 0 };
+  anEng.onLine = function (line) {
+    if (line.indexOf('bestmove') === 0) { AN.busy = false; if (AN.want) { var f = AN.want; AN.want = null; startAn(f); } return; }
+    if (line.indexOf('info') !== 0 || AN.want || !AN.fen) return;
+    var r = parseInfo(line, AN.fen.split(' ')[1]); if (!r) return;
+    AN.lines[r.k - 1] = r; AN.depth = Math.max(AN.depth, r.depth);
+    if (!AN.t) AN.t = setTimeout(function () { AN.t = null; paintEngine(); }, 120);
+  };
+  function startAn(fen) {
+    AN.fen = fen; AN.lines = []; AN.depth = 0; AN.busy = true; paintEngine();
+    var c = new Chess(fen);
+    if (c.isGameOver()) { AN.busy = false; paintEngine(); return; }
+    anEng.send('setoption name MultiPV value 3'); anEng.send('position fen ' + fen); anEng.send('go depth 40');
+  }
+  function analyse() {
+    if (!G || !engineOK() || !S.engine) { stopAnalysis(); paintEngine(); return; }
+    var fen = G.cur.fen;
+    if (AN.fen === fen && (AN.busy || AN.lines.length)) { paintEngine(); return; }
+    if (AN.busy) { AN.want = fen; anEng.send('stop'); } else startAn(fen);
+  }
+  function stopAnalysis() { if (AN.busy) { AN.want = null; anEng.send('stop'); } }
+  function paintEngine() {
+    if (!G) return;
+    $('engSwitch').setAttribute('aria-checked', String(!!S.engine));
+    if (!S.engine || !engineOK()) { $('engEval').textContent = '—'; $('engInfo').textContent = engineOK() ? 'Движок выключен' : 'Во время онлайн-партии движок недоступен'; $('engLines').innerHTML = ''; $('engBar').style.width = '50%'; return; }
+    if (anEng.broken) { $('engInfo').textContent = 'Движок не запустился в этом браузере'; return; }
+    var c = new Chess(G.cur.fen), oc = c.isGameOver() ? outcomeOf(chessOf(G.cur)) || (c.isCheckmate() ? { w: c.turn() === 'w' ? 'b' : 'w' } : { w: 'd' }) : null;
+    if (oc) { $('engEval').textContent = oc.w === 'd' ? '½' : oc.w === 'w' ? '1–0' : '0–1'; $('engInfo').textContent = resText(outcomeOf(chessOf(G.cur)) || oc) || 'Партия окончена'; $('engLines').innerHTML = ''; $('engBar').style.width = oc.w === 'w' ? '100%' : oc.w === 'b' ? '0%' : '50%'; return; }
+    var best = AN.fen === G.cur.fen ? AN.lines[0] : null;
+    $('engEval').textContent = evalText(best);
+    $('engBar').style.width = evalPct(best) + '%';
+    $('engInfo').textContent = 'Stockfish 19 · глубина ' + (AN.fen === G.cur.fen ? AN.depth : 0) + (AN.busy ? ' · считает…' : '');
+    var html = '';
+    if (AN.fen === G.cur.fen) AN.lines.forEach(function (r, i) {
+      if (!r) return;
+      var seq = pvSan(G.cur.fen, r.pv, 10), txt = '', st = moveNumOf(G.cur.fen);
+      seq.forEach(function (m, j) { if (m.color === 'w') txt += m.num + '. '; else if (j === 0) txt += st.n + '… '; txt += ruSan(m.san) + ' '; });
+      html += '<div class="pv" data-i="' + i + '"><b>' + evalText(r) + '</b><span>' + esc(txt) + '</span></div>';
+    });
+    $('engLines').innerHTML = html || '<span class="muted">Считаю…</span>';
+    drawArrows();
+  }
+  $('engLines').addEventListener('click', function (e) {
+    var t = e.target.closest('.pv'); if (!t) return;
+    var r = AN.lines[+t.dataset.i]; if (!r) return;
+    var u = r.pv[0]; tryMove({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] });
+  });
+  $('engSwitch').onclick = function () { S.engine = !S.engine; saveS(); if (!S.engine) stopAnalysis(); renderSide(); };
+  // стрелка лучшего хода на доске
+  function drawArrows() {
+    var svg = $('arrows'), out = '';
+    if (G && S.tab === 'eng' && S.engine && engineOK() && AN.fen === G.cur.fen && AN.lines[0] && !(S.blind && !G.analysis)) {
+      var u = AN.lines[0].pv[0], B = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--B')) || 400, s = B / 8;
+      var xy = function (sq) { var f = sq.charCodeAt(0) - 97, r = +sq[1] - 1; if (G.flip) { f = 7 - f; r = 7 - r; } return [f * s + s / 2, (7 - r) * s + s / 2]; };
+      var a = xy(u.slice(0, 2)), b = xy(u.slice(2, 4)), dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+      var hb = [b[0] - ux * s * .32, b[1] - uy * s * .32], w = s * .13;
+      out = '<line x1="' + a[0] + '" y1="' + a[1] + '" x2="' + hb[0] + '" y2="' + hb[1] + '" stroke="rgba(21,120,27,.75)" stroke-width="' + w + '" stroke-linecap="round"/>' +
+        '<polygon points="' + b[0] + ',' + b[1] + ' ' + (hb[0] - uy * w * 1.6) + ',' + (hb[1] + ux * w * 1.6) + ' ' + (hb[0] + uy * w * 1.6) + ',' + (hb[1] - ux * w * 1.6) + '" fill="rgba(21,120,27,.8)"/>';
+      svg.setAttribute('viewBox', '0 0 ' + B + ' ' + B);
+    }
+    svg.innerHTML = out;
+  }
+
+  // openings tab: master games from The Week in Chess
+  var DB = { pos: {}, games: {}, names: null, meta: null, loading: {} };
+  var CRC = (function () { var t = new Int32Array(256); for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c; } return t; })();
+  function crc32(s) { var c = -1; for (var i = 0; i < s.length; i++) c = CRC[(c ^ s.charCodeAt(i)) & 255] ^ (c >>> 8); return (c ^ -1) >>> 0; }
+  function hex8(x) { return ('0000000' + x.toString(16)).slice(-8); }
+  function posKey(fen) { var p = fen.split(' '), f = p[0] + ' ' + p[1] + ' ' + p[2]; return hex8(crc32(f)) + hex8(crc32(f + f)); }
+  function getJSON(url, cb) { fetch(url).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(cb, function () { cb(null); }); }
+  function loadShard(sh, cb) {
+    if (DB.pos[sh] !== undefined) { cb(DB.pos[sh]); return; }
+    (DB.loading[sh] = DB.loading[sh] || []).push(cb);
+    if (DB.loading[sh].length > 1) return;
+    getJSON('db/pos-' + sh + '.json', function (d) { DB.pos[sh] = d || {}; var q = DB.loading[sh]; delete DB.loading[sh]; q.forEach(function (f) { f(DB.pos[sh]); }); });
+  }
+  function openingName(n, cb) {
+    var go2 = function () { for (var t = n; t; t = t.parent) { var nm = DB.names[posKey(t.fen)]; if (nm) { cb(nm); return; } } cb(null); };
+    if (DB.names) go2(); else getJSON('db/names.json', function (d) { DB.names = d || {}; go2(); });
+  }
+  function explore() {
+    if (!G || !engineOK()) { $('dbBox').innerHTML = '<span class="muted">Во время онлайн-партии база недоступна.</span>'; return; }
+    var n = G.cur, k = posKey(n.fen), my = n;
+    if (!DB.meta) getJSON('db/meta.json', function (m) { DB.meta = m || {}; if (S.tab === 'db' && G && G.cur === my) explore(); });
+    loadShard(k.slice(0, 2), function (d) {
+      if (!G || G.cur !== my || S.tab !== 'db') return;
+      openingName(n, function (nm) {
+        if (!G || G.cur !== my) return;
+        var rows = d[k] || [], games = d[k + '~g'] || [], html = '';
+        html += '<div class="op-name">' + (nm ? '<small>' + esc(nm[0]) + '</small>' + esc(nm[1]) : '<span class="muted">' + (n === G.root ? 'Начальная позиция' : 'Название дебюта не найдено') + '</span>') + '</div>';
+        if (!rows.length) html += '<span class="muted">В базе нет партий мастеров с этой позицией.</span>';
+        rows.forEach(function (r, i) {
+          var tot = r[1], pw = Math.round(r[2] / tot * 100), pd = Math.round(r[3] / tot * 100), pb = 100 - pw - pd;
+          html += '<div class="ex-row" data-i="' + i + '"><span>' + esc(ruSan(r[0])) + '</span><span class="n">' + tot.toLocaleString('ru') + '</span><div class="wdl">' +
+            '<i class="w" style="width:' + pw + '%">' + (pw >= 12 ? pw + '%' : '') + '</i><i class="d" style="width:' + pd + '%">' + (pd >= 12 ? pd + '%' : '') + '</i><i class="b" style="width:' + pb + '%">' + (pb >= 12 ? pb + '%' : '') + '</i></div></div>';
+        });
+        if (games.length) html += '<div class="ex-h">Партии мастеров</div><div id="gmList"><span class="muted">Загружаю…</span></div>';
+        var m = DB.meta;
+        html += '<div class="src">База: The Week in Chess' + (m && m.games ? ', ' + m.games.toLocaleString('ru') + ' партий ' + m.from + '–' + m.to + ', классика, рейтинг 2300+' : '') + '. Нажми ход — он сыграется на доске.</div>';
+        $('dbBox').innerHTML = html; $('dbBox').dataset.k = k;
+        if (games.length) loadGames(games, function (list) {
+          if (!G || G.cur !== my || !$('gmList')) return;
+          $('gmList').innerHTML = list.map(function (g) {
+            if (!g) return '';
+            var r = g.d[6] === '1-0' ? '1–0' : g.d[6] === '0-1' ? '0–1' : '½–½';
+            return '<div class="gm" data-g="' + g.id + '"><b>' + esc(g.d[0]) + '</b> ' + g.d[1] + ' — <b>' + esc(g.d[2]) + '</b> ' + g.d[3] + ' · ' + r + '<small>' + esc(g.d[5]) + ', ' + esc(g.d[4]) + '</small></div>';
+          }).join('');
+        });
+      });
+    });
+  }
+  function loadGames(ids, cb) {
+    var out = [], left = ids.length;
+    ids.forEach(function (id, i) {
+      var sh = ('0' + (id % 64)).slice(-2);
+      var done = function () { var d = DB.games[sh] && DB.games[sh][id]; out[i] = d ? { id: id, d: d } : null; if (!--left) cb(out); };
+      if (DB.games[sh]) done(); else getJSON('db/games-' + sh + '.json', function (d) { DB.games[sh] = d || {}; done(); });
+    });
+  }
+  $('dbBox').addEventListener('click', function (e) {
+    var r = e.target.closest('.ex-row');
+    if (r) { var d = DB.pos[$('dbBox').dataset.k.slice(0, 2)], row = d && d[$('dbBox').dataset.k][+r.dataset.i]; if (row) tryMove(row[0]); return; }
+    var g = e.target.closest('.gm'); if (!g) return;
+    openMasterGame(+g.dataset.g);
+  });
+  // партия мастеров открывается на доске для анализа (на том же ходу)
+  function openMasterGame(id) {
+    var sh = ('0' + (id % 64)).slice(-2), d = DB.games[sh] && DB.games[sh][id]; if (!d) return;
+    if (!G.analysis && !G.over) { toast('Партию мастеров можно открыть после игры или на доске для анализа'); return; }
+    var at = pathTo(G.cur).length;
+    newGame({ w: 'me', b: 'me' }, { analysis: true });
+    rebuild(d[7].split(' ')); G.over = true; G.title = d[0] + ' — ' + d[2];
+    var t = G.root; for (var k = 0; k < at && t.ch.length; k++) t = t.ch[0];
+    G.cur = t; S.tab = 'nota'; render();
+    toast(d[0] + ' — ' + d[2] + ', ' + d[4]);
+  }
+
   // ---------- input ----------
   function onSq(e) {
-    if (!G) return;
-    var d = RV.display(), live = d.mode === 'live';
-    if (live ? !canTap() : !RV.canPlay()) return;
-    var c = live ? G.c : new Chess(d.s.fen), sq = e.currentTarget.dataset.square, sel = live ? G.sel : G.vsel;
-    var setSel = function (v) { if (live) G.sel = v; else G.vsel = v; };
-    var p = c.get(sq);
+    if (!G || !canTap()) return;
+    var c = curChess(), sq = e.currentTarget.dataset.square, sel = G.sel, p = c.get(sq);
     if (sel) {
       var ms = c.moves({ square: sel, verbose: true }).filter(function (m) { return m.to === sq; });
-      if (ms.length) { setSel(null); choose(ms, live); return; }
+      if (ms.length) { G.sel = null; choose(ms); return; }
     }
-    if (p && p.color === c.turn()) { setSel(sel === sq ? null : sq); render(); return; }
-    if (S.blind && sel) toast('Так сходить нельзя');
-    else if (S.blind && !p) toast('Здесь нет твоей фигуры');
-    setSel(null); render();
+    if (p && p.color === c.turn() && (canVary() || G.kind[p.color] === 'me')) { G.sel = sel === sq ? null : sq; render(); return; }
+    if (S.blind && sel) toast('Так сходить нельзя'); else if (S.blind && !p) toast('Здесь нет твоей фигуры');
+    G.sel = null; render();
   }
-  // a move from tapping; asks for the piece if a pawn is promoted
-  function choose(ms, live) {
-    var go = function (m) { var san = m.san; if (live) submit(san); else { sfx(san); RV.play(san); } };
+  function choose(ms) {
     if (ms.length > 1 && ms[0].promotion) {
       var side = ms[0].color, box = $('promoChoices'); box.innerHTML = '';
       ['q', 'r', 'b', 'n'].forEach(function (t) {
         var m = ms.filter(function (x) { return x.promotion === t; })[0]; if (!m) return;
         var b = document.createElement('button'); b.innerHTML = pieceSVG(side, t); b.setAttribute('aria-label', PNAME[t]);
-        b.onclick = function () { $('promoOv').hidden = true; go(m); }; box.appendChild(b);
+        b.onclick = function () { $('promoOv').hidden = true; tryMove(m.san); }; box.appendChild(b);
       });
       $('promoOv').hidden = false; return;
     }
-    go(ms[0]);
+    tryMove(ms[0].san);
   }
   $('promoCancel').onclick = function () { $('promoOv').hidden = true; render(); };
-  // ход текстом (для игры вслепую): e4, Кf3, Nf3, exd5, e2e4, O-O, 0-0-0, e8=Ф
-  function parseMove(c, txt) {
-    var t = String(txt || '').trim().replace(/\s+/g, '').replace(/[0О]-[0О]-[0О]/i, 'O-O-O').replace(/[0О]-[0О]/i, 'O-O').replace(/:/g, 'x');
-    if (!t) return null;
-    var map = { 'кр': 'K', 'ф': 'Q', 'л': 'R', 'с': 'B', 'к': 'N' };
-    t = t.replace(/^(кр|Кр|КР|ф|Ф|л|Л|с|С|к|К)/, function (m) { return map[m.toLowerCase()]; }).replace(/=(ф|Ф|л|Л|с|С|к|К)/, function (m, p) { return '=' + map[p.toLowerCase()]; });
-    var lc = t.toLowerCase(), m = /^([a-h][1-8])-?x?([a-h][1-8])([qrbn])?$/.exec(lc);
-    var all = c.moves({ verbose: true });
-    if (m) { var hit = all.filter(function (x) { return x.from === m[1] && x.to === m[2] && (!x.promotion || x.promotion === (m[3] || 'q')); }); return hit[0] || null; }
-    var clean = function (s) { return s.replace(/[+#!?]/g, ''); };
-    var want = clean(t);
-    var byS = all.filter(function (x) { return clean(x.san) === want; }); if (byS.length) return byS[0];
-    byS = all.filter(function (x) { return clean(x.san).toLowerCase() === want.toLowerCase(); }); return byS.length === 1 ? byS[0] : null;
-  }
-  function sanGo() {
+  // ход с доски, из движка или из базы: в живую партию или в анализ (вариант)
+  function tryMove(mv) {
     if (!G) return;
-    var d = RV.display(), live = d.mode === 'live';
-    if (live ? !canTap() : !RV.canPlay()) return;
-    var c = live ? G.c : new Chess(d.s.fen), m = parseMove(c, $('sanIn').value);
-    if (!m) { toast('Не понял ход или он невозможен'); return; }
-    $('sanIn').value = '';
-    if (live) submit(m.san); else { sfx(m.san); RV.play(m.san); }
+    if (canTapLive()) { var t = new Chess(G.c.fen()); try { var m = t.move(mv); } catch (e) { return; } submit(m.san); return; }
+    if (!canVary()) return;
+    var c = chessOf(G.cur), m2; try { m2 = c.move(mv); } catch (e) { return; }
+    var n = addChild(G.cur, m2, c.fen(), G.analysis && G.cur.ch.length === 0);
+    sfx(m2.san); G.cur = n; G.sel = null;
+    if (G.analysis) G.tip = mainTip();
+    render(); animateTo(n);
   }
-  $('sanGo').onclick = sanGo;
-  $('sanIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); sanGo(); } });
-  // подсмотреть: пока кнопка зажата
-  var peekOn = function (e) { e.preventDefault(); document.body.classList.add('peek'); }, peekOff = function () { document.body.classList.remove('peek'); };
-  $('peekBtn').addEventListener('pointerdown', peekOn); ['pointerup', 'pointerleave', 'pointercancel', 'blur'].forEach(function (ev) { $('peekBtn').addEventListener(ev, peekOff); });
-
-  function submit(san) {
-    if (!GC.before()) return;
-    if (net() && Net2P.role() === 'guest') { G.netPending = true; Net2P.send({ t: 'try', mv: san, n: G.moves.length }); render(); return; }
-    decide(san);
-  }
-  function decide(san) {
-    if (!GC.before()) return;
-    if (net() && Net2P.role() === 'host') Net2P.send({ t: 'move', mv: san, n: G.moves.length });
-    apply(san);
-  }
-  function apply(san) {
-    if (!G || G.over) return;
-    var m; try { m = G.c.move(san); } catch (e) { return; }
-    G.moves.push(m.san); G.sel = null; G.netPending = false;
-    G.line.push({ s: snapOf(G.c, G.moves.slice()), mv: m.san, by: m.color });
-    var oc = outcomeOf(G.c); if (oc) { G.over = true; G.result = oc; }
-    RV.sync(); sfx(m.san);
-    animate(m);
-    if (G.over) { render(); setTimeout(showEnd, 500); if (net() && Net2P.role() === 'host') GC.publish(); return; }
-    turnLoop();
-  }
-  // a short slide of the moved piece
-  function animate(m) {
-    render();
-    if (RV.viewing()) return;
-    var to = sqEls[m.to], from = sqEls[m.from]; if (!to || !from) return;
+  function animateTo(n) {
+    if (!n.lan) return;
+    var to = sqEls[n.lan.slice(2, 4)], from = sqEls[n.lan.slice(0, 2)]; if (!to || !from) return;
     var a = from.getBoundingClientRect(), b = to.getBoundingClientRect(), pc = to.firstChild;
     to.classList.add('moving'); pc.style.transition = 'none'; pc.style.transform = 'translate(' + (a.left - b.left) + 'px,' + (a.top - b.top) + 'px)';
     void pc.offsetWidth; pc.style.transition = ''; pc.style.transform = '';
     setTimeout(function () { to.classList.remove('moving'); }, 200);
   }
-  function turnLoop() {
+  var peekOn = function (e) { e.preventDefault(); document.body.classList.add('peek'); }, peekOff = function () { document.body.classList.remove('peek'); };
+  $('peekBtn').addEventListener('pointerdown', peekOn); ['pointerup', 'pointerleave', 'pointercancel', 'blur'].forEach(function (ev) { $('peekBtn').addEventListener(ev, peekOff); });
+  $('flipBtn').onclick = function () { if (!G) return; G.flip = !G.flip; buildBoard(); render(); };
+
+  function submit(san) {
+    if (!GC.before()) return;
+    if (net() && Net2P.role() === 'guest') { G.netPending = true; Net2P.send({ t: 'try', mv: san, n: G.c.history().length }); render(); return; }
+    decide(san);
+  }
+  function decide(san) {
+    if (!GC.before()) return;
+    if (net() && Net2P.role() === 'host') Net2P.send({ t: 'move', mv: san, n: G.c.history().length });
+    apply(san);
+  }
+  function apply(san) {
     if (!G || G.over) return;
+    var follow = !viewing(), m; try { m = G.c.move(san); } catch (e) { return; }
+    var n = addChild(G.tip, m, G.c.fen(), true);
+    G.tip = n; if (follow) G.cur = n; G.sel = null; G.netPending = false;
+    if (G.drawOffer) G.drawOffer = null;
+    var oc = outcomeOf(G.c); if (oc) { G.over = true; G.result = oc; }
+    sfx(m.san); render(); if (follow) animateTo(n);
+    if (G.over) { setTimeout(showEnd, 500); if (net() && Net2P.role() === 'host') GC.publish(); return; }
+    turnLoop();
+  }
+
+  // ---------- Stockfish plays ----------
+  var BOT = { n: -1, cb: null };
+  botEng.onLine = function (line) {
+    var m = /^bestmove (\S+)/.exec(line); if (m && BOT.cb) { var f = BOT.cb; BOT.cb = null; f(m[1]); return; }
+    var r = BOT.evalCb && parseInfo(line, BOT.evalTurn); if (r) BOT.last = r;
+  };
+  function turnLoop() {
+    if (!G || G.over || G.analysis) return;
     var side = G.c.turn();
-    if (G.kind[side] !== 'bot' || (net() && Net2P.role() !== 'host')) { render(); return; }
-    if (RV.viewing()) { render(); return; }               // смотришь историю — бот ждёт
-    var my = token, n = G.moves.length;
-    if (G.thinkingAt === n && G.thinkTok === my) return;
-    G.thinkingAt = n; G.thinkTok = my; G.busy = true; render();
-    setTimeout(function () {
-      if (my !== token || !G || G.moves.length !== n || G.over) return;
-      G.busy = false;
-      if (RV.viewing()) { G.thinkingAt = -1; render(); return; }
-      var mv = chessBot(new Chess(G.c.fen()));
-      decide(mv);
-    }, 450);
+    if (G.kind[side] !== 'bot' || (net() && Net2P.role() !== 'host')) return;
+    var my = token, n = G.c.history().length;
+    if (BOT.n === n && BOT.tok === my) return;
+    BOT.n = n; BOT.tok = my; G.busy = true; render();
+    var t0 = Date.now(), lan = pathTo(G.tip).map(function (x) { return x.lan; }).join(' ');
+    BOT.cb = function (u) {
+      setTimeout(function () {
+        if (my !== token || !G || G.c.history().length !== n || G.over) return;
+        G.busy = false;
+        var t = new Chess(G.c.fen()), mv; try { mv = t.move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] }); } catch (e) { render(); return; }
+        decide(mv.san);
+      }, Math.max(0, 350 - (Date.now() - t0)));
+    };
+    botEng.send('position startpos' + (lan ? ' moves ' + lan : ''));
+    var ck = GC.info();
+    if (ck) botEng.send('go wtime ' + Math.round(ck.left[0]) + ' btime ' + Math.round(ck.left[1]) + ' winc ' + ck.inc[0] + ' binc ' + ck.inc[1]);
+    else botEng.send('go movetime 1500');
   }
 
   // ---------- undo ----------
-  function undoTargetFor(side) { if (!G) return -1; for (var k = G.moves.length - 1; k >= 0; k--) if ((k % 2 === 0 ? 'w' : 'b') === side) return k; return -1; }
+  function undoTargetFor(side) { var h = G.c.history().length; for (var k = h - 1; k >= 0; k--) if ((k % 2 === 0 ? 'w' : 'b') === side) return k; return -1; }
   function undoTarget() {
     if (!G) return -1;
     if (net()) return undoTargetFor(mySide());
-    if (G.kind.w === 'me' && G.kind.b === 'me') return G.moves.length ? G.moves.length - 1 : -1;
+    if (G.kind.w === 'me' && G.kind.b === 'me') return G.c.history().length ? G.c.history().length - 1 : -1;
     return undoTargetFor(mySide());
   }
   function applyUndo(t, msg) {
-    if (!G || t < 0 || t > G.moves.length) return;
-    token++; rebuild(G.moves.slice(0, t)); G.over = false; G.result = null; G.busy = false; G.endShown = false; G.sel = null; G.netPending = false; G.thinkingAt = -1;
+    if (!G || t < 0) return;
+    token++; BOT.n = -1; rebuild(moves().slice(0, t)); G.over = false; G.result = null; G.busy = false; G.endShown = false; G.netPending = false; G.drawOffer = null;
     $('endOv').hidden = true; $('askOv').hidden = true;
-    RV.go(-1); RV.sync(); render(); toast(msg || 'Ход отменён'); turnLoop();
+    render(); toast(msg || 'Ход отменён'); turnLoop();
   }
   function undo() {
+    if (!G) return;
     if (net()) { requestUndo(); return; }
-    if (RV.viewing()) {
-      token++; rebuild(RV.pathHere()); G.busy = false; G.sel = null; G.thinkingAt = -1; G.endShown = G.over;
-      $('endOv').hidden = true; RV.go(-1); RV.sync(); render(); toast('Играем с этой позиции'); turnLoop(); return;
+    if (G.analysis) { if (G.cur === G.root) return; var p = G.cur.parent, i = p.ch.indexOf(G.cur); p.ch.splice(i, 1); if (G.tip === G.cur || !onMain(G.tip)) G.tip = mainTip(); G.cur = p; render(); return; }
+    if (viewing()) {                // играть с позиции на доске (из партии или из варианта)
+      token++; BOT.n = -1; rebuild(pathTo(G.cur).map(function (x) { return x.san; })); G.busy = false; G.endShown = G.over; G.drawOffer = null;
+      $('endOv').hidden = true; render(); toast('Играем с этой позиции'); turnLoop(); return;
     }
     applyUndo(undoTarget());
   }
   $('undoBtn').onclick = undo; $('endUndo').onclick = function () { $('endOv').hidden = true; undo(); };
   document.addEventListener('keydown', function (e) { if (G && !net() && !$('game').hidden && (e.ctrlKey || e.metaKey) && /^[zZяЯ]$/.test(e.key)) { e.preventDefault(); undo(); } });
 
-  // ---------- resign and the end ----------
-  $('resignBtn').onclick = function () { if (G && !G.over) $('confirmOv').hidden = false; };
-  $('cfNo').onclick = function () { $('confirmOv').hidden = true; };
-  $('cfYes').onclick = function () {
-    $('confirmOv').hidden = true; if (!G || G.over) return;
-    var side = mySide() || G.c.turn();
-    if (net() && Net2P.role() === 'guest') { Net2P.send({ t: 'resign' }); return; }
-    resign(side);
+  // ---------- draw offer and resignation ----------
+  function canOfferDraw() {
+    if (!G || G.over || G.analysis || G.drawAsked === G.c.history().length || G.drawOffer) return false;
+    if (G.kind.w === 'bot' || G.kind.b === 'bot') return G.kind[G.c.turn()] === 'me' && !G.busy;   // Stockfish отвечает на своём ходу
+    return true;
+  }
+  var CF = null;
+  function confirmBox(title, text, yes, no, onYes, onNo) { $('cfTitle').textContent = title; $('cfText').textContent = text; $('cfYes').textContent = yes; $('cfNo').textContent = no; CF = { y: onYes, n: onNo }; $('confirmOv').hidden = false; }
+  $('cfYes').onclick = function () { $('confirmOv').hidden = true; var f = CF && CF.y; CF = null; if (f) f(); };
+  $('cfNo').onclick = function () { $('confirmOv').hidden = true; var f = CF && CF.n; CF = null; if (f) f(); };
+  $('drawBtn').onclick = function () {
+    if (!G || G.over || !canOfferDraw()) return;
+    G.drawAsked = G.c.history().length;
+    var me = mySide() || G.c.turn();
+    if (G.kind.w === 'me' && G.kind.b === 'me') {                 // вдвоём: спрашиваем другую сторону
+      var other = me === 'w' ? 'b' : 'w';
+      confirmBox('Ничья?', NAME[me] + ' предлагают ничью. ' + NAME[other] + ' согласны?', 'Согласны', 'Нет', function () { endDraw('по согласию'); }, function () { toast(NAME[other] + ' отказались'); render(); });
+      return;
+    }
+    if (net()) { G.drawOffer = 'me'; Net2P.send({ t: 'drawOffer' }); render(); toast('Предложил ничью'); return; }
+    // Stockfish соглашается, если у него нет перевеса
+    G.drawOffer = 'me'; render(); toast('Stockfish думает над ничьей…');
+    var my = token, n = G.c.history().length, botSide = me === 'w' ? 'b' : 'w';
+    BOT.evalCb = true; BOT.evalTurn = G.c.turn(); BOT.last = null;
+    BOT.cb = function () {
+      BOT.evalCb = false;
+      if (my !== token || !G || G.over || G.c.history().length !== n) return;
+      G.drawOffer = null;
+      var r = BOT.last, botScore = r ? (r.mate != null ? (r.mate > 0 ? 1e4 : -1e4) : r.cp) * (botSide === 'w' ? 1 : -1) : 0;
+      if (botScore <= 25) endDraw('по согласию'); else { toast('Stockfish отказался от ничьей'); render(); }
+    };
+    botEng.send('position fen ' + G.c.fen()); botEng.send('go depth 14');
+  };
+  function endDraw(why) {
+    if (!G || G.over) return;
+    G.over = true; G.result = { w: 'd', t: why }; G.drawOffer = null;
+    if (net() && Net2P.role() === 'host') { Net2P.send({ t: 'result', res: G.result }); GC.publish(); }
+    render(); showEnd();
+  }
+  $('resignBtn').onclick = function () {
+    if (!G || G.over) return;
+    confirmBox('Сдаться?', 'Партия закончится, победа достанется сопернику.', 'Сдаться', 'Играть дальше', function () {
+      if (!G || G.over) return;
+      var side = mySide() || G.c.turn();
+      if (net() && Net2P.role() === 'guest') { Net2P.send({ t: 'resign' }); return; }
+      resign(side);
+    });
   };
   function resign(side) {
     if (!G || G.over) return;
     G.over = true; G.result = { w: side === 'w' ? 'b' : 'w', t: NAME[side].toLowerCase() + ' сдались' };
-    if (net() && Net2P.role() === 'host') { Net2P.send({ t: 'result', res: G.result, n: G.moves.length }); GC.publish(); }
+    if (net() && Net2P.role() === 'host') { Net2P.send({ t: 'result', res: G.result }); GC.publish(); }
     render(); showEnd();
   }
   function showEnd() {
-    if (!G || G.endShown) return; G.endShown = true;
+    if (!G || G.endShown || G.analysis) return; G.endShown = true;
     var r = G.result || {}, me = mySide();
     if (r.w === 'd') $('endTitle').textContent = 'Ничья';
     else if (me && r.w === me) $('endTitle').textContent = 'Победа!';
-    else if (me) $('endTitle').textContent = G.kind[r.w] === 'bot' ? 'Бот победил' : 'Друг победил';
+    else if (me) $('endTitle').textContent = G.kind[r.w] === 'bot' ? 'Stockfish победил' : 'Друг победил';
     else $('endTitle').textContent = 'Победили ' + NAME[r.w].toLowerCase();
-    $('endText').textContent = (r.w === 'd' ? 'Причина: ' + r.t : resText(r)) + '. Ходов: ' + Math.ceil(G.moves.length / 2) + '.' + (net() && Net2P.role() === 'guest' ? ' Новую партию начинает хозяин игры.' : '');
+    $('endText').textContent = (r.w === 'd' ? 'Причина: ' + r.t : resText(r)) + '. Ходов: ' + Math.ceil(G.c.history().length / 2) + '.' + (net() && Net2P.role() === 'guest' ? ' Новую партию начинает хозяин игры.' : '');
     $('endAgain').hidden = net() && Net2P.role() === 'guest';
     $('endOv').hidden = false;
   }
-  $('endLook').onclick = function () { $('endOv').hidden = true; RV.go(0); };
+  $('endLook').onclick = function () { $('endOv').hidden = true; S.tab = 'eng'; saveS(); go(G.root); };
   $('endAgain').onclick = again; $('againBtn').onclick = again;
-  function again() { if (net()) { if (Net2P.role() === 'host') hostStart(true); } else { $('endOv').hidden = true; G && G.kind.w === 'me' && G.kind.b === 'me' ? newGame({ w: 'me', b: 'me' }) : startLocal(); } }
+  function again() {
+    if (net()) { if (Net2P.role() === 'host') hostStart(true); return; }
+    $('endOv').hidden = true;
+    if (G && G.analysis) { newGame({ w: 'me', b: 'me' }, { analysis: true }); return; }
+    G && G.kind.w === 'me' && G.kind.b === 'me' ? newGame({ w: 'me', b: 'me' }) : startLocal();
+  }
   $('endMenu').onclick = toMenu; $('homeBtn').onclick = toMenu;
-  function toMenu() { Net2P.close(); token++; G = null; GC.sync(); $('game').hidden = true; ['endOv', 'lobbyOv', 'askOv', 'confirmOv', 'promoOv'].forEach(function (id) { $(id).hidden = true; }); $('menu').hidden = false; renderMenu(); }
+  function toMenu() { Net2P.close(); token++; stopAnalysis(); G = null; GC.sync(); $('game').hidden = true; ['endOv', 'lobbyOv', 'askOv', 'confirmOv', 'promoOv'].forEach(function (id) { $(id).hidden = true; }); $('menu').hidden = false; renderMenu(); }
   $('playBtn').onclick = function () { knock(440, .12); startLocal(); };
+  $('anaBtn').onclick = function () { knock(440, .12); newGame({ w: 'me', b: 'me' }, { analysis: true }); };
   $('soundBtn').onclick = function () { S.sound = !S.sound; saveS(); renderMenu(); };
   var toastT = null;
   function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 2400); }
@@ -591,10 +945,6 @@ body.blind.peek .sq .pc { visibility: visible; }
     if (!fromNet && net()) Net2P.send({ t: 'coords', on: S.coords });
   }
   $('coordBtn').onclick = function () { setCoords(!S.coords, false); toast(S.coords ? 'Координаты включены' : 'Координаты скрыты'); };
-  document.addEventListener('keydown', function (e) {
-    if (!G || $('game').hidden || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA/.test((e.target || {}).tagName || '')) return;
-    if (/^[cCсС]$/.test(e.key)) $('coordBtn').click();
-  });
 
   // ---------- online ----------
   var PREFIX = 'chess-v2-', hostSide = '';
@@ -611,7 +961,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   var lastJoin = null;
   $('lbRetry').onclick = function () { if (lastJoin) joinGame(lastJoin); else hostGame(); };
   function other(s) { return s === 'w' ? 'b' : 'w'; }
-  function syncMsg() { return { t: 'sync', hostSide: hostSide, moves: G.moves, result: G.over ? G.result : null, coords: S.coords }; }
+  function syncMsg() { return { t: 'sync', hostSide: hostSide, moves: moves(), result: G.over ? G.result : null, coords: S.coords }; }
   function hostGame() {
     lastJoin = null; hostSide = '';
     lobby('Создаю игру', 'Подключаюсь к серверу связи…');
@@ -635,13 +985,21 @@ body.blind.peek .sq .pc { visibility: visible; }
     if (d.t === 'try') {
       if (!GC.before()) return;
       var ok = false;
-      if (G && !G.over && !G.undoVote && G.kind[G.c.turn()] === 'net' && d.n === G.moves.length) { try { var t = new Chess(G.c.fen()); t.move(d.mv); ok = true; } catch (e) {} }
+      if (G && !G.over && !G.undoVote && G.kind[G.c.turn()] === 'net' && d.n === G.c.history().length) { try { new Chess(G.c.fen()).move(d.mv); ok = true; } catch (e) {} }
       if (ok) decide(d.mv); else Net2P.send({ t: 'nack' });
     } else if (d.t === 'resign') { if (G && !G.over) resign(other(hostSide)); }
+    else if (d.t === 'drawOffer') { if (G && !G.over) drawAsked(); }
+    else if (d.t === 'drawReply') { if (G && G.drawOffer === 'me') { G.drawOffer = null; if (d.ok) endDraw('по согласию'); else { toast('Друг отказался от ничьей'); render(); } } }
     else if (d.t === 'undoReq') startVote('friend');
     else if (d.t === 'undoVote') endVote(!!d.ok, d.ok ? '' : 'no');
     else if (d.t === 'needsync') { if (G) Net2P.send(syncMsg()); }
     else if (d.t === 'coords') setCoords(d.on, true);
+  }
+  // друг предложил ничью
+  function drawAsked() {
+    confirmBox('Друг предлагает ничью', 'Согласиться на ничью?', 'Согласен', 'Нет', function () {
+      if (Net2P.role() === 'host') endDraw('по согласию'); else Net2P.send({ t: 'drawReply', ok: true });
+    }, function () { Net2P.send({ t: 'drawReply', ok: false }); });
   }
   function joinGame(code) {
     lastJoin = code;
@@ -658,11 +1016,13 @@ body.blind.peek .sq .pc { visibility: visible; }
   function guestData(d) {
     if (GC.receive(d)) return;
     if (d.t === 'start') { newGame(guestKinds(d.hostSide)); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 'w' ? 'чёрными' : 'белыми')); }
-    else if (d.t === 'sync') { newGame(guestKinds(d.hostSide)); rebuild(d.moves); if (d.result) { G.over = true; G.result = d.result; } G.endShown = G.over; guestCoords(d.coords); RV.sync(); render(); }
+    else if (d.t === 'sync') { newGame(guestKinds(d.hostSide)); rebuild(d.moves); if (d.result) { G.over = true; G.result = d.result; } G.endShown = G.over; guestCoords(d.coords); render(); }
     else if (!G) return;
-    else if (d.t === 'move') { G.netPending = false; if (d.n === G.moves.length) apply(d.mv); else if (d.n > G.moves.length) Net2P.send({ t: 'needsync' }); }
+    else if (d.t === 'move') { G.netPending = false; if (d.n === G.c.history().length) apply(d.mv); else if (d.n > G.c.history().length) Net2P.send({ t: 'needsync' }); }
     else if (d.t === 'nack') { G.netPending = false; render(); }
-    else if (d.t === 'result') { if (!G.over) { G.over = true; G.result = d.res; render(); showEnd(); } }
+    else if (d.t === 'result') { if (!G.over) { G.over = true; G.result = d.res; G.drawOffer = null; render(); showEnd(); } }
+    else if (d.t === 'drawOffer') { if (!G.over) drawAsked(); }
+    else if (d.t === 'drawReply') { if (G.drawOffer === 'me') { G.drawOffer = null; if (!d.ok) { toast('Друг отказался от ничьей'); render(); } } }
     else if (d.t === 'coords') setCoords(d.on, true);
     else if (d.t === 'undoAsk') { G.undoVote = { by: 'friend' }; showAsk(d.back); render(); }
     else if (d.t === 'undoWait') { G.undoVote = { by: 'me' }; render(); toast('Спрашиваю у друга…'); }
@@ -680,17 +1040,17 @@ body.blind.peek .sq .pc { visibility: visible; }
     var side = by === 'host' ? hostSide : other(hostSide), t = undoTargetFor(side);
     if (t < 0) { if (by === 'friend') Net2P.send({ t: 'undoNo', mine: true, why: 'none' }); return; }
     if (!Net2P.online()) { toast('Друг не в сети'); return; }
-    G.undoVote = { by: by, to: t, n: G.moves.length };
+    var n = G.c.history().length;
+    G.undoVote = { by: by, to: t, n: n };
     G.undoVote.timer = setTimeout(function () { endVote(false, 'time'); }, 30000);
-    var back = G.moves.length - t;
-    if (by === 'host') { Net2P.send({ t: 'undoAsk', back: back }); toast('Спрашиваю у друга…'); }
-    else { Net2P.send({ t: 'undoWait' }); showAsk(back); }
+    if (by === 'host') { Net2P.send({ t: 'undoAsk', back: n - t }); toast('Спрашиваю у друга…'); }
+    else { Net2P.send({ t: 'undoWait' }); showAsk(n - t); }
     render();
   }
   function endVote(ok, why) {
     var u = G && G.undoVote; if (!u || !u.timer) return;
     clearTimeout(u.timer); G.undoVote = null; $('askOv').hidden = true;
-    if (ok && G.moves.length === u.n) { Net2P.send({ t: 'undo', to: u.to, mine: u.by === 'friend' }); applyUndo(u.to, u.by === 'host' ? 'Ход отменён, ходи заново' : 'Друг вернул свой ход'); }
+    if (ok && G.c.history().length === u.n) { Net2P.send({ t: 'undo', to: u.to, mine: u.by === 'friend' }); applyUndo(u.to, u.by === 'host' ? 'Ход отменён, ходи заново' : 'Друг вернул свой ход'); }
     else { Net2P.send({ t: 'undoNo', mine: u.by === 'friend', why: why }); render(); toast(u.by === 'host' ? (why === 'time' ? 'Друг не ответил' : why === 'gone' ? 'Друг отключился' : 'Друг не согласен') : 'Ход не отменён'); }
   }
   var askTick = null;

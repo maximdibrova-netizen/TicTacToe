@@ -437,7 +437,7 @@ body.no-eval #boardWrap { top: calc(56px + env(safe-area-inset-top, 0px)); botto
       <button class="sq-btn" id="rulesBtn" aria-label="Правила">?</button>
     </div>
     <p class="hint" id="playHint" hidden>Нужно минимум два игрока.</p>
-    <p class="hint" id="verLine" style="font-size:11.5px"><a href="../" style="color:var(--ink-dim)">← все игры</a> · <span style="opacity:.6">версия от 02.11.2026 23:07</span></p>
+    <p class="hint" id="verLine" style="font-size:11.5px"><a href="../" style="color:var(--ink-dim)">← все игры</a> · <span style="opacity:.6">версия от 02.11.2026 23:54</span></p>
     <div class="card" id="onlineCard" hidden>
       <h2>Онлайн с друзьями</h2>
       <div class="seg" style="--cols:2">
@@ -716,7 +716,9 @@ var GameClock = (function () {
     }
     function before() { sync(); return !(model && model.flag !== null); }
     setInterval(sync, 100);
-    return { sync: sync, before: before, receive: receive, publish: publish, enabled: function () { return !!model; } };
+    // для бота: сколько осталось у каждого (мс) и добавка
+    function info() { if (!model) return null; sync(); return { left: model.left.slice(), inc: model.inc.slice(), running: model.running }; }
+    return { sync: sync, before: before, receive: receive, publish: publish, info: info, enabled: function () { return !!model; } };
   }
   return { attach: attach };
 })();

@@ -26,6 +26,13 @@ def build(name):
     pf = os.path.join(src, name, 'pieces.js')
     if os.path.exists(pf): page = page.replace('/*PIECES*/', read(name, 'pieces.js'))
     d = os.path.join(here, name); os.makedirs(d, exist_ok=True)
+    # папки с файлами для игры (движок, база) копируются рядом со страницей: src/chess/sf → chess/sf
+    for sub in sorted(os.listdir(os.path.join(src, name))):
+        sp = os.path.join(src, name, sub)
+        if os.path.isdir(sp):
+            dp = os.path.join(d, sub)
+            if os.path.exists(dp): shutil.rmtree(dp)
+            shutil.copytree(sp, dp)
     open(os.path.join(d, 'index.html'), 'w', encoding='utf-8').write(head('<style>' + clock_css + '</style><script>' + room + '</script>' + hub_back, '../') + page + '\n</body></html>\n')
     print('собрано:', name + '/index.html')
 GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go', 'chess']

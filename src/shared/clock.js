@@ -155,7 +155,9 @@ var GameClock = (function () {
     }
     function before() { sync(); return !(model && model.flag !== null); }
     setInterval(sync, 100);
-    return { sync: sync, before: before, receive: receive, publish: publish, enabled: function () { return !!model; } };
+    // для бота: сколько осталось у каждого (мс) и добавка
+    function info() { if (!model) return null; sync(); return { left: model.left.slice(), inc: model.inc.slice(), running: model.running }; }
+    return { sync: sync, before: before, receive: receive, publish: publish, info: info, enabled: function () { return !!model; } };
   }
   return { attach: attach };
 })();
