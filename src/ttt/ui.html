@@ -106,8 +106,16 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 #bigLine { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
 #bigLine line { stroke: var(--gold); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 160; stroke-dashoffset: 160; animation: drawIn .5s ease-out forwards; filter: drop-shadow(0 0 6px rgba(255,209,102,.8)); }
 
-.bar { display: flex; gap: 8px; }
-.bar button { border: 0; border-radius: 13px; width: 50px; height: 46px; background: var(--btn); display: grid; place-items: center; }
+.bar { display: flex; gap: 6px; }
+.bar button.on { background: var(--ink); color: var(--bg); }
+.bar button.thinking { animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: .45; } }
+.bar .txt { font: 800 12px/1 var(--display); }
+#rvMount { width: var(--B); max-width: 100%; }
+.cell.hint { box-shadow: inset 0 0 0 3px var(--gold); background: rgba(255, 209, 102, .22); }
+.coord { position: absolute; font: 800 11px/1 var(--body); color: var(--ink-dim); pointer-events: none; transform: translate(-50%, -50%); }
+:root { --rv-me: var(--x); --rv-them: var(--o); --rv-accent: var(--gold); --rv-btn: var(--btn); }
+.bar button { border: 0; border-radius: 13px; width: 48px; height: 44px; background: var(--btn); display: grid; place-items: center; }
 .bar button:hover:not(:disabled) { background: var(--btn-hi); }
 .bar button:disabled { opacity: .35; cursor: default; }
 .bar svg { width: 22px; height: 22px; }
@@ -130,6 +138,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .err { background: #3a1620; color: #ffb3bc; border-radius: 12px; padding: 10px; font: 700 13.5px/1.4 var(--body); }
 .toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 14px); transform: translateX(-50%); z-index: 30; background: var(--ink); color: var(--bg); font: 800 14px/1.25 var(--body); padding: 10px 16px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.4); max-width: calc(100% - 32px); text-align: center; }
 @media (prefers-reduced-motion: reduce) { .mk.draw path, .mk.draw circle, #bigLine line { animation: none; stroke-dashoffset: 0; } }
+#game > * { flex-shrink: 0; }
 </style>
 
 <section class="screen" id="menu">
@@ -161,6 +170,12 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
         <button id="s-o" data-v="2"><span class="mo">◯</span></button>
         <button id="s-r" data-v="0">Случайно</button>
       </div>
+    </div>
+    <div class="card">
+      <h2>Подсказки</h2>
+      <div class="seg" style="--cols:2" id="evalSeg"><button data-v="1">Оценка видна</button><button data-v="0">Без оценки</button></div>
+      <div class="seg" style="--cols:2" id="coordSeg"><button data-v="1">Координаты</button><button data-v="0">Без координат</button></div>
+      <p class="hint">В онлайн-партии оценки и подсказок нет. После её конца — разбор с движком.</p>
     </div>
     <div class="card" id="netCard" hidden>
       <h2>Онлайн с другом</h2>
@@ -196,10 +211,13 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   </div>
   <div class="status" id="status"></div>
   <div id="big"></div>
+  <div id="rvMount"></div>
   <div class="bar">
     <button id="homeBtn" aria-label="В меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M3.5 11 12 3.8 20.5 11M6 9v11h12V9"/></svg></button>
     <button id="againBtn" aria-label="Новая партия"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v5h-5"/></svg></button>
     <button id="undoBtn" aria-label="Отменить ход"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+    <button id="hintBtn" aria-label="Подсказка: лучший ход"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21.5h4"/><path d="M12 2.5a6.5 6.5 0 0 0-3.9 11.7c.6.5.9 1.1.9 1.8v.5h6V16c0-.7.3-1.3.9-1.8A6.5 6.5 0 0 0 12 2.5z"/></svg></button>
+    <button id="coordBtn" aria-label="Координаты"><span class="txt">a1</span></button>
     <button id="soundBtn" aria-label="Звук"></button>
   </div>
 </section>
@@ -212,7 +230,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     <div class="btns">
       <button id="endAgain">Ещё раз</button>
       <button id="endUndo" class="alt">Отменить ход</button>
-      <button id="endLook" class="alt">Посмотреть поле</button>
+      <button id="endLook" class="alt">Разбор партии</button>
       <button id="endMenu" class="alt">Меню</button>
     </div>
   </div>
@@ -243,6 +261,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
 <div class="toast" id="toast" hidden></div>
 
+<script>/*REVIEW*/</script>
 <script id="core">
 /*CORE*/
 </script>
@@ -250,7 +269,8 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 onmessage = function (e) {
   var d = e.data, s = newState(1);
   for (var k = 0; k < d.moves.length; k++) play(s, d.moves[k]);
-  postMessage({ id: d.id, move: tttThink(s, d.level) });
+  if (d.kind === 'analyze') postMessage({ id: d.id, move: tttAnalyze(s, d.ms) });
+  else postMessage({ id: d.id, move: tttThink(s, d.level) });
 };
 </script>
 <script>
@@ -265,7 +285,7 @@ onmessage = function (e) {
   var ICON_MUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></svg>';
 
   // ---------- settings ----------
-  var S = { mode: 'bot', level: 1, side: 1, sound: true };
+  var S = { mode: 'bot', level: 1, side: 1, sound: true, evalOn: true, coords: false };
   try { var sv = JSON.parse(localStorage.getItem('ttt-3x3') || 'null'); if (sv) Object.assign(S, sv); } catch (e) {}
   if (!ONLINE && S.mode === 'net') S.mode = 'bot';
   function saveS() { try { localStorage.setItem('ttt-3x3', JSON.stringify(S)); } catch (e) {} }
@@ -282,7 +302,12 @@ onmessage = function (e) {
   Array.prototype.forEach.call(document.querySelectorAll('#sideSeg button'), function (b) {
     b.onclick = function () { S.side = +b.dataset.v; saveS(); renderMenu(); };
   });
+  Array.prototype.forEach.call(document.querySelectorAll('#evalSeg button'), function (b) { b.onclick = function () { S.evalOn = b.dataset.v === '1'; saveS(); renderMenu(); }; });
+  Array.prototype.forEach.call(document.querySelectorAll('#coordSeg button'), function (b) { b.onclick = function () { setCoords(b.dataset.v === '1', false); }; });
   function renderMenu() {
+    Array.prototype.forEach.call(document.querySelectorAll('#evalSeg button'), function (b) { b.setAttribute('aria-pressed', String((b.dataset.v === '1') === !!S.evalOn)); });
+    Array.prototype.forEach.call(document.querySelectorAll('#coordSeg button'), function (b) { b.setAttribute('aria-pressed', String((b.dataset.v === '1') === !!S.coords)); });
+    $('coordBtn').classList.toggle('on', !!S.coords);
     Array.prototype.forEach.call(document.querySelectorAll('#modeSeg button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === S.mode)); });
     Array.prototype.forEach.call(document.querySelectorAll('#levelSeg button'), function (b) { b.setAttribute('aria-pressed', String(+b.dataset.v === S.level)); });
     Array.prototype.forEach.call(document.querySelectorAll('#sideSeg button'), function (b) { b.setAttribute('aria-pressed', String(+b.dataset.v === S.side)); });
@@ -317,6 +342,16 @@ onmessage = function (e) {
     worker.onmessage = function (e) { var cb = pending[e.data.id]; delete pending[e.data.id]; if (cb) cb(e.data.move); };
     worker.onerror = function () { worker = null; };
   } catch (e) { worker = null; }
+  var anW = null, anId = 0, anPend = {};
+  try {
+    anW = new Worker(URL.createObjectURL(new Blob([$('core').textContent + '\n' + $('workerGlue').textContent], { type: 'text/javascript' })));
+    anW.onmessage = function (e) { var cb = anPend[e.data.id]; delete anPend[e.data.id]; if (cb) cb(e.data.move); };
+    anW.onerror = function () { anW = null; };
+  } catch (e) { anW = null; }
+  function askAnalyze(moves, cb) {
+    if (anW) { var id = ++anId; anPend[id] = cb; try { anW.postMessage({ id: id, moves: moves, kind: 'analyze', ms: 500 }); return; } catch (e) { delete anPend[id]; anW = null; } }
+    setTimeout(function () { var s = newState(1); moves.forEach(function (m) { play(s, m); }); cb(tttAnalyze(s, 200)); }, 30);
+  }
   function askBot(moves, level, cb) {
     if (worker) { var id = ++reqId; pending[id] = cb; try { worker.postMessage({ id: id, moves: moves, level: level }); return; } catch (e) { delete pending[id]; worker = null; } }
     setTimeout(function () { var s = newState(1); moves.forEach(function (m) { play(s, m); }); cb(tttThink(s, level)); }, 30);
@@ -326,6 +361,27 @@ onmessage = function (e) {
   // G.kind[p]: 'me' (taps on this screen), 'bot', 'net' (friend over the network). p = 1 (✕) or 2 (◯).
   var G = null, token = 0, NET = null;
   var cellsEl = [], boardsEl = [];
+  // a1 — левый нижний угол большого поля 9×9 (одинаково для всех)
+  function cellName(i) { var b = (i / 9) | 0, c = i % 9, col = (b % 3) * 3 + (c % 3), row = ((b / 3) | 0) * 3 + ((c / 3) | 0); return 'abcdefghi'[col] + (9 - row); }
+  function snapOf(s, path) { var t = cloneState(s); t.path = path; return t; }
+  function lineOf(list) {
+    var s = newState(1), L = [{ s: snapOf(s, []), mv: null, by: 0 }];
+    for (var k = 0; k < list.length; k++) { var by = s.turn; play(s, list[k]); L.push({ s: snapOf(s, list.slice(0, k + 1)), mv: list[k], by: by }); }
+    return L;
+  }
+  function placeCoords() {
+    var big = $('big'); Array.prototype.slice.call(big.querySelectorAll('.coord')).forEach(function (x) { x.remove(); });
+    if (!S.coords || !cellsEl.length) return;
+    var bx = big.getBoundingClientRect();
+    for (var k = 0; k < 9; k++) {
+      var top = cellsEl[(k / 3 | 0) * 9 + (k % 3)], left = cellsEl[(k / 3 | 0) * 27 + (k % 3) * 3];   // клетки верхнего ряда и левого столбца
+      var r1 = top.getBoundingClientRect(), r2 = left.getBoundingClientRect();
+      var a = document.createElement('div'); a.className = 'coord'; a.textContent = 'abcdefghi'[k];
+      a.style.left = (r1.left - bx.left + r1.width / 2) + 'px'; a.style.top = (bx.height + 10) + 'px'; big.appendChild(a);
+      var n = document.createElement('div'); n.className = 'coord'; n.textContent = 9 - k;
+      n.style.left = '-11px'; n.style.top = (r2.top - bx.top + r2.height / 2) + 'px'; big.appendChild(n);
+    }
+  }
   function buildBoard() {
     var big = $('big'); big.innerHTML = ''; cellsEl = []; boardsEl = [];
     for (var b = 0; b < 9; b++) {
@@ -342,15 +398,19 @@ onmessage = function (e) {
     var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.id = 'bigLine'; svg.setAttribute('viewBox', '0 0 100 100'); big.appendChild(svg);
   }
   function layout() {
-    var top = 52 + 30 + 58 + 40, w = window.innerWidth - 24, h = window.innerHeight - top;
+    var cd = S.coords ? 22 : 0, top = 52 + 30 + 58 + 40 + $('rvMount').offsetHeight + 8 + cd, w = window.innerWidth - 24 - cd, h = window.innerHeight - top;
     var B = Math.max(240, Math.min(w, h, 640));
     document.documentElement.style.setProperty('--B', B + 'px');
+    $('big').style.marginLeft = cd ? '16px' : ''; $('big').style.marginBottom = cd ? '12px' : '';
+    if (window.RVready) RV.refresh();
+    requestAnimationFrame(placeCoords);
   }
   window.addEventListener('resize', layout);
 
   function newGame(kind) {
     token++;
     G = { kind: kind, s: newState(1), moves: [], over: false, endShown: false, busy: false };
+    G.line = lineOf([]); RV.reset();
     $('menu').hidden = true; $('game').hidden = false; $('endOv').hidden = true; $('lobbyOv').hidden = true; $('askOv').hidden = true;
     buildBoard(); layout(); render(true); turnLoop();
   }
@@ -363,16 +423,39 @@ onmessage = function (e) {
   function mySide() { return G.kind[1] === 'me' && G.kind[2] !== 'me' ? 1 : G.kind[2] === 'me' && G.kind[1] !== 'me' ? 2 : 0; }
 
   function canTap(i) {
-    return G && !G.over && !G.busy && G.kind[G.s.turn] === 'me' && !(NET && (NET.pendingTry || NET.undo)) && (i === undefined || legal(G.s, i));
+    return G && !G.over && !G.busy && G.kind[G.s.turn] === 'me' && !(NET && (NET.pendingTry || NET.undo)) && !RV.viewing() && (i === undefined || legal(G.s, i));
   }
+  // ---------- analysis (shared module) ----------
+  var RV = Review({
+    mount: $('rvMount'), status: $('status'),
+    line: function () { return G ? G.line : lineOf([]); },
+    play: function (s, i) { if (!legal(s, i)) return null; var t = cloneState(s); play(t, i); t.path = (s.path || []).concat([i]); return t; },
+    over: function (s) { return !!s.winner; },
+    toMove: function (s) { return s.turn; },
+    me: function () { return mySide() || 1; },
+    meName: function () { return mySide() ? 'Ты' : 'Крестики'; },
+    side: function (x) { return NAME[x] || ''; },
+    same: function (a, b) { return a === b; },
+    moveText: function (e) { return cellName(e.mv); },
+    overText: function (s) { return s.winner === 3 ? 'Ничья' : NAME[s.winner] + ' победили'; },
+    engine: function () { return !!G && (!NET || G.over); },
+    evalOn: function () { return !!S.evalOn; },
+    analyze: function (s, cb) { askAnalyze(s.path || [], cb); },
+    redraw: function () { if (!G) return; render(true); if (!RV.viewing()) turnLoop(); },
+    relayout: function () { layout(); },
+    active: function () { return !!G && !$('game').hidden && $('endOv').hidden && $('lobbyOv').hidden; }
+  });
   function render(full) {
-    var s = G.s, last = G.moves.length ? G.moves[G.moves.length - 1] : -1, tap = canTap();
+    var d = RV.display(), liveView = d.mode === 'live', s = liveView ? G.s : d.s;
+    var last = liveView ? (G.moves.length ? G.moves[G.moves.length - 1] : -1) : (d.e && typeof d.e.mv === 'number' ? d.e.mv : -1);
+    var tap = liveView ? canTap() : RV.canPlay();
     for (var i = 0; i < 81; i++) {
       var el = cellsEl[i], v = s.cells[i];
       if (full || el._v !== v) { el.innerHTML = v ? markSVG(v, false) : ''; el._v = v; }
       el.classList.toggle('can', tap && legal(s, i));
       el.classList.toggle('px', s.turn === 1); el.classList.toggle('po', s.turn === 2);
       el.classList.toggle('last', i === last);
+      el.classList.toggle('hint', d.hint === i);
       el.disabled = false;
     }
     var live = !s.winner, tc = s.turn === 1 ? 'var(--x)' : 'var(--o)';
@@ -400,9 +483,14 @@ onmessage = function (e) {
     $('scX').textContent = 'досок: ' + cnt[1]; $('scO').textContent = 'досок: ' + cnt[2];
     $('nmX').textContent = who(1); $('nmO').textContent = who(2);
     $('plX').classList.toggle('on', !s.winner && s.turn === 1); $('plO').classList.toggle('on', !s.winner && s.turn === 2);
-    setStatus();
-    $('undoBtn').disabled = undoTarget() < 0 || !!(NET && NET.undo);
+    if (liveView) setStatus();
+    var viewOff = RV.viewing() && !NET;
+    $('undoBtn').disabled = viewOff ? false : (undoTarget() < 0 || !!(NET && NET.undo));
+    var lbl = NET ? 'Попросить отменить ход' : viewOff ? 'Играть с этой позиции' : 'Отменить ход';
+    $('undoBtn').setAttribute('aria-label', lbl); $('undoBtn').title = lbl;
     $('againBtn').hidden = !!(NET && NET.role === 'guest');
+    $('hintBtn').hidden = !!NET && !G.over;
+    $('hintBtn').disabled = !!s.winner || (liveView && !canTap());
   }
   function who(p) {
     var k = G.kind[p];
@@ -423,6 +511,7 @@ onmessage = function (e) {
 
   function onCell(e) {
     var i = +e.currentTarget.dataset.i;
+    if (G && RV.viewing()) { if (RV.canPlay() && legal(RV.display().s, i)) { sfxMove(RV.display().s.turn); RV.play(i); } return; }
     if (!canTap(i)) return;
     if (NET && NET.role === 'guest') { NET.pendingTry = true; netSend({ t: 'try', i: i, n: G.moves.length }); render(); return; }
     decide(i);
@@ -435,7 +524,8 @@ onmessage = function (e) {
   function apply(i) {
     var p = G.s.turn, res = play(G.s, i);
     G.moves.push(i);
-    var el = cellsEl[i]; el.innerHTML = markSVG(p, true); el._v = p;
+    G.line.push({ s: snapOf(G.s, G.moves.slice()), mv: i, by: p }); RV.sync();
+    var el = cellsEl[i]; if (!RV.viewing()) { el.innerHTML = markSVG(p, true); el._v = p; }
     sfxMove(p);
     if (res.boardWon === 1 || res.boardWon === 2) setTimeout(function () { sfxBoard(p); }, 120);
     render();
@@ -446,13 +536,18 @@ onmessage = function (e) {
     if (!G || G.over) return;
     var p = G.s.turn;
     if (G.kind[p] !== 'bot' || (NET && NET.role !== 'host')) { render(); return; }
+    if (RV.viewing() && !NET) { render(); return; }      // смотришь историю — бот ждёт
     var my = token, n = G.moves.length, t0 = Date.now();
+    if (G.thinkingAt === n && G.thinkTok === my) return;
+    G.thinkingAt = n; G.thinkTok = my;
     G.busy = true; render();
     askBot(G.moves.slice(), S.level, function (m) {
       if (my !== token || !G || G.moves.length !== n) return;
       setTimeout(function () {
         if (my !== token || !G || G.moves.length !== n) return;
-        G.busy = false; decide(m);
+        G.busy = false;
+        if (RV.viewing() && !NET) { G.thinkingAt = -1; render(); return; }
+        decide(m);
       }, Math.max(0, 450 - (Date.now() - t0)));
     });
   }
@@ -477,12 +572,20 @@ onmessage = function (e) {
     token++;
     var mv = G.moves.slice(0, t);
     G.moves = mv; G.s = newState(1); mv.forEach(function (m) { play(G.s, m); });
-    G.over = false; G.busy = false; G.endShown = false;
+    G.over = false; G.busy = false; G.endShown = false; G.line = lineOf(mv); G.thinkingAt = -1;
     $('endOv').hidden = true; $('askOv').hidden = true;
-    render(true); toast(msg || 'Ход отменён'); turnLoop();
+    RV.go(-1); RV.sync(); render(true); toast(msg || 'Ход отменён'); turnLoop();
   }
   $('undoBtn').onclick = undo; $('endUndo').onclick = undo;
-  function undo() { if (NET) requestUndo(); else applyUndo(undoTarget()); }
+  function undo() {
+    if (NET) { requestUndo(); return; }
+    if (RV.viewing()) {           // играть с позиции на доске (из партии или из варианта)
+      token++; var mv = RV.pathHere(); G.moves = mv.slice(); G.s = newState(1); mv.forEach(function (m) { play(G.s, m); });
+      G.line = lineOf(mv); G.over = !!G.s.winner; G.endShown = G.over; G.busy = false; G.thinkingAt = -1;
+      $('endOv').hidden = true; RV.go(-1); RV.sync(); render(true); toast('Играем с этой позиции'); turnLoop(); return;
+    }
+    applyUndo(undoTarget());
+  }
   document.addEventListener('keydown', function (e) {
     if (G && !NET && !$('game').hidden && (e.ctrlKey || e.metaKey) && /^[zZяЯ]$/.test(e.key)) { e.preventDefault(); undo(); }
   });
@@ -500,7 +603,24 @@ onmessage = function (e) {
     $('endAgain').hidden = !!(NET && NET.role === 'guest');
     $('endOv').hidden = false;
   }
-  $('endLook').onclick = function () { $('endOv').hidden = true; };
+  $('endLook').onclick = function () { $('endOv').hidden = true; RV.go(0); };
+  // ---------- coordinates (shared with the friend online) ----------
+  function setCoords(on, fromNet) {
+    S.coords = !!on; saveS(); renderMenu(); if (G) layout();
+    if (!fromNet && NET) netSend({ t: 'coords', on: S.coords });
+  }
+  $('coordBtn').onclick = function () { setCoords(!S.coords, false); toast(S.coords ? 'Координаты включены' : 'Координаты скрыты'); };
+  // ---------- hint ----------
+  $('hintBtn').onclick = function () {
+    if (!G || (NET && !G.over)) return;
+    var d = RV.display(); if (d.mode === 'live' && !canTap()) return;
+    var b = $('hintBtn'); b.classList.add('thinking');
+    if (!RV.hint(function () { b.classList.remove('thinking'); })) b.classList.remove('thinking');
+  };
+  document.addEventListener('keydown', function (e) {
+    if (!G || $('game').hidden || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA/.test((e.target || {}).tagName || '')) return;
+    if (/^[cCсС]$/.test(e.key)) $('coordBtn').click(); else if (/^[hHрР]$/.test(e.key)) $('hintBtn').click();
+  });
   $('endAgain').onclick = again; $('againBtn').onclick = again;
   function again() { if (NET && NET.role === 'host') hostStart(true); else if (!NET) startLocal(); }
   $('endMenu').onclick = toMenu; $('homeBtn').onclick = toMenu;
@@ -608,17 +728,18 @@ onmessage = function (e) {
       if (ok) decide(d.i | 0); else netSend({ t: 'nack' });
     }
     else if (d.t === 'undoReq') startVote('friend');
+    else if (d.t === 'coords') setCoords(d.on, true);
     else if (d.t === 'undoVote') voteAnswer(!!d.ok);
     else if (d.t === 'needsync') { if (G) netSend(syncMsg()); }
     else if (d.t === 'leave') { n.peerOnline = false; if (G) render(); toast('Друг вышел'); }
   }
-  function syncMsg() { return { t: 'sync', hostSide: NET.hostSide, moves: G.moves.slice() }; }
+  function syncMsg() { return { t: 'sync', hostSide: NET.hostSide, moves: G.moves.slice(), coords: S.coords }; }
   function hostStart(swap) {
     var n = NET; if (!n) return;
     if (!n.hostSide) n.hostSide = S.side || (Math.random() < .5 ? 1 : 2);
     else if (swap) n.hostSide = 3 - n.hostSide;      // rematch: swap sides, so the first move alternates
     var k = {}; k[n.hostSide] = 'me'; k[3 - n.hostSide] = 'net';
-    netSend({ t: 'start', hostSide: n.hostSide });
+    netSend({ t: 'start', hostSide: n.hostSide, coords: S.coords });
     newGame(k);
     toast('Ты играешь за ' + (n.hostSide === 1 ? '✕' : '◯'));
   }
@@ -657,8 +778,9 @@ onmessage = function (e) {
     n.seen = Date.now(); if (n.peerOnline === false) { n.peerOnline = true; if (G) render(); }
     if (d.t === 'ping') { netSend({ t: 'pong' }); return; }
     if (d.t === 'pong') return;
-    if (d.t === 'start') { var k = {}; k[d.hostSide] = 'net'; k[3 - d.hostSide] = 'me'; newGame(k); toast('Ты играешь за ' + (d.hostSide === 1 ? '◯' : '✕')); }
-    else if (d.t === 'sync') { var k2 = {}; k2[d.hostSide] = 'net'; k2[3 - d.hostSide] = 'me'; newGame(k2); d.moves.forEach(function (m) { G.moves.push(m); play(G.s, m); }); G.over = !!G.s.winner; G.endShown = G.over; render(true); }
+    if (d.t === 'start') { var k = {}; k[d.hostSide] = 'net'; k[3 - d.hostSide] = 'me'; newGame(k); guestCoords(d.coords); toast('Ты играешь за ' + (d.hostSide === 1 ? '◯' : '✕')); }
+    else if (d.t === 'sync') { var k2 = {}; k2[d.hostSide] = 'net'; k2[3 - d.hostSide] = 'me'; newGame(k2); d.moves.forEach(function (m) { G.moves.push(m); play(G.s, m); }); G.line = lineOf(G.moves); G.over = !!G.s.winner; G.endShown = G.over; guestCoords(d.coords); RV.sync(); render(true); }
+    else if (d.t === 'coords') setCoords(d.on, true);
     else if (d.t === 'move') { n.pendingTry = false; if (!G) return; if (d.n === G.moves.length) apply(d.i); else if (d.n > G.moves.length) netSend({ t: 'needsync' }); }
     else if (d.t === 'nack') { n.pendingTry = false; if (G) render(); }
     else if (d.t === 'full') guestFail('В этой игре уже два игрока.');
@@ -669,6 +791,7 @@ onmessage = function (e) {
     else if (d.t === 'undo') { n.undo = null; if (G) applyUndo(d.to, d.mine ? 'Ход отменён, ходи заново' : 'Друг вернул свой ход'); }
   }
 
+  function guestCoords(hostOn) { if (hostOn) setCoords(true, true); else if (S.coords) netSend({ t: 'coords', on: true }); }
   // take-back by agreement (the host runs it)
   function requestUndo() {
     if (!NET || !G || NET.undo) return;
@@ -719,6 +842,7 @@ onmessage = function (e) {
   $('askNo').onclick = function () { answerAsk(false); };
 
   (function autoJoin() { if (!ONLINE) return; var m = /^#([A-Za-z0-9]{5})$/.exec(location.hash || ''); if (m) { S.mode = 'net'; renderMenu(); guestJoin(m[1]); } })();
+  window.RVready = true;
   renderMenu();
 })();
 </script>

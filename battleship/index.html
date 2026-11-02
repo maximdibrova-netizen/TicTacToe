@@ -97,6 +97,8 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
 /* ---------- game ---------- */
 #game { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding-block: max(10px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-bottom, 0px)); overflow-y: auto; }
 .status { font: 700 30px/1 var(--hand); color: var(--pen); text-align: center; min-height: 30px; text-wrap: balance; }
+#game > * { flex-shrink: 0; }
+#game { justify-content: safe center; }
 .status.red { color: var(--red); }
 .boards { display: flex; gap: 28px; align-items: flex-start; justify-content: center; flex-wrap: wrap; }
 .side { display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -140,6 +142,19 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
 .bar button { border: 0; border-radius: 12px; width: 48px; height: 44px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--grid-strong); display: grid; place-items: center; color: var(--pen); }
 .bar button:hover { background: var(--btn); }
 .bar svg { width: 21px; height: 21px; }
+.bar button:disabled { opacity: .35; cursor: default; }
+.bar button.thinking { animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: .45; } }
+.grid .cell.hint { box-shadow: inset 0 0 0 3px var(--ok); }
+.grid .cell.hint::after { content: ""; position: absolute; inset: 28%; border-radius: 50%; border: 3px solid var(--ok); }
+#rvMount { width: min(100%, 420px); color: var(--ink); }
+:root { --rv-accent: #1d4ea0; --rv-btn: #e6eef8; }
+#rvMount .rv-nav .back { color: #fff; }
+#rvMount .rv-tag { background: var(--btn); }
+#rvMount .rv-tag.var { background: var(--pen); color: #fff; }
+.status small { display: block; font: 700 13px/1.35 var(--body); color: var(--ink-dim); margin-top: 4px; }
+.status .rv-tag, .status .rv-sub { font-family: var(--body); }
+.status.rvs { font-size: 22px; }
 
 /* dialogs */
 .ov { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(27, 36, 51, .45); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px; overflow-y: auto; }
@@ -197,7 +212,7 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
         <li>Побеждает тот, кто первым потопит весь флот соперника.</li>
       </ol>
     </div>
-    <p class="hint"><a href="../" style="color:var(--pen)">← все игры</a> · <span style="opacity:.7">версия от 01.11.2026 20:41</span></p>
+    <p class="hint"><a href="../" style="color:var(--pen)">← все игры</a> · <span style="opacity:.7">версия от 02.11.2026 21:44</span></p>
   </div>
 </section>
 
@@ -207,6 +222,7 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
     <div class="side" id="mySide"><h3 id="myTitle">Мой флот</h3><div class="grid" id="myGrid"></div><div class="left" id="myLeft"></div></div>
     <div class="side" id="enSide"><h3 id="enTitle">Соперник</h3><div class="grid target" id="enGrid"></div><div class="left" id="enLeft"></div></div>
   </div>
+  <div id="rvMount" hidden></div>
   <div class="place" id="placePanel">
     <div class="dock" id="dock"></div>
     <div class="tools">
@@ -219,6 +235,7 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
   </div>
   <div class="bar">
     <button id="homeBtn" aria-label="В меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"><path d="M3.5 11 12 3.8 20.5 11M6 9v11h12V9"/></svg></button>
+    <button id="hintBtn" aria-label="Подсказка: куда стрелять"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21.5h4"/><path d="M12 2.5a6.5 6.5 0 0 0-3.9 11.7c.6.5.9 1.1.9 1.8v.5h6V16c0-.7.3-1.3.9-1.8A6.5 6.5 0 0 0 12 2.5z"/></svg></button>
     <button id="soundBtn" aria-label="Звук"></button>
   </div>
 </section>
@@ -229,7 +246,7 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
     <p id="endText"></p>
     <div class="btns">
       <button id="endAgain">Ещё раз</button>
-      <button id="endLook" class="alt">Посмотреть поле</button>
+      <button id="endLook" class="alt">Разбор партии</button>
       <button id="endMenu" class="alt">Меню</button>
     </div>
   </div>
@@ -380,6 +397,259 @@ var Net2P = (function () {
     hashCode: function () { var m = /^#([A-Za-z0-9]{5})$/.exec(location.hash || ''); return m ? m[1] : null; }
   };
 })();
+</script>
+<script>// ===== Разбор партии: история ходов, оценка движка, график, варианты =====
+// Общий модуль для игр на двоих. Игра даёт описание (o), модуль хранит, какую позицию сейчас показывать.
+//   o.mount        — элемент, куда вставить панель (полоса оценки, график, кнопки ⏮ ◀ ▶ ⏭)
+//   o.status       — элемент строки состояния (в режиме просмотра модуль пишет туда сам)
+//   o.line()       — основная партия: [{ s: позиция, mv: ход или null, by: кто ходил }], [0] — начальная
+//   o.play(s, mv)  — новая позиция после хода (исходную не трогать) или null, если ход невозможен
+//   o.over(s)      — партия в позиции закончена?   o.toMove(s) — чья очередь
+//   o.me()         — с чьей стороны считать шансы  o.side(x) — название стороны («Белые»)
+//   o.moveText(e, prev) — запись хода («e3–f4»)     o.overText(s) — итог («Белые победили»)
+//   o.engine()     — можно ли сейчас показывать движок (не онлайн-партия или партия окончена)
+//   o.evalOn()     — показывать оценку во время своей партии (настройка)
+//   o.analyze(s, cb) — оценка: cb({ p: шанс на победу того, чей ход (0..1), best: лучший ход, text?: подпись })
+//   o.redraw()     — перерисовать доску (игра берёт позицию из rv.display())
+//   o.relayout()   — панель поменяла высоту
+//   o.extra(e, prev) — необязательно: доп. текст к ходу в просмотре (например, «шанс попадания 12%»)
+//   o.noBar        — без полосы оценки и графика (только история, варианты и подсказка)
+//   o.canVary()    — необязательно: можно ли сейчас играть варианты (например, только после конца партии)
+var Review = function (o) {
+  var css = '.rv{width:100%;display:flex;flex-direction:column;gap:6px;font-family:inherit}' +
+    '.rv-bar{position:relative;height:20px;border-radius:7px;overflow:hidden;background:var(--rv-them,#3b3b46);box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}' +
+    '.rv-fill{position:absolute;left:0;top:0;bottom:0;width:50%;background:var(--rv-me,#e8e2d0);transition:width .35s}' +
+    '.rv-txt{position:absolute;inset:0;display:grid;place-items:center;font:800 12px/1 var(--body,system-ui);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.8),0 0 4px rgba(0,0,0,.6);font-variant-numeric:tabular-nums}' +
+    '.rv-txt.pend{opacity:.6}' +
+    '.rv-graph{height:36px;border-radius:7px;background:rgba(0,0,0,.22);cursor:pointer;display:block;width:100%}' +
+    '.rv-graph .mid{stroke:rgba(255,255,255,.18);stroke-width:1}.rv-graph .ln{fill:none;stroke:rgba(255,255,255,.85);stroke-width:1.5}' +
+    '.rv-graph .cur{stroke:var(--rv-accent,#f2c14e);stroke-width:2}.rv-graph .mk{stroke:#111;stroke-width:1}' +
+    '.rv-graph .mk.b{fill:#ff4d4d}.rv-graph .mk.m{fill:#ff9b3d}.rv-graph .mk.i{fill:#ffe14d}' +
+    '.rv-nav{display:flex;align-items:center;justify-content:center;gap:6px}' +
+    '.rv-nav button{border:0;border-radius:9px;width:40px;height:32px;background:var(--rv-btn,rgba(255,255,255,.1));color:inherit;display:grid;place-items:center;cursor:pointer}' +
+    '.rv-nav button:disabled{opacity:.3;cursor:default}.rv-nav button svg{width:18px;height:18px}' +
+    '.rv-nav .cnt{min-width:64px;flex:0 1 auto;white-space:nowrap;text-align:center;font:800 12.5px/1 var(--body,system-ui);opacity:.85;font-variant-numeric:tabular-nums}' +
+    '.rv-nav .back{width:auto;padding:0 10px;white-space:nowrap;font:800 12.5px/1 var(--body,system-ui);background:var(--rv-accent,#f2c14e);color:#1d1408}' +
+    '.rv-tag{display:inline-block;font:800 10.5px/1 var(--body,system-ui);letter-spacing:.06em;text-transform:uppercase;padding:4px 6px;border-radius:6px;background:rgba(255,255,255,.14);margin-right:6px;vertical-align:2px}' +
+    '.rv-tag.var{background:var(--rv-accent,#f2c14e);color:#1d1408}' +
+    '.rv-vd{display:inline-block;font:800 11.5px/1 var(--body,system-ui);padding:4px 6px;border-radius:6px;margin-left:6px;color:#1d1408;vertical-align:1px}' +
+    '.rv-vd.b{background:#ff6b6b}.rv-vd.m{background:#ffa552}.rv-vd.i{background:#ffe066}.rv-vd.g{background:#7fd36b}' +
+    '.rv-sub{display:block;font:700 12px/1.3 var(--body,system-ui);opacity:.75;margin-top:3px}';
+  if (!document.getElementById('rv-css')) { var st = document.createElement('style'); st.id = 'rv-css'; st.textContent = css; document.head.appendChild(st); }
+
+  var I = {
+    first: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5v14M18 6l-7 6 7 6"/></svg>',
+    prev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>',
+    next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
+    last: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 5v14M6 6l7 6-7 6"/></svg>'
+  };
+  var root = document.createElement('div'); root.className = 'rv';
+  root.innerHTML = (o.noBar ? '' : '<div class="rv-bar" hidden><div class="rv-fill"></div><span class="rv-txt"></span></div><svg class="rv-graph" hidden></svg>') +
+    '<div class="rv-nav"><button data-a="first" aria-label="К началу партии">' + I.first + '</button><button data-a="prev" aria-label="Ход назад">' + I.prev + '</button>' +
+    '<span class="cnt"></span><button data-a="next" aria-label="Ход вперёд">' + I.next + '</button><button data-a="last" aria-label="К последнему ходу">' + I.last + '</button>' +
+    '<button class="back" data-a="main" hidden aria-label="Вернуться к партии">↩ партия</button></div>';
+  o.mount.appendChild(root);
+  var q = function (s) { return root.querySelector(s); };
+  var bar = q('.rv-bar'), fill = q('.rv-fill'), txt = q('.rv-txt'), graph = q('.rv-graph'), cnt = q('.cnt');
+  Array.prototype.forEach.call(root.querySelectorAll('[data-a]'), function (b) {
+    b.onclick = function () { var a = b.dataset.a; if (a === 'main') exitVar(); else step(a === 'first' ? 'first' : a === 'last' ? 'last' : a === 'prev' ? -1 : 1); };
+  });
+
+  // view: -1 — живая партия; k — позиция k основной партии. V — вариант: { base, list: [{ s, mv, by }], idx }
+  var view = -1, V = null, hint = null, hintTok = 0, cache = new WeakMap(), busy = false, queue = [], marks = [], shown = false;
+
+  function line() { return o.line(); }
+  function lastIdx() { return line().length - 1; }
+  function engine() { return !!o.engine(); }
+  function liveOver() { var L = line(); return o.over(L[L.length - 1].s); }
+  function evalVisible() { return !o.noBar && engine() && (o.evalOn() || liveOver() || view >= 0); }
+  function cur() {
+    var L = line();
+    if (V) { if (V.idx < 0) return { s: L[V.base].s, e: L[V.base], prev: V.base > 0 ? L[V.base - 1].s : null, k: V.base }; var e = V.list[V.idx]; return { s: e.s, e: e, prev: V.idx > 0 ? V.list[V.idx - 1].s : L[V.base].s, k: V.base }; }
+    var k = view < 0 ? L.length - 1 : view;
+    return { s: L[k].s, e: L[k], prev: k > 0 ? L[k - 1].s : null, k: k };
+  }
+
+  // ---------- оценка ----------
+  function pctFor(s, r) { return 100 * (o.toMove(s) === o.me() ? r.p : 1 - r.p); }
+  function want(s, urgent) { if (!s || cache.has(s)) return; if (urgent) queue.unshift(s); else queue.push(s); }
+  function pump() {
+    if (busy || !engine()) return;
+    var s = null;
+    while (queue.length) { var c = queue.shift(); if (!cache.has(c)) { s = c; break; } }
+    if (!s) return;
+    if (o.over(s)) { var oe = o.overEval ? o.overEval(s) : { p: .5 }; if (oe) cache.set(s, oe); pump(); return; }   // итог ещё не посчитан — спросим позже
+    busy = true;
+    o.analyze(s, function (r) { busy = false; if (r) cache.set(s, r); paint(); pump(); });
+  }
+  function fillQueue() {
+    if (o.noBar || !engine()) return;
+    var c = cur(); want(c.s, true); if (c.prev) want(c.prev, true);
+    if (evalVisible()) { var L = line(); for (var k = 0; k < L.length; k++) want(L[k].s); }
+    pump();
+  }
+  function pctOf(s) { var r = s && cache.get(s); return r ? pctFor(s, r) : null; }
+  // ход «моей» стороны, после которого мои шансы заметно упали
+  function verdict(prevS, e) {
+    if (!prevS || !e || e.mv == null || e.by !== o.me()) return null;
+    var a = pctOf(prevS), b = pctOf(e.s);
+    if (a == null || b == null || a > 97.5 || a < 2.5) return null;
+    var d = Math.round(a - b);
+    if (d >= 25) return { c: 'b', t: 'грубая ошибка', d: d };
+    if (d >= 12) return { c: 'm', t: 'ошибка', d: d };
+    if (d >= 6) return { c: 'i', t: 'неточность', d: d };
+    return null;
+  }
+
+  // ---------- отрисовка панели ----------
+  function paint() {
+    var vis = evalVisible();
+    if (bar) { if (bar.hidden === vis) { bar.hidden = !vis; graph.hidden = !vis; if (o.relayout) o.relayout(); } }
+    var c = cur(), L = line(), last = L.length - 1;
+    if (vis && bar) {
+      var r = cache.get(c.s), s = c.s;
+      var me = o.me(), meName = o.meName ? o.meName() : o.side(me);
+      if (!r) { var j = V ? -1 : c.k; while (!r && j > 0) r = cache.get(L[--j].s), s = L[j].s; }
+      if (!r) { fill.style.width = '50%'; txt.textContent = meName + ' …'; txt.classList.add('pend'); }
+      else {
+        var pc = pctFor(s, r); fill.style.width = pc + '%';
+        txt.textContent = r.text ? r.text : (pc >= 99.5 ? meName + ': выигрыш' : pc <= .5 ? meName + ': проигрыш' : meName + ' ' + Math.round(pc) + '%');
+        txt.classList.toggle('pend', s !== c.s);
+      }
+      drawGraph();
+    }
+    var at = V ? V.base : (view < 0 ? last : view);
+    q('[data-a="first"]').disabled = q('[data-a="prev"]').disabled = !V && at <= 0;
+    q('[data-a="next"]').disabled = V ? V.idx >= V.list.length - 1 : view < 0;
+    q('[data-a="last"]').disabled = V ? V.idx >= V.list.length - 1 : view < 0;
+    q('[data-a="main"]').hidden = !V;
+    cnt.textContent = V ? 'вариант ' + (V.idx + 1) + ' / ' + V.list.length : (at === 0 ? 'старт' : 'ход ' + at) + ' / ' + last;
+    if (view >= 0 || V) o.status.innerHTML = statusHtml();
+  }
+  function drawGraph() {
+    var w = graph.clientWidth, h = graph.clientHeight; if (!w || !h) return;
+    var L = line(), last = L.length - 1, n = Math.max(last, 1);
+    var X = function (i) { return 4 + (w - 8) * i / n; }, Y = function (p) { return 3 + (h - 6) * (1 - p / 100); };
+    var pts = [];
+    for (var i = 0; i <= last; i++) { var p = pctOf(L[i].s); if (p != null) pts.push([X(i), Y(p)]); }
+    var out = '<defs><clipPath id="rvTop"><rect x="0" y="0" width="' + w + '" height="' + (h / 2) + '"/></clipPath><clipPath id="rvBot"><rect x="0" y="' + (h / 2) + '" width="' + w + '" height="' + (h / 2) + '"/></clipPath></defs>' +
+      '<line class="mid" x1="0" x2="' + w + '" y1="' + h / 2 + '" y2="' + h / 2 + '"/>';
+    if (pts.length > 1) {
+      var ln = pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
+      var area = pts[0][0].toFixed(1) + ',' + h / 2 + ' ' + ln + ' ' + pts[pts.length - 1][0].toFixed(1) + ',' + h / 2;
+      out += '<polygon clip-path="url(#rvTop)" points="' + area + '" fill="var(--rv-me,#e8e2d0)" opacity=".55"/><polygon clip-path="url(#rvBot)" points="' + area + '" fill="var(--rv-them,#3b3b46)" opacity=".9"/><polyline class="ln" points="' + ln + '"/>';
+    }
+    var at = V ? V.base : (view < 0 ? last : view);
+    out += '<line class="cur" x1="' + X(at) + '" x2="' + X(at) + '" y1="0" y2="' + h + '"/>';
+    marks = [];
+    for (i = 1; i <= last; i++) { var vd = verdict(L[i - 1].s, L[i]); if (vd) { out += '<circle class="mk ' + vd.c + '" cx="' + X(i).toFixed(1) + '" cy="' + Y(pctOf(L[i].s)).toFixed(1) + '" r="' + (vd.c === 'b' ? 5 : 4) + '"/>'; marks.push([X(i), i]); } }
+    graph.setAttribute('viewBox', '0 0 ' + w + ' ' + h); graph.innerHTML = out;
+  }
+  if (graph) graph.addEventListener('click', function (e) {
+    var rc = graph.getBoundingClientRect(), x = e.clientX - rc.left, L = line(), n = Math.max(L.length - 1, 1);
+    var mk = marks.filter(function (m) { return Math.abs(m[0] - x) <= 10; }).sort(function (a, b) { return Math.abs(a[0] - x) - Math.abs(b[0] - x); })[0];
+    if (mk) { go(mk[1] - 1); showHint(); return; }
+    go(Math.max(0, Math.min(L.length - 1, Math.round((x - 4) / (rc.width - 8) * n))));
+  });
+
+  function statusHtml() {
+    var c = cur(), e = c.e, tag = V ? '<span class="rv-tag var">Вариант</span>' : '<span class="rv-tag">Просмотр</span>';
+    var L = line(), at = V ? V.base + V.idx + 1 : c.k, body;
+    if (!V && c.k === 0) body = 'Начало партии';
+    else if (V && V.idx < 0) body = 'Позиция после хода ' + V.base + ' — сделай ход';
+    else body = 'Ход ' + at + ': ' + o.side(e.by) + ' ' + o.moveText(e, c.prev);
+    var vd = verdict(c.prev, e), h = tag + body + (vd ? '<span class="rv-vd ' + vd.c + '">' + vd.t + ' −' + vd.d + '%</span>' : '');
+    var ex = o.extra && e && e.mv != null && e.mv !== undefined && (V ? V.idx >= 0 : c.k > 0) ? o.extra(e, c.prev) : '';
+    if (o.over(c.s)) ex = (ex ? ex + ' · ' : '') + o.overText(c.s);
+    else if (canPlay()) ex = (ex ? ex + ' · ' : '') + 'можно сходить и посмотреть, что будет';
+    return h + (ex ? '<span class="rv-sub">' + ex + '</span>' : '');
+  }
+
+  // ---------- навигация ----------
+  function go(k) {
+    var last = lastIdx(); V = null; clearHint();
+    view = k >= last || k < 0 ? -1 : k;
+    shown = view >= 0;
+    fillQueue(); paint(); o.redraw();
+  }
+  function step(d) {
+    if (V) {
+      if (d === 'first') { go(0); return; }
+      if (d === -1 && V.idx < 0) { go(Math.max(0, V.base - 1)); return; }
+      if (d === 'last') V.idx = V.list.length - 1; else V.idx = Math.max(-1, Math.min(V.list.length - 1, V.idx + d));
+      clearHint(); fillQueue(); paint(); o.redraw(); return;
+    }
+    var last = lastIdx(), at = view < 0 ? last : view;
+    if (d === 'first') go(0); else if (d === 'last') go(-1); else go(Math.max(0, Math.min(last, at + d)));
+  }
+  function exitVar() { if (!V) return; var b = V.base; V = null; go(b); }
+  function canPlay() { return engine() && (view >= 0 || !!V) && !o.over(cur().s) && (!o.canVary || o.canVary()); }
+  function play(mv) {
+    if (!canPlay()) return false;
+    var c = cur(), ns = o.play(c.s, mv); if (!ns) return false;
+    var by = o.byOf ? o.byOf(c.s, mv) : o.toMove(c.s), L = line();
+    if (!V) V = { base: view < 0 ? L.length - 1 : view, list: [], idx: -1 };
+    // если этот ход есть в основной партии — просто идём по ней
+    if (V.idx < 0 && V.base + 1 < L.length && o.same && o.same(L[V.base + 1].mv, mv)) { var nb = V.base + 1; V = null; go(nb); return true; }
+    V.list.length = V.idx + 1; V.list.push({ s: ns, mv: mv, by: by }); V.idx++;
+    view = V.base; clearHint(); fillQueue(); paint(); o.redraw();
+    return true;
+  }
+
+  // ---------- подсказка ----------
+  function clearHint() { hintTok++; hint = null; }
+  function showHint(cb) {
+    if (!engine()) return false;
+    var c = cur(); if (o.over(c.s)) return false;
+    var my = ++hintTok, s = c.s;
+    var done = function (r) { if (my !== hintTok || cur().s !== s) return; hint = r && r.best != null ? r.best : null; o.redraw(); if (cb) cb(hint); };
+    var r = cache.get(s);
+    if (r && r.best != null) { done(r); return true; }
+    if (o.hint) o.hint(s, done); else o.analyze(s, function (r2) { if (r2) cache.set(s, r2); paint(); done(r2); });
+    return true;
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (!o.active || !o.active() || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA/.test((e.target || {}).tagName || '')) return;
+    var k = e.key;
+    if (k === 'ArrowLeft') step(-1); else if (k === 'ArrowRight') step(1); else if (k === 'Home') step('first'); else if (k === 'End') step('last'); else return;
+    e.preventDefault();
+  });
+  window.addEventListener('resize', function () { if (graph && !graph.hidden) drawGraph(); });
+
+  return {
+    el: root,
+    // что показывать на доске: { mode: 'live'|'view'|'var', s, e (ход, который привёл сюда), hint }
+    display: function () { var c = cur(); return { mode: V ? 'var' : view >= 0 ? 'view' : 'live', s: c.s, e: c.e, prev: c.prev, hint: hint, k: c.k }; },
+    viewing: function () { return view >= 0 || !!V; },
+    inVar: function () { return !!V; },
+    canPlay: canPlay,
+    play: play,
+    go: go, step: step, exitVar: exitVar,
+    hint: showHint, clearHint: function () { clearHint(); },
+    // после изменения основной партии (новый ход, отмена, новая партия)
+    sync: function () {
+      var last = lastIdx();
+      if (view > last) view = -1;
+      if (V && V.base > last) V = null;
+      if (view === last && !V) view = -1;
+      if (view < 0 && !V) clearHint();
+      fillQueue(); paint();
+    },
+    reset: function () { view = -1; V = null; clearHint(); queue = []; cache = new WeakMap(); fillQueue(); paint(); },
+    refresh: function () { fillQueue(); paint(); },
+    // путь от начала до показанной позиции (для «играть с этой позиции»)
+    pathHere: function () {
+      var L = line(), out = [], base = V ? V.base : (view < 0 ? L.length - 1 : view);
+      for (var k = 1; k <= base; k++) out.push(L[k].mv);
+      if (V) for (k = 0; k <= V.idx; k++) out.push(V.list[k].mv);
+      return out;
+    },
+    evalVisible: evalVisible,
+    evalOf: function (s) { return cache.get(s); },
+    statusHtml: statusHtml
+  };
+};
 </script>
 <script>// ===== Морской бой: правила и бот =====
 // Поле 10×10, клетка i = r*10 + c. Флот (классика): 1×4, 2×3, 3×2, 4×1.
@@ -535,6 +805,37 @@ function bsDensity(view, left, hits) {
   }
   return best;
 }
+
+// ---------- подсказка и разбор: шанс попадания в каждую клетку ----------
+// Только по тому, что стрелок знает (view). Есть раненый корабль — где он продолжается; иначе — где может стоять
+// хоть один из оставшихся кораблей (каждый корабль считаем отдельно, грубо, но наглядно).
+function bsProb(view0, left) {
+  var view = view0.slice(), i, P = new Float64Array(100), hits = [];
+  for (i = 0; i < 100; i++) if (view0[i] === 2 || view0[i] === 3) {
+    var r0 = (i / 10) | 0, c0 = i % 10;
+    [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(function (d) { var rr = r0 + d[0], cc = c0 + d[1]; if (rr >= 0 && cc >= 0 && rr < 10 && cc < 10 && view[rr * 10 + cc] === 0) view[rr * 10 + cc] = 4; });
+  }
+  for (i = 0; i < 100; i++) if (view[i] === 2) hits.push(i);
+  var uniq = {}; left.forEach(function (l) { uniq[l] = (uniq[l] || 0) + 1; });
+  var miss = new Float64Array(100).fill(1), tot = 0, cov = new Float64Array(100);
+  Object.keys(uniq).forEach(function (key) {
+    var len = +key, mult = uniq[key], total = 0, cover = new Float64Array(100);
+    for (var r = 0; r < 10; r++) for (var c = 0; c < 10; c++) for (var v = 0; v < 2; v++) {
+      if (len === 1 && v === 1) continue;
+      var cells = bsShipCells(r, c, len, v === 1); if (!cells) continue;
+      var ok = true, ch = 0;
+      for (var k = 0; k < len; k++) { var s = view[cells[k]]; if (s === 1 || s === 3 || s === 4) { ok = false; break; } if (s === 2) ch++; }
+      if (!ok) continue;
+      if (hits.length) { if (!ch) continue; var w = mult * Math.pow(30, ch); tot += w; for (k = 0; k < len; k++) if (view[cells[k]] === 0) cov[cells[k]] += w; }
+      else { total++; for (k = 0; k < len; k++) cover[cells[k]]++; }
+    }
+    if (!hits.length && total) for (var j = 0; j < 100; j++) miss[j] *= Math.pow(1 - cover[j] / total, mult);
+  });
+  for (i = 0; i < 100; i++) P[i] = view[i] !== 0 ? 0 : hits.length ? (tot ? cov[i] / tot : 0) : 1 - miss[i];
+  var best = -1, bv = -1;
+  for (i = 0; i < 100; i++) if (view[i] === 0 && P[i] > bv) { bv = P[i]; best = i; }
+  return { P: P, best: best };
+}
 </script>
 <script>
 (function () {
@@ -633,6 +934,50 @@ function bsDensity(view, left, hits) {
   }
   window.addEventListener('resize', layout);
 
+  // ---------- history and analysis ----------
+  // G.line: [{ s: snapshot, mv: { i, w: 'me'|'them' }, by }] — every shot of the battle, both sides
+  function snap() {
+    return { view: G.view.slice(), enemyLeft: G.enemyLeft.slice(), marksMe: G.marksMe.slice(), hitsMe: G.hitsMe.slice(), myLeft: G.myLeft.slice(),
+      turn: G.turn, lastEn: G.lastEn, lastMe: G.lastMe, over: G.phase === 'over', shots: G.shots };
+  }
+  function enemyFleet() { return G.opp === 'bot' ? G.bot.fleet : G.reveal; }
+  var RV = Review({
+    mount: $('rvMount'), status: $('status'), noBar: true,
+    line: function () { return G && G.line ? G.line : [{ s: { over: false, turn: 'me' }, mv: null, by: 0 }]; },
+    // «что если»: мой выстрел по настоящему флоту соперника (он известен после конца партии)
+    byOf: function () { return 'me'; },
+    play: function (s, m) {
+      var i = m.i, fl = enemyFleet(); if (!fl || s.view[i] !== 0) return null;
+      var hits = new Int8Array(100); for (var k = 0; k < 100; k++) if (s.view[k] === 2 || s.view[k] === 3) hits[k] = 1;
+      var a = bsAnswer(fl, hits, i), t = Object.assign({}, s, { view: s.view.slice(), enemyLeft: s.enemyLeft.slice(), lastEn: i, turn: 'me', shots: s.shots + 1 });
+      if (a.res === 'miss') t.view[i] = 1; else if (a.res === 'hit') t.view[i] = 2;
+      else { a.ship.forEach(function (x) { t.view[x] = 3; }); bsAround(a.ship).forEach(function (x) { if (t.view[x] === 0) t.view[x] = 4; }); t.enemyLeft.splice(t.enemyLeft.indexOf(a.ship.length), 1); }
+      t.over = !!a.all; t.res = a.res;
+      return t;
+    },
+    over: function (s) { return !!s.over; },
+    toMove: function (s) { return s.turn; },
+    me: function () { return 'me'; },
+    side: function (x) { return x === 'me' ? 'Ты' : G && G.opp === 'bot' ? 'Бот' : 'Друг'; },
+    moveText: function (e) { var r = e.s.res || resOf(e); return bsCellName(e.mv.i) + ' — ' + (r === 'miss' ? 'мимо' : r === 'sunk' ? 'потопил' : 'попал'); },
+    overText: function (s) { return s.enemyLeft && !s.enemyLeft.length ? 'Весь флот соперника потоплен' : 'Твой флот потоплен'; },
+    extra: function (e, prev) {
+      if (e.by !== 'me' || !prev) return '';
+      var r = bsProb(prev.view, prev.enemyLeft), p = Math.round(r.P[e.mv.i] * 100), b = Math.round(r.P[r.best] * 100);
+      if (r.best === e.mv.i || p >= b - 1) return 'шанс попадания ' + p + '% — лучший выстрел';
+      return 'шанс попадания ' + p + '% · лучше было ' + bsCellName(r.best) + ' (' + b + '%)';
+    },
+    engine: function () { return !!G && G.phase !== 'place' && (G.opp === 'bot' || G.phase === 'over'); },
+    canVary: function () { return !!G && G.phase === 'over' && !!enemyFleet(); },
+    evalOn: function () { return false; },
+    analyze: function (s, cb) { var r = bsProb(s.view, s.enemyLeft); cb({ p: .5, best: r.best, P: r.P }); },
+    redraw: function () { renderAll(); },
+    relayout: function () { layout(); },
+    active: function () { return !!G && G.phase !== 'place' && !$('game').hidden && $('endOv').hidden && $('lobbyOv').hidden; }
+  });
+  function resOf(e) { var v = e.s.view[e.mv.i]; if (e.by === 'them') v = e.s.marksMe[e.mv.i] === 1 ? 1 : 2; return v === 1 ? 'miss' : v === 3 ? 'sunk' : 'hit'; }
+  function pushShot(i, w, res) { if (!G.line) return; var sn = snap(); sn.res = res; G.line.push({ s: sn, mv: { i: i, w: w }, by: w }); RV.sync(); }
+
   // ---------- placement ----------
   function placedCount(len) { return G.fleet.filter(function (s) { return s.cells.length === len; }).length; }
   function need(len) { return BS_FLEET.filter(function (x) { return x === len; }).length; }
@@ -695,11 +1040,13 @@ function bsDensity(view, left, hits) {
   }
   function startBattle() {
     G.phase = 'battle'; G.turn = G.first; clearPreview();
+    G.line = [{ s: snap(), mv: null, by: 0 }]; RV.reset();
     renderAll(); layout(); save();
     toast(G.turn === 'me' ? 'Бой! Ты стреляешь первым' : 'Бой! Первым стреляет ' + (G.opp === 'bot' ? 'бот' : 'друг'));
     if (G.turn === 'them' && G.opp === 'bot') botTurn();
   }
   function onShoot(e) {
+    if (G && RV.viewing()) { var vi = +e.currentTarget.dataset.i; if (RV.canPlay() && RV.display().s.view[vi] === 0) { var ok = RV.play({ i: vi, w: 'me' }); if (ok) { var r = RV.display().s.res; sfx(r === 'miss' ? 'miss' : r === 'sunk' ? 'sunk' : 'hit'); } } return; }
     if (!G || G.phase !== 'battle' || G.turn !== 'me' || G.waiting) return;
     var i = +e.currentTarget.dataset.i;
     if (G.view[i] !== 0) return;
@@ -719,6 +1066,8 @@ function bsDensity(view, left, hits) {
       sfx('sunk'); flash(cellsEn[i], 'boom');
       toast(shipWord(a.ship.length) + ' потоплен!');
     }
+    if (a.all) G.phase = 'over';
+    pushShot(i, 'me', a.res); if (a.all) G.phase = 'battle';
     renderAll(); save();
     if (a.all) { finish(true); return; }
     if (G.turn === 'them' && G.opp === 'bot') botTurn();
@@ -732,6 +1081,8 @@ function bsDensity(view, left, hits) {
       G.marksMe[i] = 2; sfx(a.res === 'sunk' ? 'sunk' : 'hit'); flash(cellsMy[i], 'boom');
       if (a.res === 'sunk') { bsAround(a.ship).forEach(function (x) { if (!G.marksMe[x]) G.marksMe[x] = 3; }); G.myLeft.splice(G.myLeft.indexOf(a.ship.length), 1); }
     }
+    if (a.all) G.phase = 'over';
+    pushShot(i, 'them', a.res); if (a.all) G.phase = 'battle';
     renderAll(); save();
     if (a.all) finish(false);
     return a;
@@ -741,6 +1092,7 @@ function bsDensity(view, left, hits) {
     G.botThinking = true; renderAll();
     setTimeout(function () {
       if (my !== token || !G || G.phase !== 'battle' || G.turn !== 'them') return;
+      if (RV.viewing()) { G.botThinking = false; G.botWait = true; renderAll(); return; }     // смотришь историю — бот ждёт
       var i = bsBotShot(G.bot.view, G.bot.left, S.level);
       var a = incoming(i);
       if (a.res === 'miss') G.bot.view[i] = 1;
@@ -773,24 +1125,31 @@ function bsDensity(view, left, hits) {
   function renderAll() {
     if (!G) return;
     var place = G.phase === 'place', s;
+    var d = !place && G.line ? RV.display() : { mode: 'live' }, live = d.mode === 'live', V = live ? G : d.s;
     $('placePanel').hidden = !place || G.readyMe;
     $('enSide').hidden = place;
+    $('rvMount').hidden = place; $('hintBtn').hidden = place || !RV_engine();
     var occ = occMap();
     cellsMy.forEach(function (b, i) {
-      var m = G.marksMe[i];
-      b.className = 'cell' + (occ[i] ? (m === 2 && isSunkMine(i) ? ' sunk' : ' ship') : '') + (m === 1 ? ' miss' : m === 2 ? ' hit' : m === 3 ? ' near' : '') + (i === G.lastMe && !place ? ' last' : '');
+      var m = V.marksMe[i];
+      b.className = 'cell' + (occ[i] ? (m === 2 && isSunkMine(i, V.hitsMe) ? ' sunk' : ' ship') : '') + (m === 1 ? ' miss' : m === 2 ? ' hit' : m === 3 ? ' near' : '') + (i === V.lastMe && !place ? ' last' : '');
     });
     var reveal = {};
     if (G.reveal) G.reveal.forEach(function (sh) { sh.cells.forEach(function (x) { reveal[x] = 1; }); });
-    var myTurn = G.phase === 'battle' && G.turn === 'me' && G.waiting == null;
+    var myTurn = live ? G.phase === 'battle' && G.turn === 'me' && G.waiting == null : RV.canPlay();
+    var heat = d.hint != null && d.hint >= 0 ? bsProb(V.view, V.enemyLeft).P : null;
     cellsEn.forEach(function (b, i) {
-      var v = G.view[i];
-      b.className = 'cell' + (v === 1 ? ' miss' : v === 2 ? ' hit' : v === 3 ? ' hit sunk' : v === 4 ? ' near' : '') + (v === 0 && reveal[i] ? ' reveal' : '') + (myTurn && v === 0 ? ' can' : '') + (i === G.lastEn ? ' last' : '');
+      var v = V.view[i];
+      b.className = 'cell' + (v === 1 ? ' miss' : v === 2 ? ' hit' : v === 3 ? ' hit sunk' : v === 4 ? ' near' : '') + (v === 0 && reveal[i] ? ' reveal' : '') + (myTurn && v === 0 ? ' can' : '') + (i === V.lastEn ? ' last' : '') + (d.hint === i ? ' hint' : '');
+      b.style.background = heat && v === 0 ? 'rgba(46,139,87,' + Math.min(.55, heat[i] * 1.6).toFixed(3) + ')' : '';
     });
-    $('enGrid').classList.toggle('off', G.phase === 'battle' && !myTurn);
+    $('enGrid').classList.toggle('off', G.phase === 'battle' && !myTurn && live);
     $('myGrid').classList.toggle('off', false);
-    $('myLeft').textContent = place ? '' : 'Целы: ' + fleetText(G.myLeft);
-    $('enLeft').textContent = 'Осталось потопить: ' + fleetText(G.enemyLeft);
+    $('myLeft').textContent = place ? '' : 'Целы: ' + fleetText(V.myLeft);
+    $('enLeft').textContent = 'Осталось потопить: ' + fleetText(V.enemyLeft);
+    $('hintBtn').disabled = live ? !(G.phase === 'battle' && G.turn === 'me' && G.waiting == null) : !!V.over;
+    if (!live) { $('status').className = 'status rvs'; return; }
+    if (G.botWait && G.phase === 'battle' && G.turn === 'them' && G.opp === 'bot') { G.botWait = false; botTurn(); }
     $('enTitle').textContent = G.opp === 'bot' ? 'Бот · ' + BS_LEVELS[S.level].name.toLowerCase() : 'Друг' + (Net2P.active() && !Net2P.online() ? ' (нет связи)' : '');
     // status
     var st = $('status'); st.className = 'status';
@@ -801,7 +1160,14 @@ function bsDensity(view, left, hits) {
     else { st.textContent = G.opp === 'bot' ? 'Стреляет бот…' : 'Стреляет друг…'; st.className = 'status red'; }
     if (place) renderDock();
   }
-  function isSunkMine(i) { var sh = G.fleet.find(function (s) { return s.cells.indexOf(i) >= 0; }); return sh && sh.cells.every(function (x) { return G.hitsMe[x]; }); }
+  function isSunkMine(i, hits) { hits = hits || G.hitsMe; var sh = G.fleet.find(function (s) { return s.cells.indexOf(i) >= 0; }); return sh && sh.cells.every(function (x) { return hits[x]; }); }
+  function RV_engine() { return !!G && G.phase !== 'place' && (G.opp === 'bot' || G.phase === 'over'); }
+  $('hintBtn').onclick = function () {
+    if (!G || !RV_engine()) return;
+    var d = RV.display();
+    if (d.mode === 'live' && !(G.phase === 'battle' && G.turn === 'me' && G.waiting == null)) return;
+    RV.hint(function (mv) { if (mv >= 0) toast('Лучший выстрел: ' + bsCellName(mv) + '. Зелёным — где вероятнее корабль'); });
+  };
   function fleetText(left) {
     if (!left.length) return 'ничего';
     var cnt = {}; left.forEach(function (l) { cnt[l] = (cnt[l] || 0) + 1; });
@@ -809,7 +1175,7 @@ function bsDensity(view, left, hits) {
   }
 
   // ---------- end / navigation ----------
-  $('endLook').onclick = function () { $('endOv').hidden = true; };
+  $('endLook').onclick = function () { $('endOv').hidden = true; RV.go(0); };
   $('endAgain').onclick = function () { again(); };
   function again() {
     if (G && G.opp === 'net') { if (Net2P.role() === 'host') hostNewGame(true); return; }
@@ -851,6 +1217,7 @@ function bsDensity(view, left, hits) {
       if (!d || d.gid !== gid) return false;
       G = emptyGame('net');
       Object.assign(G, d); G.marksMe = Int8Array.from(d.marksMe); G.hitsMe = Int8Array.from(d.hitsMe); G.view = Int8Array.from(d.view);
+      G.line = [{ s: snap(), mv: null, by: 0 }]; RV.reset();
       $('menu').hidden = true; $('game').hidden = false; $('lobbyOv').hidden = true; renderAll(); layout();
       return true;
     } catch (e) { return false; }

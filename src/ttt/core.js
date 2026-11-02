@@ -151,9 +151,10 @@ var TTT_LEVELS = [
   { name: 'Сильный', time: 1500, depth: 14, beam: 14, noise: 0.5 }
 ];
 function tttThink(s0, levelIdx) {
-  var L = TTT_LEVELS[levelIdx], me = s0.turn, deadline = Date.now() + L.time, nodes = 0, ABORT = {};
+  var L = typeof levelIdx === 'object' ? levelIdx : TTT_LEVELS[levelIdx], me = s0.turn, deadline = Date.now() + L.time, nodes = 0, ABORT = {};
   var moves = legalMoves(s0);
-  if (moves.length === 1) return moves[0];
+  tttThink.score = 0;
+  if (moves.length === 1 && !L.full) return moves[0];
   function ordered(s) {
     var mv = legalMoves(s), arr = mv.map(function (i) { return { i: i, k: moveScore(s, i) }; });
     arr.sort(function (a, b) { return b.k - a.k; });
@@ -194,10 +195,19 @@ function tttThink(s0, levelIdx) {
       // случайный выбор среди почти равных лучших (для слабых уровней — среди широкого круга)
       var good = res.filter(function (r) { return r.v >= bv - L.noise; });
       bestMove = good[Math.floor(Math.random() * good.length)].i;
-      tttThink.depth = d;
+      tttThink.depth = d; tttThink.score = bv;
       if (bv > 5e4) break;
     } catch (e) { if (e !== ABORT) throw e; break; }
     if (Date.now() > deadline) break;
   }
   return bestMove;
+}
+
+// ---------- анализ: шанс на победу того, чей ход, и лучший ход ----------
+var TTT_K = 400;
+function tttWinP(v) { if (v > 5e4) return 1; if (v < -5e4) return 0; return 1 / (1 + Math.exp(-v / TTT_K)); }
+function tttAnalyze(s, ms) {
+  if (s.winner) return { p: s.winner === 3 ? .5 : s.winner === s.turn ? 1 : 0, best: null };
+  var best = tttThink(s, { name: 'Анализ', time: ms || 500, depth: 14, beam: 14, noise: 0, full: true });
+  return { p: tttWinP(tttThink.score), best: best, v: tttThink.score };
 }

@@ -1,10 +1,10 @@
-"""Собирает все игры: главная (index.html, комната), tochki/, ttt/, battleship/, checkers/ из папки src. Запуск: python3 build.py"""
+"""Собирает все игры: главная (index.html, комната), tochki/, ttt/, battleship/, checkers/, go/ из папки src. Запуск: python3 build.py"""
 import os, re, json, shutil, datetime, zoneinfo
 here = os.path.dirname(os.path.abspath(__file__))
 src = os.path.join(here, 'src')
 ver = datetime.datetime.now(zoneinfo.ZoneInfo('Europe/Vienna')).strftime('%d.%m.%Y %H:%M')
 read = lambda *p: open(os.path.join(src, *p), encoding='utf-8').read()
-net, room = read('shared', 'net.js'), read('shared', 'room-client.js')
+net, room, review = read('shared', 'net.js'), read('shared', 'room-client.js'), read('shared', 'review.js')
 def head(extra='', root=''):
     # root: путь до корня сайта ('' для главной, '../' для игр) — манифест, иконки и работа без интернета
     app = ('<link rel="manifest" href="{r}manifest.webmanifest"><meta name="theme-color" content="#121726">'
@@ -18,17 +18,18 @@ def head(extra='', root=''):
             'body{margin:0;font:14px system-ui}[hidden]{display:none!important}</style>'
             '<script>window.GAMES_ONLINE=true;window.TTT_ONLINE=true;window.BGC_ONLINE=true;</script>' + extra + '</head><body>\n')
 def build(name):
-    page = read(name, 'ui.html').replace('/*CORE*/', read(name, 'core.js')).replace('/*NET*/', net).replace('/*VER*/', ver)
+    page = read(name, 'ui.html').replace('/*CORE*/', read(name, 'core.js')).replace('/*NET*/', net).replace('/*REVIEW*/', review).replace('/*VER*/', ver)
     d = os.path.join(here, name); os.makedirs(d, exist_ok=True)
     open(os.path.join(d, 'index.html'), 'w', encoding='utf-8').write(head('<script>' + room + '</script>', '../') + page + '\n</body></html>\n')
     print('собрано:', name + '/index.html')
-for g in ['tochki', 'ttt', 'battleship', 'checkers']: build(g)
+GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go']
+for g in GAMES: build(g)
 hub = read('hub.html').replace('/*NET*/', net).replace('/*VER*/', ver)
 open(os.path.join(here, 'index.html'), 'w', encoding='utf-8').write(head() + hub + '\n</body></html>\n')
 print('собрано: index.html (главная и комната)')
 # работа без интернета: манифест, иконки и service worker в корень сайта
 fonts = set()
-for f in ['index.html'] + [g + '/index.html' for g in ['tochki', 'ttt', 'battleship', 'checkers']]:
+for f in ['index.html'] + [g + '/index.html' for g in GAMES]:
     fonts.update(re.findall(r'href="(https://fonts\.googleapis\.com/css2\?[^"]+)"', open(os.path.join(here, f), encoding='utf-8').read()))
 for n in ['manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png']:
     shutil.copy(os.path.join(src, 'app', n), os.path.join(here, n))

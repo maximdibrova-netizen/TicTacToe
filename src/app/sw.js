@@ -3,7 +3,7 @@
 // Шрифты и библиотека связи: сохранённая копия, если она есть.
 var VERSION = '/*VER*/';
 var CACHE = 'games-' + VERSION;
-var PAGES = ['./', 'tochki/', 'ttt/', 'battleship/', 'checkers/', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
+var PAGES = ['./', 'tochki/', 'ttt/', 'battleship/', 'checkers/', 'go/', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 var FONTS = /*FONTS*/[];
 var EXTRA = ['https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js'];
 

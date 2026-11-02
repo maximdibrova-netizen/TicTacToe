@@ -119,6 +119,17 @@ a.game.current::after { content: "сейчас играете"; position: absolu
       <p>Доска 8×8. Бить обязательно, простая бьёт назад, дамка — на любое расстояние.</p>
       <div class="tags"><span>бот</span><span>вдвоём</span><span>онлайн</span></div>
     </a>
+    <a class="game" href="go/" data-g="go" data-name="Го">
+      <div class="art" style="background:#dcb468">
+        <svg viewBox="0 0 120 90" aria-hidden="true"><defs><radialGradient id="hgB" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#666"/><stop offset=".5" stop-color="#1c1c1c"/><stop offset="1" stop-color="#000"/></radialGradient><radialGradient id="hgW" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".7" stop-color="#e6e3da"/><stop offset="1" stop-color="#bdb8aa"/></radialGradient></defs>
+          <g stroke="#3d2a12" stroke-width="1.2"><path d="M22 9h76M22 21h76M22 33h76M22 45h76M22 57h76M22 69h76M22 81h76M22 9v72M34 9v72M46 9v72M58 9v72M70 9v72M82 9v72M94 9v72"/></g>
+          <g fill="url(#hgB)"><circle cx="46" cy="33" r="5.6"/><circle cx="58" cy="45" r="5.6"/><circle cx="46" cy="57" r="5.6"/><circle cx="82" cy="21" r="5.6"/></g>
+          <g fill="url(#hgW)" stroke="#9d978a" stroke-width=".4"><circle cx="58" cy="33" r="5.6"/><circle cx="70" cy="45" r="5.6"/><circle cx="58" cy="57" r="5.6"/><circle cx="34" cy="69" r="5.6"/></g></svg>
+      </div>
+      <h3>Го</h3>
+      <p>Окружай территорию и забирай камни соперника. Доски 9×9, 13×13, 19×19 или своя.</p>
+      <div class="tags"><span>бот</span><span>вдвоём</span><span>онлайн</span></div>
+    </a>
   </div>
   <section class="room install" id="install" hidden>
     <img src="apple-touch-icon.png" alt="">
@@ -367,7 +378,7 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     $('instBtn').onclick = function () { if (!prompt) return; prompt.prompt(); prompt.userChoice.then(function () { prompt = null; render(); }); };
     function check() {
       if (!window.caches || !('serviceWorker' in navigator)) return;
-      Promise.all(['./', 'tochki/', 'ttt/', 'battleship/', 'checkers/'].map(function (u) { return caches.match(u, { ignoreSearch: true }); })).then(function (rs) {
+      Promise.all(['./', 'tochki/', 'ttt/', 'battleship/', 'checkers/', 'go/'].map(function (u) { return caches.match(u, { ignoreSearch: true }); })).then(function (rs) {
         var ok = rs.every(Boolean);
         if (ok && !saved) { saved = true; $('offState').innerHTML = ' · <span class="ok">✓ работает без интернета</span>'; render(); }
         if (!ok) setTimeout(check, 1500);

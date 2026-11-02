@@ -264,6 +264,11 @@ body:not(.coords) .coord { display: none; }
 .rp-count { white-space: nowrap; }
 @media (max-width: 480px) { .replay { gap: 0; padding: 3px; } .replay button { width: 32px; height: 34px; } .replay svg { width: 17px; height: 17px; } .rp-count { min-width: 62px; font-size: 13px; } }
 .replay.viewing { box-shadow: inset 0 0 0 2px var(--gold); }
+.replay .rp-txt { width: auto; padding: 0 9px; font: 800 13px/1 var(--display); white-space: nowrap; }
+.replay #rpMain { background: var(--gold); color: var(--panel-ink); }
+.replay #rpCoord.on { background: rgba(255,255,255,.16); color: var(--gold); }
+.replay .rp-sep { width: 1px; align-self: stretch; margin: 6px 2px; background: rgba(255,255,255,.14); }
+.status .view-tag.var { background: var(--gold); color: var(--panel-ink); }
 .replay.viewing .rp-count { color: var(--gold); }
 .tile.last::after { content: ""; position: absolute; inset: 4%; border-radius: 14%; border: 3px solid var(--gold); pointer-events: none; z-index: 2; }
 .status .view-tag { font: 800 12px/1 var(--body); letter-spacing: .06em; text-transform: uppercase; color: var(--gold); border: 1.5px solid var(--gold); border-radius: 6px; padding: 3px 5px; }
@@ -399,6 +404,9 @@ body.no-eval #boardWrap { top: calc(56px + env(safe-area-inset-top, 0px)); botto
     <span class="rp-count" id="rpCount">0 / 0</span>
     <button id="rpNext" aria-label="Ход вперёд"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7.5 5.5v13L18 12z"/></svg></button>
     <button id="rpLast" aria-label="К последнему ходу"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 5.5v13L15.5 12z"/><rect x="17.4" y="5" width="2.6" height="14" rx="1"/></svg></button>
+    <button id="rpMain" class="rp-txt" hidden aria-label="Вернуться к партии">↩ партия</button>
+    <span class="rp-sep" aria-hidden="true"></span>
+    <button id="rpCoord" class="rp-txt" aria-label="Координаты" title="Координаты (C)">a1</button>
   </div>
   <div class="bottombar">
     <button class="sq-btn" id="homeBtn" aria-label="В меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"><path d="M3.5 11 12 3.8 20.5 11M6 9v11h12V9"/></svg></button>
@@ -607,9 +615,15 @@ onmessage = function (e) {
     b.onclick = function () { S.evalOn = b.dataset.v === '1'; saveS(); renderMenu(); };
   });
   Array.prototype.forEach.call(document.querySelectorAll('#coordSeg button'), function (b) {
-    b.onclick = function () { setCoords(b.dataset.v === '1'); };
+    b.onclick = function () { setCoords(b.dataset.v === '1', false); };
   });
-  function setCoords(on) { S.coords = !!on; saveS(); document.body.classList.toggle('coords', S.coords); renderMenu(); if (G) { layout(); setStatus(); } }
+  // координаты общие для всех игроков онлайн-партии: кто-то включил — видно у всех
+  function setCoords(on, fromNet) {
+    S.coords = !!on; saveS(); document.body.classList.toggle('coords', S.coords); renderMenu(); if (G) { layout(); setStatus(); }
+    var rc = document.getElementById('rpCoord'); if (rc) rc.classList.toggle('on', S.coords);
+    if (fromNet || !NET) return;
+    if (NET.role === 'host') netBroadcast({ t: 'coords', on: S.coords }); else netSend({ t: 'coords', on: S.coords });
+  }
   document.body.classList.toggle('coords', !!S.coords);
   function sizeStep(k, d) { S[k] = Math.max(SIZE_MIN, Math.min(SIZE_MAX, (S[k] | 0) + d)); S.map = 'custom'; saveS(); renderMenu(); }
   $('wMinus').onclick = function () { sizeStep('cw', -1); }; $('wPlus').onclick = function () { sizeStep('cw', 1); };
@@ -940,6 +954,14 @@ onmessage = function (e) {
     var st = $('status');
     if (!G) return;
     var sw = function (p) { return '<span class="sw" style="background:var(--p' + p + ')"></span>'; };
+    if (G.view >= 0 && G.var) {
+      var vs = curSnap(), vv = null;
+      if (G.var.idx >= 0 && vs.by === G.me) { var a0 = prevEvalOf(), b0 = vs.ev; if (a0 && b0 && a0.pct <= 97.5 && a0.pct >= 2.5) { var dd = Math.round(a0.pct - b0.pct); vv = dd >= 25 ? { c: 'b', t: 'грубая ошибка', d: dd } : dd >= 12 ? { c: 'm', t: 'ошибка', d: dd } : dd >= 6 ? { c: 'i', t: 'неточность', d: dd } : null; } }
+      var vtag = vv ? ' <span class="verdict ' + vv.c + '">' + vv.t + ' −' + vv.d + '%</span>' : '';
+      st.innerHTML = '<span class="view-tag var">Вариант</span>' + (G.var.idx < 0 ? '<span>После хода ' + G.var.base + '</span>' :
+        sw(vs.by) + '<span>Ход ' + (G.var.base + G.var.idx + 1) + (S.coords && vs.cell >= 0 ? ' · ' + cellName(vs.cell) : '') + '</span>' + vtag) + (vs.over ? '<small>' + COLORS_GEN[vs.by] + ' победили</small>' : '');
+      return;
+    }
     if (G.view >= 0) {
       var s = G.hist[G.view];
       var vd = G.review >= 0 ? verdict(G.review) : verdict(G.view);
@@ -1021,6 +1043,7 @@ onmessage = function (e) {
   }
 
   function onTileClick(e) {
+    if (G && G.view >= 0) { if (canVary()) varPlay(+e.currentTarget.dataset.i); return; }
     if (!G || !canTap()) return;
     var i = +e.currentTarget.dataset.i, p = G.turn;
     if (G.own[i] !== p) return;
@@ -1127,9 +1150,44 @@ onmessage = function (e) {
     }, ch);
   }
 
+  // ----- variations: from any position of the history, play moves yourself and see what the engine thinks -----
+  // Offline at any time; online only after the game is over (during an online game the engine is never shown).
+  function canVary() { return !!G && G.view >= 0 && (!NET || G.over) && !G.varBusy; }
+  function curSnap() { if (!G) return null; if (G.var) return G.var.idx < 0 ? G.hist[G.var.base] : G.var.list[G.var.idx]; return G.view >= 0 ? G.hist[G.view] : null; }
+  function curEval() { if (G.var && G.var.idx >= 0) return G.var.list[G.var.idx].ev || null; return G.evals[G.var ? G.var.base : G.view] || null; }
+  function prevEvalOf() { if (!G.var) return null; return G.var.idx > 0 ? G.var.list[G.var.idx - 1].ev : G.evals[G.var.base]; }
+  function markVary(s) { var on = canVary() && s && !s.over; for (var i = 0; i < G.B.n; i++) tiles[i].classList.toggle('can', !!on && s.own[i] === s.turn); }
+  function varEval(s) {
+    if (!s || s.ev || s.evBusy || !evalActive()) return;
+    s.evBusy = true;
+    askEval({ rows: G.map.rows, cnt: Array.from(s.cnt), own: Array.from(s.own), mask: s.mask, turn: s.turn, me: G.me, start: G.start, time: EVAL_MS }, function (r) {
+      s.ev = r; s.evBusy = false;
+      if (G && curSnap() === s) { renderEval(); setStatus(); }
+    });
+  }
+  function showCur() {
+    var s = curSnap(); if (!s) return;
+    renderSnap(s); markVary(s); updateReplay(); setStatus(); renderEval();
+    if (G.var && G.var.idx >= 0) { varEval(s); var pv = G.var.idx > 0 ? G.var.list[G.var.idx - 1] : null; if (pv) varEval(pv); }
+  }
+  function varPlay(i) {
+    var s = curSnap(); if (!s || s.over || s.own[i] !== s.turn) return;
+    var p = s.turn, cnt = s.cnt.slice(), own = s.own.slice();
+    var frames = applyMove(G.B, cnt, own, i, p, true);
+    var mask = aliveMaskAfter(G.B, own, s.mask), over = bitCount(mask) === 1;
+    var ns = { cnt: cnt, own: own, mask: mask, turn: over ? p : nextAlive(mask, p), over: over, cell: i, by: p };
+    if (!G.var) G.var = { base: G.view, list: [], idx: -1 };
+    G.var.list.length = G.var.idx + 1; G.var.list.push(ns); G.var.idx++;
+    G.review = -1; clearHint(); varEval(ns);
+    G.varBusy = true; markVary(null); updateReplay(); setStatus(); renderEval();
+    animateMove({ pre: { cnt: s.cnt, own: s.own, mask: s.mask }, i: i, p: p, frames: frames }, function () { if (!G) return; G.varBusy = false; showCur(); });
+  }
+  function leaveVar() { if (G && G.var) { G.var = null; if (G.varBusy) { stopAnims(); G.varBusy = false; } } }
+
   // ----- move history: look back like in chess -----
   function setView(v) {
     if (!G) return;
+    leaveVar();
     var last = G.hist.length - 1;
     if (v >= last) v = -1;
     if (v < 0 && G.view < 0) return;
@@ -1140,15 +1198,17 @@ onmessage = function (e) {
     if (v < 0) { tiles.forEach(function (t) { t._c = -2; }); idle(); }
     else {
       if (evalActive() && !G.evals[v]) queueEval(v, true);
-      renderSnap(G.hist[v]); updateReplay(); setStatus(); renderEval();
+      renderSnap(G.hist[v]); markVary(G.hist[v]); updateReplay(); setStatus(); renderEval();
+      if (canVary() && !G.varTip) { G.varTip = true; toast('Можно сходить самому и посмотреть, что будет'); }
     }
   }
   function updateReplay() {
     if (!G) return;
     var last = G.hist.length - 1, v = G.view < 0 ? last : G.view;
-    $('rpCount').textContent = (v === 0 ? 'старт' : 'ход ' + v) + ' / ' + last;
-    $('rpFirst').disabled = $('rpPrev').disabled = v <= 0;
-    $('rpNext').disabled = $('rpLast').disabled = G.view < 0;
+    $('rpCount').textContent = G.var ? 'вариант ' + (G.var.idx + 1) + ' / ' + G.var.list.length : (v === 0 ? 'старт' : 'ход ' + v) + ' / ' + last;
+    $('rpFirst').disabled = $('rpPrev').disabled = !G.var && v <= 0;
+    $('rpNext').disabled = $('rpLast').disabled = G.var ? G.var.idx >= G.var.list.length - 1 : G.view < 0;
+    $('rpMain').hidden = !G.var; $('rpCoord').classList.toggle('on', !!S.coords);
     $('replay').classList.toggle('viewing', G.view >= 0);
     $('hintBtn').disabled = !hintAvailable() && !$('hintBtn').classList.contains('thinking');
     var ub = $('undoBtn'), net = !!NET;
@@ -1159,6 +1219,13 @@ onmessage = function (e) {
   }
   function viewStep(d) {
     if (!G) return;
+    if (G.var) {
+      if (G.varBusy) { stopAnims(); G.varBusy = false; }
+      if (d === 'first') { setView(0); return; }
+      if (d === -1 && G.var.idx < 0) { setView(Math.max(0, G.var.base - 1)); return; }
+      G.var.idx = d === 'last' ? G.var.list.length - 1 : Math.max(-1, Math.min(G.var.list.length - 1, G.var.idx + d));
+      clearHint(); showCur(); return;
+    }
     var last = G.hist.length - 1, v = G.view < 0 ? last : G.view;
     if (d === 'first') setView(0);
     else if (d === 'last') setView(-1);
@@ -1168,8 +1235,10 @@ onmessage = function (e) {
   $('rpPrev').onclick = function () { viewStep(-1); };
   $('rpNext').onclick = function () { viewStep(1); };
   $('rpLast').onclick = function () { viewStep('last'); };
+  $('rpMain').onclick = function () { if (G && G.var) setView(G.var.base); };
+  $('rpCoord').onclick = function () { setCoords(!S.coords, false); toast(S.coords ? 'Координаты включены' : 'Координаты скрыты'); };
   document.addEventListener('keydown', function (e) {
-    if (G && !$('game').hidden && !e.ctrlKey && !e.metaKey && !e.altKey && /^[cCсС]$/.test(e.key) && !/INPUT|TEXTAREA/.test((e.target || {}).tagName || '')) { setCoords(!S.coords); toast(S.coords ? 'Координаты включены' : 'Координаты скрыты'); return; }
+    if (G && !$('game').hidden && !e.ctrlKey && !e.metaKey && !e.altKey && /^[cCсС]$/.test(e.key) && !/INPUT|TEXTAREA/.test((e.target || {}).tagName || '')) { setCoords(!S.coords, false); toast(S.coords ? 'Координаты включены' : 'Координаты скрыты'); return; }
     if (!G || $('game').hidden || /INPUT|TEXTAREA/.test((e.target || {}).tagName || '')) return;
     if (!$('endOv').hidden || !$('rulesOv').hidden || !$('lobbyOv').hidden) return;
     var k = e.key;
@@ -1196,6 +1265,13 @@ onmessage = function (e) {
   }
   function undo() {
     if (NET) { requestUndo(); return; }
+    if (G && G.var) {               // play on from the position in the variation
+      if (G.varBusy) { stopAnims(); G.varBusy = false; }
+      var b = G.var.base, L = G.var.list.slice(0, G.var.idx + 1);
+      G.hist.length = b + 1; if (G.evals.length > b + 1) G.evals.length = b + 1;
+      L.forEach(function (x) { G.hist.push({ cnt: x.cnt, own: x.own, mask: x.mask, turn: x.turn, over: x.over, cell: x.cell, by: x.by }); if (x.ev) G.evals[G.hist.length - 1] = x.ev; });
+      G.var = null; applyUndo(G.hist.length - 1, 'Играем с этой позиции'); return;
+    }
     applyUndo(undoTarget());
   }
   function applyUndo(t, msg) {
@@ -1205,7 +1281,7 @@ onmessage = function (e) {
     if (G.evals.length > t + 1) G.evals.length = t + 1;
     var s = G.hist[t];
     G.cnt = s.cnt.slice(); G.own = s.own.slice(); G.mask = s.mask; G.turn = s.turn; G.over = s.over;
-    G.winner = -1; G.moves = t; G.view = -1; G.thinkingAt = -1;
+    G.winner = s.over ? s.by : -1; G.moves = t; G.view = -1; G.thinkingAt = -1;
     G.endShown = false; G.outShown = false; G.watching = false;
     $('endOv').hidden = true;
     tiles.forEach(function (x) { x._c = -2; });
@@ -1253,7 +1329,8 @@ onmessage = function (e) {
   }
   function renderEval() {
     if (!evalActive()) return;
-    var last = G.hist.length - 1, k = G.view >= 0 ? G.view : last, r = G.evals[k], j = k;
+    var last = G.hist.length - 1, k = G.view >= 0 ? G.view : last, r = G.var ? curEval() : G.evals[k], j = k;
+    if (G.var && !r) { r = prevEvalOf() || G.evals[G.var.base]; j = -1; }
     while (!r && j > 0) r = G.evals[--j];
     var bar = $('evalBar'), txt = $('ebText');
     var others = [0, 1, 2, 3].filter(function (q) { return q !== G.me && G.kinds[q] !== 'off'; });
@@ -1264,7 +1341,7 @@ onmessage = function (e) {
     else {
       $('ebFill').style.width = r.pct + '%';
       txt.textContent = r.v >= WIN - 1000 ? who + ': выигрыш' : r.v <= -WIN + 1000 ? who + ': проигрыш' : who + ' ' + Math.round(r.pct) + '%';
-      txt.classList.toggle('pending', j !== k);
+      txt.classList.toggle('pending', G.var ? !curEval() : j !== k);
     }
     drawGraph();
   }
@@ -1322,7 +1399,7 @@ onmessage = function (e) {
   var hintTok = 0;
   function hintAvailable() {
     if (!G || (NET && !G.over)) return false;
-    if (G.view >= 0) { var s = G.hist[G.view]; return !s.over; }
+    if (G.view >= 0) { var s = curSnap(); return !!s && !s.over && !G.varBusy; }
     return canTap();
   }
   function clearHint() {
@@ -1333,15 +1410,15 @@ onmessage = function (e) {
   }
   function showHint() {
     if (!hintAvailable() || $('hintBtn').classList.contains('thinking')) return;
-    var s = G.view >= 0 ? G.hist[G.view] : { cnt: G.cnt, own: G.own, mask: G.mask, turn: G.turn };
+    var s = G.view >= 0 ? curSnap() : { cnt: G.cnt, own: G.own, mask: G.mask, turn: G.turn };
     tiles.forEach(function (t) { t.classList.remove('hint'); });   // keep the "played" mark of a reviewed mistake
-    var my = ++hintTok, tk = token, v = G.view, n = G.hist.length;
+    var my = ++hintTok, tk = token, v = G.view, n = G.hist.length, shown = curSnap();
     $('hintBtn').classList.add('thinking'); $('hintBtn').disabled = false;
     askBot({ rows: G.map.rows, cnt: Array.from(s.cnt), own: Array.from(s.own), mask: s.mask, me: s.turn, level: 3, start: G.start }, function (m) {
-      if (my !== hintTok || tk !== token || !G || G.view !== v || G.hist.length !== n) return;
+      if (my !== hintTok || tk !== token || !G || G.view !== v || G.hist.length !== n || curSnap() !== shown) return;
       $('hintBtn').classList.remove('thinking');
       G.hint = m; tiles[m].classList.add('hint'); updateReplay();
-      if (G.view >= 0 && G.review < 0) toast('Здесь лучший ход ' + (G.kinds[s.turn] === 'human' ? 'был такой' : 'для ' + COLORS[s.turn].toLowerCase().replace(/ый$/, 'ого').replace(/ий$/, 'его')));
+      if (G.view >= 0 && G.review < 0) toast(canVary() ? 'Лучший ход подсвечен — тапни его и посмотри, что будет' : 'Здесь лучший ход ' + (G.kinds[s.turn] === 'human' ? 'был такой' : 'для ' + COLORS[s.turn].toLowerCase().replace(/ый$/, 'ого').replace(/ий$/, 'его')));
     });
   }
   $('hintBtn').onclick = showHint;
@@ -1596,6 +1673,7 @@ onmessage = function (e) {
       var ok = G && NET.setup && !NET.undo && !G.over && G.turn === seat2 && d.n === G.hist.length && i >= 0 && i < G.B.n && G.own[i] === seat2;
       if (ok) decide(i, seat2); else { try { conn.send({ t: 'nack' }); } catch (e) {} }
     } else if (d.t === 'undoReq') { if (G) hostStartVote(seat2); }
+    else if (d.t === 'coords') { setCoords(d.on, true); netBroadcast({ t: 'coords', on: S.coords }); }
     else if (d.t === 'undoVote') { hostVote(seat2, d.id, !!d.ok); }
     else if (d.t === 'needsync') { if (G) try { conn.send(syncMsg()); } catch (e) {} }
     else if (d.t === 'leave') { hostOnClose(conn); }
@@ -1696,7 +1774,7 @@ onmessage = function (e) {
     hostPushPeers();
   }
   function syncMsg() {
-    return { t: 'sync', setup: NET.setup, winner: G.winner, watching: false,
+    return { t: 'sync', setup: NET.setup, winner: G.winner, watching: false, coords: S.coords,
       hist: G.hist.map(function (h) { return { c: Array.from(h.cnt), o: Array.from(h.own), m: h.mask, tu: h.turn, ov: h.over, cell: h.cell, by: h.by }; }) };
   }
   function hostStartGame() {
@@ -1706,7 +1784,7 @@ onmessage = function (e) {
     var kinds = kindsFor(setup);
     setup.first = firstSeat(kinds, S.first);
     NET.setup = setup;
-    netBroadcast({ t: 'start', setup: setup });
+    netBroadcast({ t: 'start', setup: setup, coords: S.coords });
     newGame({ rows: setup.rows, mapId: setup.mapId, kinds: kinds, level: setup.level, first: setup.first });
   }
 
@@ -1765,7 +1843,9 @@ onmessage = function (e) {
     else if (d.t === 'start') {
       n.setup = d.setup;
       newGame({ rows: d.setup.rows, mapId: d.setup.mapId, kinds: kindsFor(d.setup, n.seat), level: d.setup.level, first: d.setup.first });
+      if (d.coords) setCoords(true, true); else if (S.coords) netSend({ t: 'coords', on: true });
     }
+    else if (d.t === 'coords') setCoords(d.on, true);
     else if (d.t === 'sync') guestSync(d);
     else if (d.t === 'move') {
       n.pendingTry = false; clearTimeout(n.tryTimer);
@@ -1790,6 +1870,7 @@ onmessage = function (e) {
     G.cnt = L.cnt.slice(); G.own = L.own.slice(); G.mask = L.mask; G.turn = L.turn; G.over = L.over; G.winner = d.winner;
     G.moves = G.hist.length - 1; G.endShown = G.over;
     tiles.forEach(function (t) { t._c = -2; });
+    if (d.coords) setCoords(true, true);
     idle();
   }
 

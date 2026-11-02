@@ -152,3 +152,34 @@ function bsDensity(view, left, hits) {
   }
   return best;
 }
+
+// ---------- подсказка и разбор: шанс попадания в каждую клетку ----------
+// Только по тому, что стрелок знает (view). Есть раненый корабль — где он продолжается; иначе — где может стоять
+// хоть один из оставшихся кораблей (каждый корабль считаем отдельно, грубо, но наглядно).
+function bsProb(view0, left) {
+  var view = view0.slice(), i, P = new Float64Array(100), hits = [];
+  for (i = 0; i < 100; i++) if (view0[i] === 2 || view0[i] === 3) {
+    var r0 = (i / 10) | 0, c0 = i % 10;
+    [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(function (d) { var rr = r0 + d[0], cc = c0 + d[1]; if (rr >= 0 && cc >= 0 && rr < 10 && cc < 10 && view[rr * 10 + cc] === 0) view[rr * 10 + cc] = 4; });
+  }
+  for (i = 0; i < 100; i++) if (view[i] === 2) hits.push(i);
+  var uniq = {}; left.forEach(function (l) { uniq[l] = (uniq[l] || 0) + 1; });
+  var miss = new Float64Array(100).fill(1), tot = 0, cov = new Float64Array(100);
+  Object.keys(uniq).forEach(function (key) {
+    var len = +key, mult = uniq[key], total = 0, cover = new Float64Array(100);
+    for (var r = 0; r < 10; r++) for (var c = 0; c < 10; c++) for (var v = 0; v < 2; v++) {
+      if (len === 1 && v === 1) continue;
+      var cells = bsShipCells(r, c, len, v === 1); if (!cells) continue;
+      var ok = true, ch = 0;
+      for (var k = 0; k < len; k++) { var s = view[cells[k]]; if (s === 1 || s === 3 || s === 4) { ok = false; break; } if (s === 2) ch++; }
+      if (!ok) continue;
+      if (hits.length) { if (!ch) continue; var w = mult * Math.pow(30, ch); tot += w; for (k = 0; k < len; k++) if (view[cells[k]] === 0) cov[cells[k]] += w; }
+      else { total++; for (k = 0; k < len; k++) cover[cells[k]]++; }
+    }
+    if (!hits.length && total) for (var j = 0; j < 100; j++) miss[j] *= Math.pow(1 - cover[j] / total, mult);
+  });
+  for (i = 0; i < 100; i++) P[i] = view[i] !== 0 ? 0 : hits.length ? (tot ? cov[i] / tot : 0) : 1 - miss[i];
+  var best = -1, bv = -1;
+  for (i = 0; i < 100; i++) if (view[i] === 0 && P[i] > bv) { bv = P[i]; best = i; }
+  return { P: P, best: best };
+}

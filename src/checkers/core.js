@@ -133,9 +133,10 @@ function ckEval(b, side) {
   return sc * side;
 }
 function ckThink(s0, levelIdx) {
-  var L = CK_LEVELS[levelIdx], deadline = Date.now() + L.time, nodes = 0, ABORT = {}, me = s0.side;
+  var L = typeof levelIdx === 'object' ? levelIdx : CK_LEVELS[levelIdx], deadline = Date.now() + L.time, nodes = 0, ABORT = {}, me = s0.side;
   var root = ckMoves(s0);
-  if (root.length === 1) return 0;
+  ckThink.score = 0;
+  if (root.length === 1 && !L.full) return 0;
   function order(s, mv) {
     return mv.map(function (m) { return { m: m, k: m.caps.length * 1000 + (m.promote ? 500 : 0) }; }).sort(function (a, b) { return b.k - a.k; }).map(function (x) { return x.m; });
   }
@@ -175,7 +176,7 @@ function ckThink(s0, levelIdx) {
       var good = res.filter(function (r) { return r.v >= bv - L.noise; });
       var pick = good[Math.floor(Math.random() * good.length)].m;
       bestIdx = root.indexOf(pick);
-      ckThink.depth = d;
+      ckThink.depth = d; ckThink.score = bv;
       if (bv > 5e4 || bv < -5e4) break;
     } catch (e) { if (e !== ABORT) throw e; break; }
     if (Date.now() > deadline) break;
@@ -188,4 +189,13 @@ function ckApplyFast(s, mv) {
   for (var k = 0; k < mv.caps.length; k++) b[mv.caps[k]] = 0;
   b[to] = mv.promote ? 2 * s.side : piece;
   s.side = -s.side;
+}
+
+// ---------- анализ: шанс на победу того, чей ход, и лучший ход ----------
+var CK_K = 160;
+function ckWinP(v) { if (v > 5e4) return 1; if (v < -5e4) return 0; return 1 / (1 + Math.exp(-v / CK_K)); }
+function ckAnalyze(s, ms) {
+  if (s.winner) return { p: s.winner === 3 ? .5 : s.winner === s.side ? 1 : 0, best: null };
+  var all = ckMoves(s), i = ckThink(s, { name: 'Анализ', time: ms || 600, depth: 30, noise: 0, full: true });
+  return { p: ckWinP(ckThink.score), best: all[i].path.join(','), v: ckThink.score };
 }
