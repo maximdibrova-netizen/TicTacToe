@@ -1,4 +1,4 @@
-"""Собирает все игры: главная (index.html, комната), tochki/, ttt/, battleship/, checkers/, go/ из папки src. Запуск: python3 build.py"""
+"""Собирает все игры: главная (index.html, комната), tochki/, ttt/, battleship/, checkers/, go/ из папки src (плюс chess/). Запуск: python3 build.py"""
 import os, re, json, shutil, datetime, zoneinfo
 here = os.path.dirname(os.path.abspath(__file__))
 src = os.path.join(here, 'src')
@@ -7,6 +7,7 @@ read = lambda *p: open(os.path.join(src, *p), encoding='utf-8').read()
 net, room, review = read('shared', 'net.js'), read('shared', 'room-client.js'), read('shared', 'review.js')
 clock = read('shared', 'clock-core.js') + '\n' + read('shared', 'clock.js')
 clock_css = read('shared', 'clock.css')
+hub_back = read('shared', 'hub-back.html')
 
 def head(extra='', root=''):
     # root: путь до корня сайта ('' для главной, '../' для игр) — манифест, иконки и работа без интернета
@@ -22,8 +23,10 @@ def head(extra='', root=''):
             '<script>window.GAMES_ONLINE=true;window.TTT_ONLINE=true;window.BGC_ONLINE=true;</script>' + extra + '</head><body>\n')
 def build(name):
     page = read(name, 'ui.html').replace('/*CORE*/', read(name, 'core.js')).replace('/*CLOCK*/', clock).replace('/*NET*/', net).replace('/*REVIEW*/', review).replace('/*VER*/', ver)
+    pf = os.path.join(src, name, 'pieces.js')
+    if os.path.exists(pf): page = page.replace('/*PIECES*/', read(name, 'pieces.js'))
     d = os.path.join(here, name); os.makedirs(d, exist_ok=True)
-    open(os.path.join(d, 'index.html'), 'w', encoding='utf-8').write(head('<style>' + clock_css + '</style><script>' + room + '</script>', '../') + page + '\n</body></html>\n')
+    open(os.path.join(d, 'index.html'), 'w', encoding='utf-8').write(head('<style>' + clock_css + '</style><script>' + room + '</script>' + hub_back, '../') + page + '\n</body></html>\n')
     print('собрано:', name + '/index.html')
 GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go', 'chess']
 for g in GAMES: build(g)

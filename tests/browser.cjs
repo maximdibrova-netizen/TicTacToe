@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const {PeerServer}=require('peer');const 
 try{for(const name of (process.env.GAMES?process.env.GAMES.split(','):['chess','go','checkers','ttt','battleship','tochki'])){
 const host=await browser.newPage(),guest=await browser.newPage(),errors=[];for(const p of [host,guest])p.on('pageerror',e=>errors.push(e.message));
 const url='http://127.0.0.1:8765/'+name+'/?peer=127.0.0.1:9000&peerlib=http://127.0.0.1:8766/';await host.goto(url);
-await host.locator('#gc-enabled').check();for(let i=0;i<await host.locator('[id^=gc-min-]').count();i++){await host.locator('#gc-min-'+i).fill('0.2');await host.locator('#gc-inc-'+i).fill('2');}
+await host.evaluate(n=>localStorage.setItem('clock-'+n,JSON.stringify({v:2,enabled:true,preset:'custom',min:0.2,inc:2,per:false,pmin:[.2,.2,.2,.2],pinc:[2,2,2,2]})),name);await host.reload();
 if(await host.locator('#m-net').count())await host.locator('#m-net').click();
 await host.locator('#netCreate,#onCreate').click();await host.waitForFunction(()=>document.querySelector('#lbCode').textContent.trim().length===5);const code=(await host.locator('#lbCode').textContent()).trim();await guest.goto(url+'#'+code);if(name==='tochki')await host.locator('#lbStart').click();
 await host.locator('#game').waitFor({state:'visible'});await guest.locator('#game').waitFor({state:'visible'});
@@ -15,6 +15,6 @@ if(name==='checkers'){await host.locator('.sq.can').first().click();await host.l
 if(name==='ttt'){await host.locator('.cell').first().click();await guest.waitForFunction(()=>document.querySelectorAll('.gc-face')[1].classList.contains('gc-active'));}
 if(name==='tochki'){await host.locator('#board .can').first().click();}
 if(name==='battleship'){await host.locator('#enGrid .cell').first().click();}
-if(name==='chess'){await host.locator('[data-square=e2]').click();await host.locator('[data-square=e4]').click();await guest.waitForFunction(()=>document.querySelector('#history').textContent.includes('e4'));await guest.locator('[data-square=e7]').click();await guest.locator('[data-square=e5]').click();await host.waitForFunction(()=>document.querySelector('#history').textContent.includes('e5'));}
+if(name==='chess'){await host.locator('[data-square=e2]').click();await host.locator('[data-square=e4]').click();await guest.waitForFunction(()=>document.querySelector('#moves').textContent.includes('e4'));await guest.locator('[data-square=e7]').click();await guest.locator('[data-square=e5]').click();await host.waitForFunction(()=>document.querySelector('#moves').textContent.includes('e5'));}
 await host.locator('.gc-result').waitFor({state:'visible',timeout:22000});await guest.locator('.gc-result').waitFor({state:'visible',timeout:3000});assert.equal(await host.locator('.gc-result p').textContent(),await guest.locator('.gc-result p').textContent());assert.deepEqual(errors,[]);console.log(name+' online clock and timeout PASS');await host.close();await guest.close();
 }}finally{await browser.close();lib.close();staticServer.close();}})().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1);});

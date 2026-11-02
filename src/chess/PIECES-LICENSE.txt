@@ -1,0 +1,4 @@
+Chess piece images (src/chess/pieces.js): "cburnett" set by Colin M.L. Burnett
+(https://en.wikipedia.org/wiki/User:Cburnett), as distributed by lichess.org
+(https://github.com/lichess-org/lila/tree/master/public/piece/cburnett).
+License: GNU General Public License, version 2 or later — https://www.gnu.org/licenses/gpl-2.0.txt

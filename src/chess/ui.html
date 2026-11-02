@@ -1,43 +1,717 @@
 <title>Шахматы</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@500;700;800&display=swap">
 <style>
-:root{color-scheme:dark;--gc-bg:#363b34;--gc-active:#49533c;--gc-accent:#adc486}*{box-sizing:border-box}body{margin:0;background:#252824;color:#eeeee6;font:16px/1.5 system-ui}button,input,select{font:inherit}button{cursor:pointer;color:inherit;background:#41473c;border:1px solid #68725c;border-radius:5px;padding:9px 14px}button:focus-visible,a:focus-visible{outline:3px solid #e6be5a;outline-offset:2px}a{color:#c6d9ac}h1{font:600 36px Georgia,serif;margin:0}h2{font-size:18px}.col{max-width:470px;margin:35px auto;padding:20px}label{display:block;margin:10px 0}select,input{background:#34392f;color:#fff;border:1px solid #7f876e;padding:7px;border-radius:4px}.play{width:100%;background:#728753;color:white;margin:12px 0;font-weight:700}.sub{color:#bac1b0}.modes{display:flex;gap:7px;flex-wrap:wrap}.modes [aria-pressed=true]{background:#728753}.game-shell{max-width:1100px;margin:18px auto;padding:12px;display:grid;grid-template-columns:minmax(260px,680px) minmax(200px,300px);gap:24px;align-items:start}.board{aspect-ratio:1;display:grid;grid-template-columns:repeat(8,1fr);width:100%;box-shadow:0 5px 24px #0005;border:6px solid #444c3b;border-radius:3px}.square{position:relative;border:0;border-radius:0;padding:0;aspect-ratio:1;background:#ecebd5;display:grid;place-items:center}.square.dark{background:#81966a}.square.selected{background:#e4c563}.square.target:after{content:'';position:absolute;inset:37%;border-radius:50%;background:#202b4480}.square.last{box-shadow:inset 0 0 0 4px #e2c55a}.square svg{width:87%;height:87%;filter:drop-shadow(0 2px 1px #0004)}.coordinate{position:absolute;bottom:1px;left:3px;font:600 10px system-ui;color:#25361f}.side{background:#30352b;border-radius:6px;padding:20px}.side h2{margin:0 0 12px}#status{font-weight:700;min-height:48px}#history{max-height:260px;overflow:auto;font:14px/1.8 monospace;white-space:pre-wrap;color:#cfd4c6}.tools{display:flex;gap:7px;flex-wrap:wrap;margin:15px 0}.ov{position:fixed;inset:0;background:#000b;z-index:20;display:grid;place-items:center;padding:20px}.dlg{background:#30352b;border:1px solid #7c886b;padding:24px;border-radius:10px;max-width:420px;width:100%}.promotion{display:flex;gap:8px}.promotion button{width:70px;height:70px;padding:4px}.promotion svg{width:100%;height:100%}.gc-bar{grid-column:1/-1;max-width:600px;margin-bottom:0}.code{font:700 32px monospace;letter-spacing:5px;margin:12px 0}#lbLink{max-width:100%;font-size:12px}#joinRow{margin:10px 0}#joinCode{width:130px}.hint{font-size:13px;color:#b5bea9}#game[hidden],.ov[hidden],#menu[hidden]{display:none!important}@media(max-width:740px){.game-shell{display:flex;flex-direction:column;margin:0;padding:8px;gap:8px}.board{max-width:calc(100svh - 235px);min-width:270px;align-self:center}.side{width:100%;padding:12px}#history{max-height:85px}.tools{margin:8px 0}#status{min-height:24px}.gc-bar{width:100%}}
+/* Layout: a classic brown board on the same navy table as the home page; player cards above, history and tools below. */
+:root {
+  color-scheme: dark;
+  --bg: #121726; --bg-2: #1a2136; --line: #2d3757; --panel: #1f2843;
+  --ink: #eef1fb; --ink-dim: #9aa5c7; --gold: #ffd166; --ok: #7fd36b; --bad: #ff6b6b;
+  --light: #f0d9b5; --dark: #b58863; --frame: #2b2f45;
+  --btn: #2a3456; --btn-hi: #36426d;
+  --rv-accent: #ffd166; --rv-btn: #2a3456;
+  --gc-bg: #1f2843; --gc-active: #2f3a62; --gc-accent: #ffd166;
+  --display: "Unbounded", "Trebuchet MS", system-ui, sans-serif; --body: "Manrope", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: radial-gradient(110% 80% at 50% 40%, var(--bg-2), var(--bg) 70%); background-color: var(--bg); color: var(--ink); font-family: var(--body); overflow: hidden; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.screen { position: fixed; inset: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+#menu { overflow-y: auto; display: grid; place-items: center; padding-block: 18px; }
+.col { width: min(100%, 440px); display: flex; flex-direction: column; gap: 12px; }
+.logo { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.logo svg { width: 58px; height: 58px; flex: none; filter: drop-shadow(0 4px 8px rgba(0,0,0,.4)); }
+h1 { margin: 0; font: 800 clamp(30px, 8vw, 40px)/1 var(--display); }
+.sub { margin: -4px 0 4px; text-align: center; font: 700 14px/1.3 var(--body); color: var(--ink-dim); }
+.card { background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.card h2 { margin: 0; font: 800 11.5px/1 var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
+.seg { display: grid; gap: 6px; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); }
+.seg button { border: 0; border-radius: 11px; padding: 10px 6px; background: var(--btn); font: 800 14.5px/1.1 var(--body); min-width: 0; }
+.seg button:hover { background: var(--btn-hi); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.play { border: 0; border-radius: 16px; padding: 14px; background: var(--gold); color: #2a1d00; font: 800 20px/1 var(--display); box-shadow: 0 5px 0 #b8892c; }
+.play:active { transform: translateY(3px); box-shadow: 0 2px 0 #b8892c; }
+.rules { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font: 600 13.5px/1.4 var(--body); color: var(--ink-dim); }
+.rules b { color: var(--ink); }
+.hint { margin: 0; font: 700 12.5px/1.4 var(--body); color: var(--ink-dim); text-align: center; text-wrap: balance; }
+.hint a { color: var(--ink-dim); }
+.join { display: flex; gap: 6px; }
+.join input { flex: 1; min-width: 0; border: 0; border-radius: 11px; padding: 10px 12px; font: 800 18px/1 var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--bg); background: var(--ink); }
+.join button { border: 0; border-radius: 11px; padding: 0 16px; font: 800 15px/1 var(--body); background: var(--gold); color: #2a1d00; }
+
+#game { display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 8px; padding-block: max(10px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-bottom, 0px)); }
+#game > * { flex-shrink: 0; }
+.top { width: var(--W); max-width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pl { display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: 12px; border: 1.5px solid transparent; min-width: 0; }
+.pl.on { border-color: var(--gold); background: rgba(255, 209, 102, .1); }
+.pl .ic { width: 28px; height: 28px; flex: none; }
+.pl .ic svg { width: 100%; height: 100%; }
+.pl .nm { font: 800 13.5px/1.15 var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl .cap { display: flex; align-items: center; min-height: 15px; font: 800 11.5px/1 var(--body); color: var(--ink-dim); }
+.pl .cap span { width: 14px; height: 14px; margin-right: -4px; display: inline-block; }
+.pl .cap span svg { width: 100%; height: 100%; }
+.pl .cap b { margin-left: 8px; color: var(--ink); }
+.pl.r { flex-direction: row-reverse; text-align: right; }
+.pl.r .cap { justify-content: flex-end; }
+.status { width: var(--W); max-width: 100%; font: 800 15px/1.25 var(--display); text-align: center; min-height: 19px; text-wrap: balance; }
+.wrap { position: relative; padding: 0 0 var(--cd) var(--cd); }
+#board { position: relative; width: var(--B); height: var(--B); display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); border-radius: 4px; overflow: hidden; box-shadow: 0 14px 40px rgba(0,0,0,.5), 0 0 0 4px var(--frame); touch-action: manipulation; }
+.sq { position: relative; border: 0; padding: 0; background: var(--light); display: grid; place-items: center; cursor: pointer; }
+.sq.d { background: var(--dark); }
+.sq.last { background: #cdd26a; } .sq.d.last { background: #aaa23a; }
+.sq.sel { background: #829769; } .sq.d.sel { background: #646f40; }
+.sq.check { background: radial-gradient(circle, #ff3b3b 0%, #e01f1f 30%, rgba(169,0,0,0) 72%), var(--light); }
+.sq.d.check { background: radial-gradient(circle, #ff3b3b 0%, #e01f1f 30%, rgba(169,0,0,0) 72%), var(--dark); }
+.sq.tgt::after { content: ""; position: absolute; width: 30%; height: 30%; border-radius: 50%; background: rgba(20, 30, 20, .32); }
+.sq.tgt.cap::after { width: 92%; height: 92%; background: transparent; box-shadow: inset 0 0 0 calc(var(--B) * .009) rgba(20, 30, 20, .35); }
+.sq .pc { width: 100%; height: 100%; pointer-events: none; }
+.sq .pc svg { width: 100%; height: 100%; display: block; }
+.sq.moving .pc { position: relative; z-index: 3; transition: transform .16s ease-out; }
+.coord { position: absolute; font: 800 calc(var(--B) * .03)/1 var(--body); color: var(--ink-dim); pointer-events: none; }
+body.nocoord .coord { display: none; }
+body.blind .sq .pc { visibility: hidden; }
+body.blind.peek .sq .pc { visibility: visible; }
+.blindRow { width: var(--W); max-width: 100%; display: flex; gap: 6px; }
+.blindRow input { flex: 1; min-width: 0; border: 0; border-radius: 11px; padding: 10px 12px; font: 800 16px/1 var(--body); color: var(--bg); background: var(--ink); }
+.blindRow button { border: 0; border-radius: 11px; padding: 0 14px; font: 800 14px/1 var(--body); background: var(--gold); color: #2a1d00; }
+#moves { width: var(--W); max-width: 100%; max-height: 40px; overflow-x: auto; overflow-y: hidden; white-space: nowrap; font: 700 12.5px/1 var(--body); color: var(--ink-dim); scrollbar-width: none; padding: 2px 0; }
+#moves::-webkit-scrollbar { display: none; }
+#moves b { color: var(--ink); font-weight: 800; margin-right: 3px; }
+#moves .cur { color: var(--gold); }
+#rvMount { width: var(--W); max-width: 100%; }
+.bar { display: flex; gap: 6px; }
+.bar button { border: 0; border-radius: 12px; width: 46px; height: 44px; background: var(--btn); display: grid; place-items: center; }
+.bar button:hover:not(:disabled) { background: var(--btn-hi); }
+.bar button:disabled { opacity: .35; cursor: default; }
+.bar button.on { background: var(--ink); color: var(--bg); }
+.bar svg { width: 22px; height: 22px; }
+.bar .txt { font: 800 12px/1 var(--display); }
+.ov { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(10, 13, 24, .72); backdrop-filter: blur(3px); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px; overflow-y: auto; }
+.dlg { width: min(100%, 380px); background: var(--bg-2); border: 1px solid var(--line); border-radius: 20px; padding: 20px 18px 18px; display: flex; flex-direction: column; gap: 12px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.dlg h3 { margin: 0; font: 800 24px/1.15 var(--display); text-wrap: balance; }
+.dlg p { margin: 0; font: 700 14px/1.4 var(--body); color: var(--ink-dim); }
+.btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.btns button { border: 0; border-radius: 12px; padding: 11px 18px; font: 800 15px/1 var(--body); background: var(--gold); color: #2a1d00; }
+.btns button.alt { background: var(--btn); color: var(--ink); }
+.promo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.promo button { border: 0; border-radius: 12px; background: var(--light); aspect-ratio: 1; padding: 4px; }
+.promo button:hover { background: #f7e7cc; }
+.code { font: 800 40px/1 var(--display); letter-spacing: .16em; background: var(--ink); color: var(--bg); border-radius: 14px; padding: 12px 6px 10px; }
+.linkrow { display: flex; gap: 6px; }
+.linkrow input { flex: 1; min-width: 0; border: 0; border-radius: 10px; padding: 9px 10px; font: 700 12.5px/1 var(--body); color: var(--bg); background: var(--ink-dim); }
+.linkrow button { border: 0; border-radius: 10px; padding: 0 12px; font: 800 13px/1 var(--body); background: var(--btn-hi); white-space: nowrap; }
+.err { background: #3a1620; color: #ffb3bc; border-radius: 12px; padding: 10px; font: 700 13.5px/1.4 var(--body); }
+.toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 14px); transform: translateX(-50%); z-index: 30; background: var(--ink); color: var(--bg); font: 800 14px/1.25 var(--body); padding: 10px 16px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.4); max-width: calc(100% - 32px); text-align: center; }
+.gc-bar { width: var(--W); max-width: 100%; margin: 0; }
+@media (prefers-reduced-motion: reduce) { .sq.moving .pc { transition: none; } }
 </style>
-<section id="menu"><div class="col"><h1>Шахматы</h1><p class="sub">Классическая доска. Время по вашим правилам.</p>
-<div class="modes"><button id="m-bot" data-mode="bot">С ботом</button><button id="m-duo" data-mode="duo">Вдвоём</button><button id="m-net" data-mode="net">Онлайн</button></div>
-<label>Я играю <select id="side"><option value="w">Белыми</option><option value="b">Чёрными</option></select></label>
-<button class="play" id="playBtn">Играть</button>
-<div id="netPanel" hidden><button id="netCreate">Создать игру</button> <button id="netJoinBtn">Войти по коду</button><div id="joinRow" hidden><input id="joinCode" maxlength="5" placeholder="КОД" aria-label="Код игры"><button id="joinGo">Войти</button></div></div>
-<p class="hint">Все стандартные ходы, включая рокировку, взятие на проходе и превращение пешки. Мат, пат, повторение, правило 50 ходов и недостаток материала. Бот начального уровня.</p><p><a href="../">← Все игры</a> · версия от /*VER*/</p></div></section>
-<section id="game" class="game-shell" hidden><div id="board" class="board" aria-label="Шахматная доска"></div><aside class="side"><h2>Шахматы</h2><div id="status" role="status"></div><div class="tools"><button id="homeBtn">Меню</button><button id="againBtn">Новая партия</button><button id="resignBtn">Сдаться</button><button id="coordBtn">a1</button></div><div id="history" aria-label="Запись партии"></div><p class="hint">Выберите фигуру, затем поле. Выделенные точки — разрешённые ходы.</p></aside></section>
-<div class="ov" id="lobbyOv" hidden><div class="dlg"><h2>Онлайн с другом</h2><p id="lbText">Отправь другу ссылку</p><div id="lbCode" class="code"></div><div id="lbLinkRow"><input id="lbLink" readonly aria-label="Ссылка для друга"></div><p id="lbErr"></p><button id="lbCancel">Отмена</button></div></div>
-<div class="ov" id="promotion" hidden><div class="dlg"><h2>Превращение пешки</h2><div class="promotion" id="promotionChoices"></div></div></div>
-<script>/*CLOCK*/</script><script>/*NET*/</script><script id="core">/*CORE*/</script>
+
+<section class="screen" id="menu">
+  <div class="col">
+    <div class="logo"><span id="logoPiece"></span><h1>Шахматы</h1></div>
+    <p class="sub">классические правила · бот, вдвоём или онлайн</p>
+    <div class="card"><h2>Режим</h2>
+      <div class="seg" id="modeSeg"><button data-v="bot" id="m-bot">С ботом</button><button data-v="duo" id="m-duo">Вдвоём</button><button data-v="net" id="m-net">Онлайн</button></div>
+    </div>
+    <div class="card" id="sideCard"><h2>Я играю</h2>
+      <div class="seg" id="sideSeg"><button data-v="w" id="s-w">Белыми</button><button data-v="b" id="s-b">Чёрными</button><button data-v="r" id="s-r">Случайно</button></div>
+    </div>
+    <div class="card"><h2>Доска</h2>
+      <div class="seg" style="--cols:2" id="blindSeg"><button data-v="0" id="bl-off">Обычная</button><button data-v="1" id="bl-on">Вслепую</button></div>
+      <div class="seg" style="--cols:2" id="coordSeg"><button data-v="1">Координаты</button><button data-v="0">Без координат</button></div>
+      <p class="hint" id="blindHint">Вслепую фигур на доске не видно: держи позицию в голове. Ходи тапами по полям или пиши ход текстом (e4, Кf3, e2e4). Кнопка с глазом — подсмотреть, пока держишь.</p>
+    </div>
+    <div class="card" id="netCard" hidden><h2>Онлайн с другом</h2>
+      <div class="seg" style="--cols:2"><button id="netCreate">Создать игру</button><button id="netJoinBtn">Войти по коду</button></div>
+      <div class="join" id="joinRow" hidden><input id="joinCode" maxlength="5" placeholder="КОД" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Код игры"><button id="joinGo">Войти</button></div>
+      <p class="hint">Цвет хозяина берётся из «Я играю». В реванше цвета меняются. «Вслепую» у каждого своё.</p>
+    </div>
+    <button class="play" id="playBtn">Играть</button>
+    <div class="card"><h2>Правила</h2>
+      <ol class="rules">
+        <li>Белые ходят первыми. Цель — <b>мат</b>: король под ударом, и спасти его нечем.</li>
+        <li>Есть рокировка, взятие на проходе и превращение пешки (выбираешь фигуру).</li>
+        <li><b>Ничья:</b> пат, троекратное повторение, 50 ходов без взятий и ходов пешкой, мало материала для мата.</li>
+        <li>Можно сдаться. На время — проигрывает тот, у кого кончились часы.</li>
+      </ol>
+    </div>
+    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от /*VER*/</span></p>
+  </div>
+</section>
+
+<section class="screen" id="game" hidden>
+  <div class="top" id="topRow">
+    <div class="pl" id="plA"><span class="ic" id="icA"></span><div><div class="nm" id="nmA"></div><div class="cap" id="capA"></div></div></div>
+    <div class="pl r" id="plB"><span class="ic" id="icB"></span><div><div class="nm" id="nmB"></div><div class="cap" id="capB"></div></div></div>
+  </div>
+  <div class="status" id="status"></div>
+  <div class="wrap" id="wrap"><div id="board" aria-label="Шахматная доска"></div></div>
+  <div class="blindRow" id="blindRow" hidden><input id="sanIn" placeholder="Ход: e4, Кf3, e2e4, O-O" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Ход текстом"><button id="sanGo">Ход</button></div>
+  <div id="moves" aria-label="Запись партии"></div>
+  <div id="rvMount"></div>
+  <div class="bar" id="barRow">
+    <button id="homeBtn" aria-label="В меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"><path d="M3.5 11 12 3.8 20.5 11M6 9v11h12V9"/></svg></button>
+    <button id="againBtn" aria-label="Новая партия"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v5h-5"/></svg></button>
+    <button id="undoBtn" aria-label="Отменить ход"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+    <button id="resignBtn" aria-label="Сдаться"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg></button>
+    <button id="peekBtn" aria-label="Подсмотреть фигуры (держи)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+    <button id="coordBtn" aria-label="Координаты"><span class="txt">a1</span></button>
+    <button id="soundBtn" aria-label="Звук"></button>
+  </div>
+</section>
+
+<div class="ov" id="endOv" hidden><div class="dlg"><h3 id="endTitle"></h3><p id="endText"></p>
+  <div class="btns"><button id="endAgain">Ещё раз</button><button id="endLook" class="alt">Разбор партии</button><button id="endUndo" class="alt">Отменить ход</button><button id="endMenu" class="alt">Меню</button></div></div></div>
+<div class="ov" id="promoOv" hidden><div class="dlg"><h3>Превращение пешки</h3><div class="promo" id="promoChoices"></div><div class="btns"><button id="promoCancel" class="alt">Отмена</button></div></div></div>
+<div class="ov" id="confirmOv" hidden><div class="dlg"><h3>Сдаться?</h3><p>Партия закончится, победа достанется сопернику.</p>
+  <div class="btns"><button id="cfYes">Сдаться</button><button id="cfNo" class="alt">Играть дальше</button></div></div></div>
+<div class="ov" id="lobbyOv" hidden><div class="dlg"><h3 id="lbTitle">Онлайн-игра</h3><p id="lbText"></p><div class="code" id="lbCode" hidden></div>
+  <div class="linkrow" id="lbLinkRow" hidden><input id="lbLink" readonly aria-label="Ссылка для друга"><button id="lbCopy">Копировать</button></div>
+  <p class="err" id="lbErr" hidden></p><div class="btns"><button id="lbRetry" hidden>Попробовать ещё раз</button><button id="lbCancel" class="alt">Отмена</button></div></div></div>
+<div class="ov" id="askOv" hidden><div class="dlg"><h3>Друг просит отменить ход</h3><p id="askText"></p><p id="askTimer" style="font-size:12.5px"></p>
+  <div class="btns"><button id="askYes">Согласен</button><button id="askNo" class="alt">Нет</button></div></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>/*CLOCK*/</script>
+<script>/*NET*/</script>
+<script>/*REVIEW*/</script>
+<script>/*PIECES*/</script>
+<script id="core">/*CORE*/</script>
 <script>
-(function(){
-var $=function(id){return document.getElementById(id);},mode='bot',G=null,serial=0,coords=true,selected=null,pending=null;
-var names={p:'пешка',n:'конь',b:'слон',r:'ладья',q:'ферзь',k:'король'};
-// Собственные силуэты, общий классический язык шахматных фигур.
-function piece(p){var paths={p:'<circle cx="32" cy="17" r="8"/><path d="M25 26h14l-3 15 7 9H21l7-9z"/>',r:'<path d="M18 10h8v7h6v-7h6v7h8v-7h3v16l-7 5 2 18H20l2-18-7-5V10z"/>',n:'<path d="M20 49c1-12 10-16 17-21l-7-2-8 7-9-6 14-17 1-6 9 6c15 4 15 23 9 39z"/><circle cx="30" cy="17" r="1.5" fill="currentColor"/>',b:'<path d="M31 6c-13 11-15 20-5 25l-3 13-5 6h28l-5-6-3-13C49 25 43 14 31 6z"/><path d="m29 15 8 10" fill="none"/>',q:'<path d="m16 17 9 9 7-14 7 14 9-9-5 30H21z"/><circle cx="15" cy="13" r="4"/><circle cx="32" cy="9" r="4"/><circle cx="49" cy="13" r="4"/>',k:'<path d="M32 4v16M25 10h14" fill="none"/><path d="M22 22c-15-10-14 13 2 16l-3 11h22l-3-11c16-3 17-26 2-16-4-6-16-6-20 0z"/>'};return '<svg viewBox="0 0 64 64" aria-hidden="true" style="color:'+(p.color==='w'?'#30342b':'#dddac5')+'"><g fill="'+(p.color==='w'?'#fffced':'#30342b')+'" stroke="'+(p.color==='w'?'#30342b':'#dedbc7')+'" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">'+paths[p.type]+'<path d="M19 49h26l5 7H14z"/></g></svg>';}
-function state(){return G?{game:G,turn:G.c.turn()==='w'?0:1,moves:G.c.history().length,over:G.over,ready:true}:null;}
-var GC=GameClock.attach({id:'chess',labels:['Белые','Чёрные'],state:state,role:Net2P.role,send:Net2P.send,menu:menu,expire:function(i){if(G){G.over=true;G.result=(i===0?'Белые':'Чёрные')+' просрочили время';serial++;$('promotion').hidden=true;render();}}});
-function setMode(m){mode=m;document.querySelectorAll('[data-mode]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.mode===m);});$('netPanel').hidden=m!=='net';$('playBtn').hidden=m==='net';}
-document.querySelectorAll('[data-mode]').forEach(function(b){b.onclick=function(){setMode(b.dataset.mode);};});
-function start(side,history){serial++;G={c:new Chess(),me:side,over:false,result:''};(history||[]).forEach(function(m){G.c.move(m);});selected=null;pending=null;$('promotion').hidden=true;$('menu').hidden=true;$('game').hidden=false;$('lobbyOv').hidden=true;render();GC.sync();bot();}
-function menu(){serial++;Net2P.close();G=null;selected=null;$('promotion').hidden=true;$('game').hidden=true;$('lobbyOv').hidden=true;$('menu').hidden=false;GC.sync();}
-function human(){return G&&!G.over&&(mode==='duo'||G.c.turn()===G.me)&&!pending;}
-function outcome(){if(G.c.isCheckmate())return (G.c.turn()==='w'?'Чёрные':'Белые')+' победили — мат';if(G.c.isStalemate())return 'Ничья — пат';if(G.c.isThreefoldRepetition())return 'Ничья — троекратное повторение';if(G.c.isInsufficientMaterial())return 'Ничья — недостаточно материала';if(G.c.isDraw())return 'Ничья — правило 50 ходов';return '';}
-function render(){if(!G)return;var c=G.c;G.result=G.result||outcome();G.over=!!G.result;var legal=selected?c.moves({square:selected,verbose:true}):[],hist=c.history({verbose:true}),last=hist[hist.length-1],flip=mode!=='duo'&&G.me==='b';$('board').innerHTML='';for(var j=0;j<64;j++){var r=flip?Math.floor(j/8):7-Math.floor(j/8),f=flip?7-j%8:j%8,sq='abcdefgh'[f]+(r+1),p=c.get(sq),b=document.createElement('button');b.className='square'+((r+f)%2===0?' dark':'')+(sq===selected?' selected':'')+(last&&(last.from===sq||last.to===sq)?' last':'')+(legal.some(function(m){return m.to===sq;})?' target':'');b.dataset.square=sq;b.setAttribute('aria-label',sq+(p?' '+(p.color==='w'?'белая ':'чёрная ')+names[p.type]:''));b.innerHTML=(p?piece(p):'')+(coords?'<span class="coordinate">'+sq+'</span>':'');b.onclick=function(){tap(this.dataset.square);};$('board').appendChild(b);}
-$('status').textContent=G.result||((c.turn()==='w'?'Ход белых':'Ход чёрных')+(c.isCheck()?' · Шах!':'')+(pending?' · Ждём хозяина…':''));$('history').textContent=c.history().map(function(m,i){return (i%2===0?(Math.floor(i/2)+1)+'. ':'')+m+(i%2?'\n':' ');}).join('');$('history').scrollTop=$('history').scrollHeight;$('againBtn').hidden=mode==='net'&&Net2P.role()==='guest';$('resignBtn').disabled=G.over;GC.sync();}
-function tap(sq){if(!human()||!GC.before())return;var p=G.c.get(sq);if(p&&p.color===G.c.turn()){selected=sq;render();return;}if(!selected)return;var ms=G.c.moves({square:selected,verbose:true}).filter(function(m){return m.to===sq;});if(!ms.length)return;var move={from:selected,to:sq};if(ms[0].promotion){$('promotionChoices').innerHTML='';['q','r','b','n'].forEach(function(t){var b=document.createElement('button');b.innerHTML=piece({color:G.c.turn(),type:t});b.setAttribute('aria-label',names[t]);b.onclick=function(){$('promotion').hidden=true;move.promotion=t;submit(move);};$('promotionChoices').appendChild(b);});$('promotion').hidden=false;}else submit(move);}
-function submit(m){if(!GC.before()||!G||G.over)return;if(mode==='net'&&Net2P.role()==='guest'){pending=m;Net2P.send({t:'try',move:m,n:G.c.history().length});render();return;}apply(m);}
-function apply(m){if(!GC.before()||!G||G.over)return;try{G.c.move(m);}catch(e){pending=null;return;}pending=null;selected=null;render();GC.publish();if(mode==='net'&&Net2P.role()==='host')Net2P.send({t:'position',moves:G.c.history(),result:G.result});bot();}
-function bot(){if(!G||G.over||mode!=='bot'||G.c.turn()===G.me)return;var n=serial;setTimeout(function(){if(!G||serial!==n||G.over||!GC.before())return;apply(chessBot(G.c));},350);}
-function lobby(){ $('lobbyOv').hidden=false;$('lbErr').textContent='';$('lbText').textContent='Подключение…';}
-function host(){mode='net';lobby();Net2P.host({prefix:'chess-v1-',onReady:function(code,link){$('lbCode').textContent=code;$('lbLink').value=link;$('lbText').textContent='Отправь другу ссылку';},onJoin:function(o){if(o.returning&&G){Net2P.send({t:'start',side:G.me==='w'?'b':'w',moves:G.c.history(),result:G.result});GC.publish();}else hostStart();},onData:hostData,onPeer:function(){},onFail:fail});}
-function hostStart(){var side=$('side').value;Net2P.send({t:'start',side:side==='w'?'b':'w',moves:[]});start(side);GC.publish();}
-function hostData(d){if(GC.receive(d))return;if(d.t==='coords'){coords=!!d.on;render();return;}if(!G)return;if(d.t==='try'&&G.c.turn()!==G.me&&d.n===G.c.history().length)apply(d.move);if(d.t==='resign'&&!G.over){G.result=(G.me==='w'?'Чёрные':'Белые')+' сдались';render();Net2P.send({t:'position',moves:G.c.history(),result:G.result});GC.publish();}}
-function join(code){mode='net';lobby();Net2P.join(code,{prefix:'chess-v1-',onData:function(d){if(GC.receive(d))return;if(d.t==='coords'){coords=!!d.on;render();return;}if(d.t==='start'){start(d.side,d.moves);if(d.result){G.result=d.result;render();}}else if(d.t==='position'&&G){var h=G.c.history();if(d.moves.length>=h.length&&h.every(function(m,i){return d.moves[i]===m;})){for(var i=h.length;i<d.moves.length;i++)G.c.move(d.moves[i]);}else{G.c=new Chess();d.moves.forEach(function(m){G.c.move(m);});}pending=null;selected=null;G.result=d.result||'';render();}},onPeer:function(){},onFail:fail});}
-function fail(e){$('lbErr').textContent=typeof e==='string'?e:'Не удалось подключиться. Проверьте код и соединение.';$('lobbyOv').hidden=false;}
-$('playBtn').onclick=function(){start($('side').value);};$('homeBtn').onclick=menu;$('lbCancel').onclick=menu;$('netCreate').onclick=host;$('netJoinBtn').onclick=function(){$('joinRow').hidden=false;};$('joinGo').onclick=function(){var c=Net2P.cleanCode($('joinCode').value);if(c.length===5)join(c);};$('againBtn').onclick=function(){if(mode==='net')hostStart();else start($('side').value);};$('coordBtn').onclick=function(){coords=!coords;render();if(mode==='net')Net2P.send({t:'coords',on:coords});};$('resignBtn').onclick=function(){if(!G||G.over)return;if(mode==='net'&&Net2P.role()==='guest'){Net2P.send({t:'resign'});return;}var side=mode==='duo'?G.c.turn():G.me;G.result=(side==='w'?'Белые':'Чёрные')+' сдались';render();if(mode==='net')Net2P.send({t:'position',moves:G.c.history(),result:G.result});GC.publish();};setMode('bot');if(Net2P.hashCode()){setMode('net');join(Net2P.hashCode());}
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var ONLINE = !!window.GAMES_ONLINE;
+  var NAME = { w: 'Белые', b: 'Чёрные' }, NAME_GEN = { w: 'белых', b: 'чёрных' };
+  var FILES = 'abcdefgh';
+  var RU = { k: 'Кр', q: 'Ф', r: 'Л', b: 'С', n: 'К', p: '' }, PNAME = { p: 'пешка', n: 'конь', b: 'слон', r: 'ладья', q: 'ферзь', k: 'король' };
+  var VAL = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+  var ICON_SND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>';
+  var ICON_MUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></svg>';
+  function pieceSVG(color, type) { return PIECES[color + type.toUpperCase()]; }
+  $('logoPiece').innerHTML = pieceSVG('w', 'n');
+
+  // ---------- settings ----------
+  var S = { mode: 'bot', side: 'w', blind: false, coords: true, sound: true };
+  try { var sv = JSON.parse(localStorage.getItem('chess-set') || 'null'); if (sv) Object.assign(S, sv); } catch (e) {}
+  if (!ONLINE && S.mode === 'net') S.mode = 'bot';
+  function saveS() { try { localStorage.setItem('chess-set', JSON.stringify(S)); } catch (e) {} }
+  function bindSeg(id, key, conv) { Array.prototype.forEach.call(document.querySelectorAll('#' + id + ' button'), function (b) { b.onclick = function () { S[key] = conv(b.dataset.v); saveS(); renderMenu(); if (G) render(); }; }); }
+  Array.prototype.forEach.call(document.querySelectorAll('#modeSeg button'), function (b) { if (b.dataset.v === 'net' && !ONLINE) b.hidden = true; });
+  if (!ONLINE) $('modeSeg').style.setProperty('--cols', 2);
+  bindSeg('modeSeg', 'mode', String); bindSeg('sideSeg', 'side', String); bindSeg('blindSeg', 'blind', function (v) { return v === '1'; });
+  Array.prototype.forEach.call(document.querySelectorAll('#coordSeg button'), function (b) { b.onclick = function () { setCoords(b.dataset.v === '1', false); }; });
+  function renderMenu() {
+    var pr = function (sel, f) { Array.prototype.forEach.call(document.querySelectorAll(sel), function (b) { b.setAttribute('aria-pressed', String(f(b.dataset.v))); }); };
+    pr('#modeSeg button', function (v) { return v === S.mode; });
+    pr('#sideSeg button', function (v) { return v === S.side; });
+    pr('#blindSeg button', function (v) { return (v === '1') === !!S.blind; });
+    pr('#coordSeg button', function (v) { return (v === '1') === !!S.coords; });
+    $('sideCard').hidden = S.mode === 'duo'; $('netCard').hidden = S.mode !== 'net'; $('playBtn').hidden = S.mode === 'net';
+    $('blindHint').hidden = !S.blind;
+    $('soundBtn').innerHTML = S.sound ? ICON_SND : ICON_MUTE;
+    $('coordBtn').classList.toggle('on', !!S.coords);
+    document.body.classList.toggle('nocoord', !S.coords);
+    document.body.classList.toggle('blind', !!S.blind);
+  }
+
+  // ---------- sound: wood on wood ----------
+  var AC = null;
+  function knock(f, vol, delay) {
+    if (!S.sound) return;
+    try {
+      if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+      if (AC.state === 'suspended') AC.resume();
+      var t = AC.currentTime + (delay || 0), o = AC.createOscillator(), g = AC.createGain(), fl = AC.createBiquadFilter();
+      o.type = 'triangle'; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * .6, t + .08);
+      fl.type = 'lowpass'; fl.frequency.value = 1800;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + .12);
+      o.connect(fl); fl.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + .15);
+    } catch (e) {}
+  }
+  function sfx(san) {
+    if (/#|\+/.test(san)) { knock(520, .14); knock(700, .1, .09); }
+    else if (/x/.test(san)) knock(300, .18);
+    else knock(440, .14);
+  }
+
+  // ---------- positions ----------
+  // Позиция для разбора — неизменяемый снимок: { fen, turn, over, res, path: [SAN…] }
+  function chessOf(path) { var c = new Chess(); for (var k = 0; k < path.length; k++) { try { c.move(path[k]); } catch (e) { break; } } return c; }
+  function outcomeOf(c) {
+    if (c.isCheckmate()) return { w: c.turn() === 'w' ? 'b' : 'w', t: 'мат' };
+    if (c.isStalemate()) return { w: 'd', t: 'пат' };
+    if (c.isThreefoldRepetition()) return { w: 'd', t: 'троекратное повторение' };
+    if (c.isInsufficientMaterial()) return { w: 'd', t: 'мало материала для мата' };
+    if (c.isDraw()) return { w: 'd', t: 'правило 50 ходов' };
+    return null;
+  }
+  function snapOf(c, path) { var oc = outcomeOf(c); return { fen: c.fen(), turn: c.turn(), over: !!oc, res: oc, path: path, check: c.isCheck() }; }
+  function lineOf(list) {
+    var c = new Chess(), L = [{ s: snapOf(c, []), mv: null, by: '' }];
+    for (var k = 0; k < list.length; k++) { var by = c.turn(); try { c.move(list[k]); } catch (e) { break; } L.push({ s: snapOf(c, list.slice(0, k + 1)), mv: list[k], by: by }); }
+    return L;
+  }
+  function ruSan(san) { return san.replace(/^([KQRBN])/, function (m) { return RU[m.toLowerCase()]; }).replace(/=([QRBN])/, function (m, p) { return '=' + RU[p.toLowerCase()]; }); }
+
+  // ---------- game ----------
+  // G.kind.w / G.kind.b: 'me' | 'bot' | 'net'. G.moves — ходы в SAN; G.c — живая партия (chess.js).
+  var G = null, token = 0, sqEls = [];
+  function net() { return Net2P.active(); }
+  function mySide() { return G.kind.w === 'me' && G.kind.b !== 'me' ? 'w' : G.kind.b === 'me' && G.kind.w !== 'me' ? 'b' : ''; }
+  function newGame(kind) {
+    token++;
+    G = { kind: kind, c: new Chess(), moves: [], line: lineOf([]), sel: null, vsel: null, busy: false, over: false, result: null, endShown: false };
+    G.flip = mySide() === 'b';
+    $('menu').hidden = true; $('game').hidden = false;
+    ['endOv', 'lobbyOv', 'askOv', 'confirmOv', 'promoOv'].forEach(function (id) { $(id).hidden = true; });
+    buildBoard(); RV.reset(); layout(); render(); turnLoop();
+  }
+  function startLocal() {
+    if (S.mode === 'duo') { newGame({ w: 'me', b: 'me' }); return; }
+    var side = S.side === 'r' ? (Math.random() < .5 ? 'w' : 'b') : S.side, k = {}; k[side] = 'me'; k[side === 'w' ? 'b' : 'w'] = 'bot'; newGame(k);
+  }
+  function rebuild(list) {
+    G.c = chessOf(list); G.moves = G.c.history(); G.line = lineOf(G.moves);
+    var oc = outcomeOf(G.c); G.over = !!oc; G.result = oc;
+  }
+  function canTap() { return G && !G.over && !G.busy && G.kind[G.c.turn()] === 'me' && !(net() && (G.netPending || G.undoVote)) && !RV.viewing(); }
+
+  // ---------- analysis module: history and variations (no engine yet) ----------
+  var RV = Review({
+    mount: $('rvMount'), status: $('status'), noBar: true,
+    line: function () { return G ? G.line : lineOf([]); },
+    play: function (s, mv) { var c = chessOf(s.path); try { c.move(mv); } catch (e) { return null; } return snapOf(c, s.path.concat([c.history().slice(-1)[0]])); },
+    over: function (s) { return !!s.over; },
+    toMove: function (s) { return s.turn; },
+    me: function () { return mySide() || 'w'; },
+    side: function (x) { return NAME[x] || ''; },
+    same: function (a, b) { return a === b; },
+    moveText: function (e) { return ruSan(e.mv); },
+    overText: function (s) { return resText(s.res); },
+    engine: function () { return !!G && (!net() || G.over); },
+    evalOn: function () { return false; },
+    analyze: function (s, cb) { cb({ p: .5, best: null }); },
+    redraw: function () { if (!G) return; G.vsel = null; render(); if (!RV.viewing()) turnLoop(); },
+    relayout: function () { layout(); },
+    active: function () { return !!G && !$('game').hidden && $('endOv').hidden && $('lobbyOv').hidden && document.activeElement !== $('sanIn'); }
+  });
+  function resText(r) { if (!r) return ''; return r.w === 'd' ? 'Ничья — ' + r.t : 'Победили ' + NAME[r.w].toLowerCase() + ' — ' + r.t; }
+
+  // ---------- clock (shared) ----------
+  var GC = GameClock.attach({ id: 'chess', labels: ['Белые', 'Чёрные'],
+    state: function () { return G ? { game: G, turn: G.c.turn() === 'w' ? 0 : 1, moves: G.moves.length, over: !!G.over, ready: true } : null; },
+    role: function () { return Net2P.role(); }, send: function (m) { Net2P.send(m); }, menu: toMenu,
+    expire: function (i) { if (!G) return; token++; G.over = true; G.result = { w: i === 0 ? 'b' : 'w', t: 'время ' + (i === 0 ? 'белых' : 'чёрных') + ' вышло' }; G.endShown = true; render(); }
+  });
+
+  // ---------- board ----------
+  function buildBoard() {
+    var bd = $('board'); bd.innerHTML = ''; sqEls = {};
+    for (var v = 0; v < 64; v++) {
+      var r = G.flip ? (v / 8 | 0) : 7 - (v / 8 | 0), f = G.flip ? 7 - v % 8 : v % 8, sq = FILES[f] + (r + 1);
+      var el = document.createElement('button'); el.className = 'sq' + ((r + f) % 2 === 0 ? ' d' : ''); el.dataset.square = sq;
+      el.setAttribute('aria-label', sq); el.innerHTML = '<div class="pc"></div>';
+      el.addEventListener('click', onSq); bd.appendChild(el); sqEls[sq] = el;
+    }
+    var wrap = $('wrap'); Array.prototype.slice.call(wrap.querySelectorAll('.coord')).forEach(function (x) { x.remove(); });
+    for (var k = 0; k < 8; k++) {   // буквы снизу, цифры слева
+      var a = document.createElement('div'); a.className = 'coord'; a.textContent = FILES[G.flip ? 7 - k : k];
+      a.style.left = 'calc(var(--cd) + var(--B) / 8 * ' + (k + .5) + ')'; a.style.bottom = 'calc(var(--cd) * .18)'; a.style.transform = 'translateX(-50%)'; wrap.appendChild(a);
+      var n = document.createElement('div'); n.className = 'coord'; n.textContent = G.flip ? k + 1 : 8 - k;
+      n.style.top = 'calc(var(--B) / 8 * ' + (k + .5) + ')'; n.style.left = 'calc(var(--cd) * .3)'; n.style.transform = 'translateY(-50%)'; wrap.appendChild(n);
+    }
+  }
+  function hubH() { return window.hubH ? window.hubH() : 0; }
+  function layout() {
+    if (!G) return;
+    var cd = S.coords ? 18 : 0;
+    var other = $('topRow').offsetHeight + $('status').offsetHeight + ($('blindRow').hidden ? 0 : $('blindRow').offsetHeight + 8) + $('moves').offsetHeight + $('rvMount').offsetHeight + $('barRow').offsetHeight + (GC.enabled() ? 64 : 0) + 6 * 8 + 24 + hubH();
+    var B = Math.max(232, Math.min(window.innerWidth - 32 - cd, window.innerHeight - other - cd, 640));
+    B = Math.floor(B / 8) * 8;
+    document.documentElement.style.setProperty('--B', B + 'px');
+    document.documentElement.style.setProperty('--cd', cd + 'px');
+    document.documentElement.style.setProperty('--W', (B + cd) + 'px');
+  }
+  window.addEventListener('resize', layout);
+
+  function render() {
+    if (!G) return;
+    var d = RV.display(), live = d.mode === 'live', s = live ? snapOf(G.c, G.moves) : d.s, c = live ? G.c : new Chess(s.fen);
+    var sel = live ? G.sel : G.vsel, can = live ? canTap() : RV.canPlay();
+    var legal = sel && can ? c.moves({ square: sel, verbose: true }) : [];
+    var tg = {}; legal.forEach(function (m) { tg[m.to] = m.captured || /e/.test(m.flags) ? 'cap' : 'go'; });
+    var lastM = null;
+    if (live) { var h = G.c.history({ verbose: true }); lastM = h[h.length - 1] || null; }
+    else if (d.e && d.e.mv) { var pc = chessOf(d.prev ? d.prev.path : []); try { lastM = pc.move(d.e.mv); } catch (e) { lastM = null; } }
+    var checkSq = null;
+    if (c.isCheck()) { var board = c.board(); for (var r = 0; r < 8; r++) for (var f = 0; f < 8; f++) { var p = board[r][f]; if (p && p.type === 'k' && p.color === c.turn()) checkSq = p.square; } }
+    var blind = !!S.blind;
+    for (var sq in sqEls) {
+      var el = sqEls[sq], p2 = c.get(sq), key = p2 ? p2.color + p2.type : '';
+      if (el._k !== key) { el.firstChild.innerHTML = p2 ? pieceSVG(p2.color, p2.type) : ''; el._k = key; }
+      el.classList.toggle('sel', sq === sel);
+      el.classList.toggle('tgt', !!tg[sq] && !blind);
+      el.classList.toggle('cap', tg[sq] === 'cap');
+      el.classList.toggle('last', !!lastM && (lastM.from === sq || lastM.to === sq));
+      el.classList.toggle('check', sq === checkSq && !blind);
+      el.setAttribute('aria-label', sq + (p2 && !blind ? ', ' + (p2.color === 'w' ? 'белый ' : 'чёрный ') + PNAME[p2.type] : ''));
+    }
+    // player cards: you (or the side at the bottom) on the left
+    var bottom = G.flip ? 'b' : 'w', top = bottom === 'w' ? 'b' : 'w';
+    fill('A', bottom, c); fill('B', top, c);
+    renderMoves(live ? G.moves.length : (d.mode === 'view' ? d.k : -1));
+    if (live) setStatus(c, lastM);
+    var viewOff = RV.viewing() && !net();
+    $('undoBtn').disabled = viewOff ? false : (undoTarget() < 0 || !!G.undoVote);
+    var lbl = net() ? 'Попросить отменить ход' : viewOff ? 'Играть с этой позиции' : 'Отменить ход';
+    $('undoBtn').setAttribute('aria-label', lbl); $('undoBtn').title = lbl;
+    $('againBtn').hidden = net() && Net2P.role() === 'guest';
+    $('resignBtn').disabled = G.over || !mySideOrTurn();
+    $('peekBtn').hidden = !blind;
+    $('blindRow').hidden = !blind || !(live ? canTap() : RV.canPlay());
+    $('coordBtn').classList.toggle('on', !!S.coords);
+    GC.sync();
+  }
+  function mySideOrTurn() { return mySide() || (G && G.c.turn()); }
+  function fill(slot, side, c) {
+    $('ic' + slot).innerHTML = pieceSVG(side, 'k');
+    $('nm' + slot).textContent = who(side);
+    // взятые фигуры соперника и перевес по материалу
+    var cnt = { w: { p: 0, n: 0, b: 0, r: 0, q: 0 }, b: { p: 0, n: 0, b: 0, r: 0, q: 0 } }, mat = { w: 0, b: 0 };
+    c.board().forEach(function (row) { row.forEach(function (p) { if (p && p.type !== 'k') { cnt[p.color][p.type]++; mat[p.color] += VAL[p.type]; } }); });
+    var start = { p: 8, n: 2, b: 2, r: 2, q: 1 }, opp = side === 'w' ? 'b' : 'w', html = '';
+    if (!S.blind) ['q', 'r', 'b', 'n', 'p'].forEach(function (t) { for (var k = 0; k < Math.max(0, start[t] - cnt[opp][t]); k++) html += '<span>' + pieceSVG(opp, t) + '</span>'; });
+    var adv = mat[side] - mat[opp];
+    $('cap' + slot).innerHTML = html + (adv > 0 && !S.blind ? '<b>+' + adv + '</b>' : '');
+    $('pl' + slot).classList.toggle('on', !G.over && c.turn() === side);
+  }
+  function who(side) {
+    var k = G.kind[side];
+    if (k === 'bot') return 'Бот';
+    if (k === 'net') return 'Друг' + (net() && !Net2P.online() ? ' (нет связи)' : '');
+    return mySide() ? 'Ты' : NAME[side];
+  }
+  function renderMoves(cur) {
+    var out = '';
+    for (var i = 0; i < G.moves.length; i++) {
+      if (i % 2 === 0) out += '<b>' + (i / 2 + 1) + '.</b>';
+      out += '<span' + (i + 1 === cur ? ' class="cur"' : '') + '>' + ruSan(G.moves[i]) + '</span> ';
+    }
+    var m = $('moves'); m.innerHTML = out || '<span>Ходов пока нет</span>';
+    var curEl = m.querySelector('.cur'); if (curEl) m.scrollLeft = curEl.offsetLeft - m.clientWidth / 2; else m.scrollLeft = m.scrollWidth;
+  }
+  function setStatus(c, lastM) {
+    var st = $('status');
+    if (G.over) { st.textContent = resText(G.result); return; }
+    if (G.undoVote) { st.textContent = 'Ждём ответа про отмену хода'; return; }
+    var side = c.turn(), k = G.kind[side], chk = c.isCheck() ? ' · шах!' : '';
+    var lastTxt = S.blind && lastM ? (G.kind[lastM.color] === 'me' && mySide() ? 'Ты: ' : (G.kind[lastM.color] === 'bot' ? 'Бот: ' : G.kind[lastM.color] === 'net' ? 'Друг: ' : NAME[lastM.color] + ': ')) + ruSan(lastM.san) + ' · ' : '';
+    if (k === 'bot') st.textContent = lastTxt + 'Бот думает…';
+    else if (k === 'net') st.textContent = lastTxt + 'Ходит друг…';
+    else st.textContent = lastTxt + (mySide() ? 'Твой ход' : 'Ходят ' + NAME[side].toLowerCase()) + chk;
+  }
+
+  // ---------- input ----------
+  function onSq(e) {
+    if (!G) return;
+    var d = RV.display(), live = d.mode === 'live';
+    if (live ? !canTap() : !RV.canPlay()) return;
+    var c = live ? G.c : new Chess(d.s.fen), sq = e.currentTarget.dataset.square, sel = live ? G.sel : G.vsel;
+    var setSel = function (v) { if (live) G.sel = v; else G.vsel = v; };
+    var p = c.get(sq);
+    if (sel) {
+      var ms = c.moves({ square: sel, verbose: true }).filter(function (m) { return m.to === sq; });
+      if (ms.length) { setSel(null); choose(ms, live); return; }
+    }
+    if (p && p.color === c.turn()) { setSel(sel === sq ? null : sq); render(); return; }
+    if (S.blind && sel) toast('Так сходить нельзя');
+    else if (S.blind && !p) toast('Здесь нет твоей фигуры');
+    setSel(null); render();
+  }
+  // a move from tapping; asks for the piece if a pawn is promoted
+  function choose(ms, live) {
+    var go = function (m) { var san = m.san; if (live) submit(san); else { sfx(san); RV.play(san); } };
+    if (ms.length > 1 && ms[0].promotion) {
+      var side = ms[0].color, box = $('promoChoices'); box.innerHTML = '';
+      ['q', 'r', 'b', 'n'].forEach(function (t) {
+        var m = ms.filter(function (x) { return x.promotion === t; })[0]; if (!m) return;
+        var b = document.createElement('button'); b.innerHTML = pieceSVG(side, t); b.setAttribute('aria-label', PNAME[t]);
+        b.onclick = function () { $('promoOv').hidden = true; go(m); }; box.appendChild(b);
+      });
+      $('promoOv').hidden = false; return;
+    }
+    go(ms[0]);
+  }
+  $('promoCancel').onclick = function () { $('promoOv').hidden = true; render(); };
+  // ход текстом (для игры вслепую): e4, Кf3, Nf3, exd5, e2e4, O-O, 0-0-0, e8=Ф
+  function parseMove(c, txt) {
+    var t = String(txt || '').trim().replace(/\s+/g, '').replace(/[0О]-[0О]-[0О]/i, 'O-O-O').replace(/[0О]-[0О]/i, 'O-O').replace(/:/g, 'x');
+    if (!t) return null;
+    var map = { 'кр': 'K', 'ф': 'Q', 'л': 'R', 'с': 'B', 'к': 'N' };
+    t = t.replace(/^(кр|Кр|КР|ф|Ф|л|Л|с|С|к|К)/, function (m) { return map[m.toLowerCase()]; }).replace(/=(ф|Ф|л|Л|с|С|к|К)/, function (m, p) { return '=' + map[p.toLowerCase()]; });
+    var lc = t.toLowerCase(), m = /^([a-h][1-8])-?x?([a-h][1-8])([qrbn])?$/.exec(lc);
+    var all = c.moves({ verbose: true });
+    if (m) { var hit = all.filter(function (x) { return x.from === m[1] && x.to === m[2] && (!x.promotion || x.promotion === (m[3] || 'q')); }); return hit[0] || null; }
+    var clean = function (s) { return s.replace(/[+#!?]/g, ''); };
+    var want = clean(t);
+    var byS = all.filter(function (x) { return clean(x.san) === want; }); if (byS.length) return byS[0];
+    byS = all.filter(function (x) { return clean(x.san).toLowerCase() === want.toLowerCase(); }); return byS.length === 1 ? byS[0] : null;
+  }
+  function sanGo() {
+    if (!G) return;
+    var d = RV.display(), live = d.mode === 'live';
+    if (live ? !canTap() : !RV.canPlay()) return;
+    var c = live ? G.c : new Chess(d.s.fen), m = parseMove(c, $('sanIn').value);
+    if (!m) { toast('Не понял ход или он невозможен'); return; }
+    $('sanIn').value = '';
+    if (live) submit(m.san); else { sfx(m.san); RV.play(m.san); }
+  }
+  $('sanGo').onclick = sanGo;
+  $('sanIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); sanGo(); } });
+  // подсмотреть: пока кнопка зажата
+  var peekOn = function (e) { e.preventDefault(); document.body.classList.add('peek'); }, peekOff = function () { document.body.classList.remove('peek'); };
+  $('peekBtn').addEventListener('pointerdown', peekOn); ['pointerup', 'pointerleave', 'pointercancel', 'blur'].forEach(function (ev) { $('peekBtn').addEventListener(ev, peekOff); });
+
+  function submit(san) {
+    if (!GC.before()) return;
+    if (net() && Net2P.role() === 'guest') { G.netPending = true; Net2P.send({ t: 'try', mv: san, n: G.moves.length }); render(); return; }
+    decide(san);
+  }
+  function decide(san) {
+    if (!GC.before()) return;
+    if (net() && Net2P.role() === 'host') Net2P.send({ t: 'move', mv: san, n: G.moves.length });
+    apply(san);
+  }
+  function apply(san) {
+    if (!G || G.over) return;
+    var m; try { m = G.c.move(san); } catch (e) { return; }
+    G.moves.push(m.san); G.sel = null; G.netPending = false;
+    G.line.push({ s: snapOf(G.c, G.moves.slice()), mv: m.san, by: m.color });
+    var oc = outcomeOf(G.c); if (oc) { G.over = true; G.result = oc; }
+    RV.sync(); sfx(m.san);
+    animate(m);
+    if (G.over) { render(); setTimeout(showEnd, 500); if (net() && Net2P.role() === 'host') GC.publish(); return; }
+    turnLoop();
+  }
+  // a short slide of the moved piece
+  function animate(m) {
+    render();
+    if (RV.viewing()) return;
+    var to = sqEls[m.to], from = sqEls[m.from]; if (!to || !from) return;
+    var a = from.getBoundingClientRect(), b = to.getBoundingClientRect(), pc = to.firstChild;
+    to.classList.add('moving'); pc.style.transition = 'none'; pc.style.transform = 'translate(' + (a.left - b.left) + 'px,' + (a.top - b.top) + 'px)';
+    void pc.offsetWidth; pc.style.transition = ''; pc.style.transform = '';
+    setTimeout(function () { to.classList.remove('moving'); }, 200);
+  }
+  function turnLoop() {
+    if (!G || G.over) return;
+    var side = G.c.turn();
+    if (G.kind[side] !== 'bot' || (net() && Net2P.role() !== 'host')) { render(); return; }
+    if (RV.viewing()) { render(); return; }               // смотришь историю — бот ждёт
+    var my = token, n = G.moves.length;
+    if (G.thinkingAt === n && G.thinkTok === my) return;
+    G.thinkingAt = n; G.thinkTok = my; G.busy = true; render();
+    setTimeout(function () {
+      if (my !== token || !G || G.moves.length !== n || G.over) return;
+      G.busy = false;
+      if (RV.viewing()) { G.thinkingAt = -1; render(); return; }
+      var mv = chessBot(new Chess(G.c.fen()));
+      decide(mv);
+    }, 450);
+  }
+
+  // ---------- undo ----------
+  function undoTargetFor(side) { if (!G) return -1; for (var k = G.moves.length - 1; k >= 0; k--) if ((k % 2 === 0 ? 'w' : 'b') === side) return k; return -1; }
+  function undoTarget() {
+    if (!G) return -1;
+    if (net()) return undoTargetFor(mySide());
+    if (G.kind.w === 'me' && G.kind.b === 'me') return G.moves.length ? G.moves.length - 1 : -1;
+    return undoTargetFor(mySide());
+  }
+  function applyUndo(t, msg) {
+    if (!G || t < 0 || t > G.moves.length) return;
+    token++; rebuild(G.moves.slice(0, t)); G.over = false; G.result = null; G.busy = false; G.endShown = false; G.sel = null; G.netPending = false; G.thinkingAt = -1;
+    $('endOv').hidden = true; $('askOv').hidden = true;
+    RV.go(-1); RV.sync(); render(); toast(msg || 'Ход отменён'); turnLoop();
+  }
+  function undo() {
+    if (net()) { requestUndo(); return; }
+    if (RV.viewing()) {
+      token++; rebuild(RV.pathHere()); G.busy = false; G.sel = null; G.thinkingAt = -1; G.endShown = G.over;
+      $('endOv').hidden = true; RV.go(-1); RV.sync(); render(); toast('Играем с этой позиции'); turnLoop(); return;
+    }
+    applyUndo(undoTarget());
+  }
+  $('undoBtn').onclick = undo; $('endUndo').onclick = function () { $('endOv').hidden = true; undo(); };
+  document.addEventListener('keydown', function (e) { if (G && !net() && !$('game').hidden && (e.ctrlKey || e.metaKey) && /^[zZяЯ]$/.test(e.key)) { e.preventDefault(); undo(); } });
+
+  // ---------- resign and the end ----------
+  $('resignBtn').onclick = function () { if (G && !G.over) $('confirmOv').hidden = false; };
+  $('cfNo').onclick = function () { $('confirmOv').hidden = true; };
+  $('cfYes').onclick = function () {
+    $('confirmOv').hidden = true; if (!G || G.over) return;
+    var side = mySide() || G.c.turn();
+    if (net() && Net2P.role() === 'guest') { Net2P.send({ t: 'resign' }); return; }
+    resign(side);
+  };
+  function resign(side) {
+    if (!G || G.over) return;
+    G.over = true; G.result = { w: side === 'w' ? 'b' : 'w', t: NAME[side].toLowerCase() + ' сдались' };
+    if (net() && Net2P.role() === 'host') { Net2P.send({ t: 'result', res: G.result, n: G.moves.length }); GC.publish(); }
+    render(); showEnd();
+  }
+  function showEnd() {
+    if (!G || G.endShown) return; G.endShown = true;
+    var r = G.result || {}, me = mySide();
+    if (r.w === 'd') $('endTitle').textContent = 'Ничья';
+    else if (me && r.w === me) $('endTitle').textContent = 'Победа!';
+    else if (me) $('endTitle').textContent = G.kind[r.w] === 'bot' ? 'Бот победил' : 'Друг победил';
+    else $('endTitle').textContent = 'Победили ' + NAME[r.w].toLowerCase();
+    $('endText').textContent = (r.w === 'd' ? 'Причина: ' + r.t : resText(r)) + '. Ходов: ' + Math.ceil(G.moves.length / 2) + '.' + (net() && Net2P.role() === 'guest' ? ' Новую партию начинает хозяин игры.' : '');
+    $('endAgain').hidden = net() && Net2P.role() === 'guest';
+    $('endOv').hidden = false;
+  }
+  $('endLook').onclick = function () { $('endOv').hidden = true; RV.go(0); };
+  $('endAgain').onclick = again; $('againBtn').onclick = again;
+  function again() { if (net()) { if (Net2P.role() === 'host') hostStart(true); } else { $('endOv').hidden = true; G && G.kind.w === 'me' && G.kind.b === 'me' ? newGame({ w: 'me', b: 'me' }) : startLocal(); } }
+  $('endMenu').onclick = toMenu; $('homeBtn').onclick = toMenu;
+  function toMenu() { Net2P.close(); token++; G = null; GC.sync(); $('game').hidden = true; ['endOv', 'lobbyOv', 'askOv', 'confirmOv', 'promoOv'].forEach(function (id) { $(id).hidden = true; }); $('menu').hidden = false; renderMenu(); }
+  $('playBtn').onclick = function () { knock(440, .12); startLocal(); };
+  $('soundBtn').onclick = function () { S.sound = !S.sound; saveS(); renderMenu(); };
+  var toastT = null;
+  function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 2400); }
+
+  // ---------- coordinates (shared with the friend online) ----------
+  function setCoords(on, fromNet) {
+    S.coords = !!on; saveS(); renderMenu(); if (G) { layout(); render(); }
+    if (!fromNet && net()) Net2P.send({ t: 'coords', on: S.coords });
+  }
+  $('coordBtn').onclick = function () { setCoords(!S.coords, false); toast(S.coords ? 'Координаты включены' : 'Координаты скрыты'); };
+  document.addEventListener('keydown', function (e) {
+    if (!G || $('game').hidden || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA/.test((e.target || {}).tagName || '')) return;
+    if (/^[cCсС]$/.test(e.key)) $('coordBtn').click();
+  });
+
+  // ---------- online ----------
+  var PREFIX = 'chess-v2-', hostSide = '';
+  function lobby(title, text, o) {
+    o = o || {};
+    $('lbTitle').textContent = title; $('lbText').textContent = text || ''; $('lbText').hidden = !text;
+    $('lbCode').hidden = !o.code; $('lbCode').textContent = o.code || '';
+    $('lbLinkRow').hidden = !o.link; $('lbLink').value = o.link || '';
+    $('lbErr').hidden = !o.err; $('lbErr').textContent = o.err || ''; $('lbRetry').hidden = !o.err;
+    $('lobbyOv').hidden = false;
+  }
+  $('lbCopy').onclick = function () { var v = $('lbLink').value, b = $('lbCopy'); try { navigator.clipboard.writeText(v).then(function () { b.textContent = 'Скопировано'; setTimeout(function () { b.textContent = 'Копировать'; }, 1500); }, function () { $('lbLink').select(); }); } catch (e) { $('lbLink').select(); } };
+  $('lbCancel').onclick = toMenu;
+  var lastJoin = null;
+  $('lbRetry').onclick = function () { if (lastJoin) joinGame(lastJoin); else hostGame(); };
+  function other(s) { return s === 'w' ? 'b' : 'w'; }
+  function syncMsg() { return { t: 'sync', hostSide: hostSide, moves: G.moves, result: G.over ? G.result : null, coords: S.coords }; }
+  function hostGame() {
+    lastJoin = null; hostSide = '';
+    lobby('Создаю игру', 'Подключаюсь к серверу связи…');
+    Net2P.host({ prefix: PREFIX,
+      onReady: function (code, link) { lobby('Игра создана', link ? 'Отправь другу ссылку или код. Партия начнётся, как только он зайдёт.' : 'Скажи другу код: он вводит его в «Войти по коду».', { code: code, link: link }); },
+      onJoin: function (o) { if (o.returning && G) { Net2P.send(syncMsg()); GC.publish(); toast('Друг вернулся'); render(); } else hostStart(false); },
+      onPeer: function (on) { if (G) render(); if (!on) { toast('Связь с другом пропала'); if (G && G.undoVote) endVote(false, 'gone'); } },
+      onLeave: function () { toast('Друг вышел'); },
+      onData: hostData,
+      onFail: function (m) { lobby('Онлайн-игра', '', { err: m }); }
+    });
+  }
+  function hostStart(swap) {
+    if (!hostSide) hostSide = S.side === 'r' ? (Math.random() < .5 ? 'w' : 'b') : S.side; else if (swap) hostSide = other(hostSide);
+    Net2P.send({ t: 'start', hostSide: hostSide, coords: S.coords });
+    var k = {}; k[hostSide] = 'me'; k[other(hostSide)] = 'net'; newGame(k); GC.publish();
+    toast('Ты играешь ' + (hostSide === 'w' ? 'белыми' : 'чёрными'));
+  }
+  function hostData(d) {
+    if (GC.receive(d)) return;
+    if (d.t === 'try') {
+      if (!GC.before()) return;
+      var ok = false;
+      if (G && !G.over && !G.undoVote && G.kind[G.c.turn()] === 'net' && d.n === G.moves.length) { try { var t = new Chess(G.c.fen()); t.move(d.mv); ok = true; } catch (e) {} }
+      if (ok) decide(d.mv); else Net2P.send({ t: 'nack' });
+    } else if (d.t === 'resign') { if (G && !G.over) resign(other(hostSide)); }
+    else if (d.t === 'undoReq') startVote('friend');
+    else if (d.t === 'undoVote') endVote(!!d.ok, d.ok ? '' : 'no');
+    else if (d.t === 'needsync') { if (G) Net2P.send(syncMsg()); }
+    else if (d.t === 'coords') setCoords(d.on, true);
+  }
+  function joinGame(code) {
+    lastJoin = code;
+    lobby('Онлайн-игра', 'Подключаюсь к игре ' + Net2P.cleanCode(code) + '…');
+    Net2P.join(code, { prefix: PREFIX,
+      onOpen: function () { lobby('Онлайн-игра', 'Подключено! Ждём начала…'); },
+      onPeer: function () { if (G) render(); },
+      onData: guestData,
+      onFail: function (m) { lobby('Онлайн-игра', '', { err: m }); }
+    });
+  }
+  function guestKinds(hs) { var k = {}; k[hs] = 'net'; k[other(hs)] = 'me'; return k; }
+  function guestCoords(hostOn) { if (hostOn) setCoords(true, true); else if (S.coords) Net2P.send({ t: 'coords', on: true }); }
+  function guestData(d) {
+    if (GC.receive(d)) return;
+    if (d.t === 'start') { newGame(guestKinds(d.hostSide)); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 'w' ? 'чёрными' : 'белыми')); }
+    else if (d.t === 'sync') { newGame(guestKinds(d.hostSide)); rebuild(d.moves); if (d.result) { G.over = true; G.result = d.result; } G.endShown = G.over; guestCoords(d.coords); RV.sync(); render(); }
+    else if (!G) return;
+    else if (d.t === 'move') { G.netPending = false; if (d.n === G.moves.length) apply(d.mv); else if (d.n > G.moves.length) Net2P.send({ t: 'needsync' }); }
+    else if (d.t === 'nack') { G.netPending = false; render(); }
+    else if (d.t === 'result') { if (!G.over) { G.over = true; G.result = d.res; render(); showEnd(); } }
+    else if (d.t === 'coords') setCoords(d.on, true);
+    else if (d.t === 'undoAsk') { G.undoVote = { by: 'friend' }; showAsk(d.back); render(); }
+    else if (d.t === 'undoWait') { G.undoVote = { by: 'me' }; render(); toast('Спрашиваю у друга…'); }
+    else if (d.t === 'undoNo') { G.undoVote = null; $('askOv').hidden = true; render(); toast(d.mine ? (d.why === 'time' ? 'Друг не ответил' : 'Друг не согласен') : 'Ход не отменён'); }
+    else if (d.t === 'undo') { G.undoVote = null; applyUndo(d.to, d.mine ? 'Ход отменён, ходи заново' : 'Друг вернул свой ход'); }
+  }
+  // take-back by agreement (the host runs it)
+  function requestUndo() {
+    if (!G || G.undoVote) return;
+    if (undoTargetFor(mySide()) < 0) { toast('Тебе пока нечего отменять'); return; }
+    if (Net2P.role() === 'host') startVote('host'); else Net2P.send({ t: 'undoReq' });
+  }
+  function startVote(by) {
+    if (!G || G.undoVote) { if (by === 'friend') Net2P.send({ t: 'undoNo', mine: true, why: 'busy' }); return; }
+    var side = by === 'host' ? hostSide : other(hostSide), t = undoTargetFor(side);
+    if (t < 0) { if (by === 'friend') Net2P.send({ t: 'undoNo', mine: true, why: 'none' }); return; }
+    if (!Net2P.online()) { toast('Друг не в сети'); return; }
+    G.undoVote = { by: by, to: t, n: G.moves.length };
+    G.undoVote.timer = setTimeout(function () { endVote(false, 'time'); }, 30000);
+    var back = G.moves.length - t;
+    if (by === 'host') { Net2P.send({ t: 'undoAsk', back: back }); toast('Спрашиваю у друга…'); }
+    else { Net2P.send({ t: 'undoWait' }); showAsk(back); }
+    render();
+  }
+  function endVote(ok, why) {
+    var u = G && G.undoVote; if (!u || !u.timer) return;
+    clearTimeout(u.timer); G.undoVote = null; $('askOv').hidden = true;
+    if (ok && G.moves.length === u.n) { Net2P.send({ t: 'undo', to: u.to, mine: u.by === 'friend' }); applyUndo(u.to, u.by === 'host' ? 'Ход отменён, ходи заново' : 'Друг вернул свой ход'); }
+    else { Net2P.send({ t: 'undoNo', mine: u.by === 'friend', why: why }); render(); toast(u.by === 'host' ? (why === 'time' ? 'Друг не ответил' : why === 'gone' ? 'Друг отключился' : 'Друг не согласен') : 'Ход не отменён'); }
+  }
+  var askTick = null;
+  function showAsk(back) {
+    $('askText').textContent = back <= 1 ? 'Вернуть его последний ход?' : 'Вернуть партию на ' + back + ' хода назад, до его последнего хода?';
+    var end = Date.now() + 30000; clearInterval(askTick);
+    var tick = function () { var s = Math.max(0, Math.ceil((end - Date.now()) / 1000)); $('askTimer').textContent = 'Нет ответа через ' + s + ' с — значит «нет».'; if (!s) clearInterval(askTick); };
+    tick(); askTick = setInterval(tick, 500); $('askOv').hidden = false;
+  }
+  function answerAsk(ok) {
+    clearInterval(askTick); $('askOv').hidden = true;
+    if (Net2P.role() === 'host') endVote(ok, ok ? '' : 'no');
+    else { Net2P.send({ t: 'undoVote', ok: ok }); if (!ok) { G.undoVote = null; render(); } }
+  }
+  $('askYes').onclick = function () { answerAsk(true); }; $('askNo').onclick = function () { answerAsk(false); };
+  $('netCreate').onclick = hostGame;
+  $('netJoinBtn').onclick = function () { $('joinRow').hidden = !$('joinRow').hidden; if (!$('joinRow').hidden) $('joinCode').focus(); };
+  $('joinCode').addEventListener('input', function () { this.value = Net2P.cleanCode(this.value); });
+  $('joinCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('joinGo').click(); });
+  $('joinGo').onclick = function () { var c = Net2P.cleanCode($('joinCode').value); if (c.length === 5) joinGame(c); };
+  if (ONLINE && Net2P.hashCode()) { S.mode = 'net'; joinGame(Net2P.hashCode()); }
+  renderMenu();
 })();
 </script>

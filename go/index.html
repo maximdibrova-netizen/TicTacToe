@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="../manifest.webmanifest"><meta name="theme-color" content="#121726"><link rel="icon" href="../icon-192.png"><link rel="apple-touch-icon" href="../apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="Игры"><script>if("serviceWorker" in navigator&&window.isSecureContext)addEventListener("load",function(){navigator.serviceWorker.register("../sw.js").catch(function(){})});</script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}[hidden]{display:none!important}</style><script>window.GAMES_ONLINE=true;window.TTT_ONLINE=true;window.BGC_ONLINE=true;</script><style>.gc-settings{margin:12px 0;padding:14px;border:1px solid currentColor;border-radius:10px;font:600 13px/1.5 system-ui;color:inherit;width:100%;box-sizing:border-box;text-align:left}.gc-settings p{font-size:12px;opacity:.8;margin:8px 0}.gc-row{display:flex;align-items:center;gap:6px;margin:8px 0}.gc-row>span{flex:1;min-width:72px}.gc-row input{width:62px;padding:7px 3px;border:1px solid #888;border-radius:4px;background:#fff;color:#222;font:inherit}.gc-settings input[type=checkbox]{width:18px;height:18px;vertical-align:middle}.gc-presets{display:flex;gap:5px;flex-wrap:wrap}.gc-presets button{padding:7px;border:1px solid #888;border-radius:4px;background:transparent;color:inherit;font:inherit}.gc-bar{display:flex;justify-content:center;gap:6px;width:min(100%,500px);flex-shrink:0;z-index:4;margin:0 auto 6px}.gc-face{background:var(--gc-bg,#293248);color:var(--gc-ink,#f4f1e8);border:2px solid transparent;box-shadow:inset 0 2px 6px #0004;border-radius:7px;padding:5px 12px;min-width:0;flex:1;text-align:center}.gc-face span{font:600 11px/1.2 system-ui;display:block}.gc-face strong{font:600 clamp(19px,5vw,29px)/1.1 'Consolas',monospace;font-variant-numeric:tabular-nums}.gc-face small{opacity:.7}.gc-active{border-color:var(--gc-accent,#e6b85b);background:var(--gc-active,#4b4a37)}.gc-low strong{color:#ff6969}.gc-result{position:fixed;inset:0;z-index:100;background:#000b;display:grid;place-items:center;padding:20px;color:#f8f4e9}.gc-result>div{max-width:400px;background:#292b2d;border-radius:12px;padding:24px;text-align:center}.gc-result button{padding:12px 25px;font:inherit;cursor:pointer}.gc-bar[hidden],.gc-result[hidden],.gc-options[hidden]{display:none!important}
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="../manifest.webmanifest"><meta name="theme-color" content="#121726"><link rel="icon" href="../icon-192.png"><link rel="apple-touch-icon" href="../apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="Игры"><script>if("serviceWorker" in navigator&&window.isSecureContext)addEventListener("load",function(){navigator.serviceWorker.register("../sw.js").catch(function(){})});</script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}[hidden]{display:none!important}</style><script>window.GAMES_ONLINE=true;window.TTT_ONLINE=true;window.BGC_ONLINE=true;</script><style>.gc-card .gc-presets button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:48px}.gc-card .gc-presets b{font-size:15px;line-height:1}.gc-card .gc-presets small{font-size:10.5px;font-weight:700;opacity:.7;line-height:1;text-transform:lowercase}.gc-custom{display:flex;flex-direction:column;gap:8px;margin-top:2px}.gc-custom[hidden],.gc-players[hidden],.gc-step[hidden]{display:none!important}.gc-step{display:grid;grid-template-columns:1fr 40px minmax(76px,auto) 40px;align-items:center;gap:6px;font-weight:700;font-size:14px}.gc-step.sm{grid-template-columns:34px minmax(58px,auto) 34px;gap:4px}.gc-step button{height:38px;border:0;border-radius:10px;background:rgba(127,127,127,.2);color:inherit;font-family:inherit;font-weight:800;font-size:20px;line-height:1;cursor:pointer;padding:0}.gc-step.sm button{height:34px;font-size:18px}.gc-step button:hover{background:rgba(127,127,127,.32)}.gc-step output{text-align:center;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}.gc-step.sm output{font-size:13.5px}.gc-per{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;cursor:pointer}.gc-per input{width:18px;height:18px;margin:0;accent-color:currentColor}.gc-players{display:flex;flex-direction:column;gap:6px}.gc-prow{display:grid;grid-template-columns:minmax(70px,1fr) auto auto;align-items:center;gap:6px;font-size:13.5px}.gc-prow b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}@media(max-width:400px){.gc-prow{grid-template-columns:1fr 1fr}.gc-prow b{grid-column:1/-1}}.gc-note{margin:0;font-weight:700;font-size:12.5px;line-height:1.4;opacity:.72}
+.gc-bar{display:flex;justify-content:center;gap:8px;width:min(100%,500px);flex-shrink:0;z-index:4;margin:0 auto 6px}.gc-face{background:var(--gc-bg,#293248);color:var(--gc-ink,#f4f1e8);border:2px solid transparent;box-shadow:inset 0 2px 6px #0004;border-radius:12px;padding:5px 12px;min-width:0;flex:1;text-align:center;transition:background .2s,border-color .2s}.gc-face span{font:700 11px/1.2 system-ui,sans-serif;display:block;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gc-face strong{font:800 clamp(19px,5vw,28px)/1.1 system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.02em}.gc-face small{opacity:.7}.gc-active{border-color:var(--gc-accent,#e6b85b);background:var(--gc-active,#4b4a37)}.gc-low strong{color:#ff6969}.gc-result{position:fixed;inset:0;z-index:100;background:#000b;display:grid;place-items:center;padding:20px;color:#f8f4e9}.gc-result>div{max-width:400px;background:#292b2d;border-radius:16px;padding:24px;text-align:center}.gc-result h2{margin:0 0 8px}.gc-result button{padding:12px 25px;font:inherit;font-weight:800;cursor:pointer;border:0;border-radius:10px;background:#e6b85b;color:#2a1d00}.gc-bar[hidden],.gc-result[hidden]{display:none!important}
 </style><script>// Подключение игры к «комнате» (главная страница). Работает, только если игра открыта внутри главной.
 // Подменяет PeerJS мостом комнаты и подстраивает интерфейс: код не нужен, друг подключается сам.
 (function () {
   try {
     if (window.parent !== window && window.parent.ROOM && window.parent.ROOM.active()) {
-      window.IN_ROOM = true;
+      window.IN_ROOM = true; document.documentElement.classList.add('in-room');
       window.Peer = window.parent.ROOM.peerFor(window);
     }
   } catch (e) {}
@@ -36,7 +37,22 @@
     }
   });
 })();
-</script></head><body>
+</script><style>
+/* «← Все игры» — на каждой странице игры, слева сверху. В комнате не нужна: там своя панель «← Игры». */
+:root{--hub-h:50px}html.in-room{--hub-h:0px}
+.hub-back{position:fixed;z-index:60;top:calc(env(safe-area-inset-top,0px) + 8px);left:calc(env(safe-area-inset-left,0px) + 8px);display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 13px 0 8px;border-radius:999px;background:var(--hub-bg,rgba(8,10,20,.5));color:var(--hub-ink,#fff);font:800 13px/1 system-ui,-apple-system,"Segoe UI",sans-serif;text-decoration:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(0,0,0,.25),inset 0 0 0 1px rgba(255,255,255,.12);transition:transform .12s}
+.hub-back:active{transform:scale(.96)}.hub-back svg{width:18px;height:18px;flex:none}
+.hub-back:focus-visible{outline:3px solid #ffd166;outline-offset:2px}
+html.in-room .hub-back{display:none}
+#menu{padding-top:calc(var(--hub-h) + 12px)!important}
+#game{padding-top:calc(var(--hub-h) + env(safe-area-inset-top,0px))!important}
+</style>
+<script>
+window.hubH=function(){return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hub-h'))||0;};
+document.addEventListener('DOMContentLoaded',function(){var a=document.createElement('a');a.className='hub-back';a.href='../';a.setAttribute('aria-label','Все игры');a.title='Все игры';
+a.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>Все игры</span>';document.body.appendChild(a);});
+</script>
+</head><body>
 <style>:root{--gc-bg:#665037;--gc-active:#665037;--gc-accent:#e8bb63;}</style>
 <title>Го</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -171,7 +187,7 @@ h1 { margin: 0; text-align: center; font: 800 clamp(32px, 9vw, 44px)/1 var(--dis
         <li><b>Счёт:</b> свои камни + окружённая пустая территория. Белые получают 7.5 очка коми за второй ход.</li>
       </ol>
     </div>
-    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 02.11.2026 22:46</span></p>
+    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 02.11.2026 23:07</span></p>
   </div>
 </section>
 
@@ -224,72 +240,166 @@ FischerClock.prototype.move = function(next, now) {
 FischerClock.prototype.stop = function(now) { this.tick(now); this.running = false; };
 if (typeof module !== 'undefined') module.exports = FischerClock;
 
-// Общие часы. Состояние партии предоставляет маленький адаптер каждой игры.
+// Общие часы. Состояние партии предоставляет маленький адаптер каждой игры:
+//   a.state() → { game, turn, moves, over, ready, active?: [места в игре], paused?: true пока идёт анимация хода }
+// Настройка времени — карточка в меню игры (классы .card/.seg берутся из оформления самой игры).
 var GameClock = (function () {
+  var PRESETS = [[1, 0], [3, 2], [5, 3], [10, 5], [15, 10], [30, 0]];
+  var MIN_STEPS = [0.5, 1, 2, 3, 4, 5, 7, 10, 15, 20, 25, 30, 45, 60, 90, 120, 180];
+  var INC_STEPS = [0, 1, 2, 3, 5, 7, 10, 15, 20, 30, 45, 60];
+  function stepIn(list, v, d) {
+    var i = 0, best = Infinity;
+    list.forEach(function (x, k) { var e = Math.abs(x - v); if (e < best) { best = e; i = k; } });
+    return list[Math.max(0, Math.min(list.length - 1, i + d))];
+  }
+  function fmtMin(m) { return m < 1 ? '½' : String(m); }
+  function fmtTime(m, s) { return fmtMin(m) + ' мин' + (s ? ' + ' + s + ' с' : ''); }
+
   function attach(a) {
-    var model = null, game = null, lastMove = 0, ended = false, received = 0, lastSend = 0;
-    var root = document.createElement('div'); root.className = 'gc-settings';
-    root.innerHTML = '<label><input type="checkbox" id="gc-enabled"> Играть на время</label><div class="gc-options" hidden><p>Для каждого игрока: минуты + секунды после каждого хода.</p>' + a.labels.map(function(n,i) {
-      return '<div class="gc-row"><span>'+n+'</span><label><input type="number" min="0.1" max="180" step="0.1" value="5" id="gc-min-'+i+'" aria-label="'+n+': минуты"> мин</label><b>+</b><label><input type="number" min="0" max="120" step="1" value="3" id="gc-inc-'+i+'" aria-label="'+n+': прибавка"> сек</label></div>';
-    }).join('') + '<div class="gc-presets"><button type="button" data-time="1,0">1+0 всем</button><button type="button" data-time="3,2">3+2 всем</button><button type="button" data-time="5,3">5+3 всем</button><button type="button" data-time="10,5">10+5 всем</button></div><p>Онлайн: настройки хозяина для всех. Время идёт при разрыве связи и просмотре истории. Отмена хода не возвращает время. По просрочке партия заканчивается.</p></div>';
+    var model = null, game = null, lastMove = 0, ended = false, received = 0, lastSend = 0, paused = false;
+    var n = a.labels.length;
+    // ---------- settings ----------
+    // cfg: { enabled, preset: 'off'|'1+0'|…|'custom', min, inc, per: bool, pmin: [], pinc: [] }
+    var cfg = { enabled: false, preset: 'off', min: 5, inc: 3, per: false, pmin: a.labels.map(function () { return 5; }), pinc: a.labels.map(function () { return 3; }) };
+    try {
+      var sv = JSON.parse(localStorage.getItem('clock-' + a.id) || 'null');
+      if (sv && sv.v === 2) Object.assign(cfg, sv);
+      else if (sv && Array.isArray(sv.left)) {            // старый формат: { enabled, left[ms], inc[ms] }
+        cfg.enabled = !!sv.enabled; cfg.preset = sv.enabled ? 'custom' : 'off';
+        cfg.pmin = sv.left.map(function (x) { return x / 60000; }); cfg.pinc = sv.inc.map(function (x) { return x / 1000; });
+        cfg.min = cfg.pmin[0]; cfg.inc = cfg.pinc[0]; cfg.per = cfg.pmin.some(function (x, i) { return x !== cfg.pmin[0] || cfg.pinc[i] !== cfg.pinc[0]; });
+      }
+    } catch (e) {}
+    while (cfg.pmin.length < n) { cfg.pmin.push(cfg.min); cfg.pinc.push(cfg.inc); }
+
+    var root = document.createElement('div'); root.className = 'card gc-card';
+    root.innerHTML = '<h2>Время на партию</h2>' +
+      '<div class="seg gc-presets" style="--cols:4">' +
+      '<button type="button" data-p="off">Без часов</button>' +
+      PRESETS.map(function (p) { return '<button type="button" data-p="' + p[0] + '+' + p[1] + '"><b>' + p[0] + '+' + p[1] + '</b><small>' + (p[0] + p[1] * 40 / 60 < 3 ? 'пуля' : p[0] + p[1] * 40 / 60 < 10 ? 'блиц' : 'рапид') + '</small></button>'; }).join('') +
+      '<button type="button" data-p="custom"><b>Своё</b><small>настроить</small></button></div>' +
+      '<div class="gc-custom" hidden>' +
+      '<div class="gc-step" data-k="min"><span>Минут на партию</span><button type="button" data-d="-1" aria-label="Меньше минут">−</button><output></output><button type="button" data-d="1" aria-label="Больше минут">+</button></div>' +
+      '<div class="gc-step" data-k="inc"><span>Добавка за ход</span><button type="button" data-d="-1" aria-label="Меньше секунд">−</button><output></output><button type="button" data-d="1" aria-label="Больше секунд">+</button></div>' +
+      '<label class="gc-per"><input type="checkbox"> Разное время игрокам (фора)</label>' +
+      '<div class="gc-players" hidden>' + a.labels.map(function (lab, i) {
+        return '<div class="gc-prow"><b>' + lab + '</b>' +
+          '<div class="gc-step sm" data-k="pmin" data-i="' + i + '"><button type="button" data-d="-1" aria-label="' + lab + ': меньше минут">−</button><output></output><button type="button" data-d="1" aria-label="' + lab + ': больше минут">+</button></div>' +
+          '<div class="gc-step sm" data-k="pinc" data-i="' + i + '"><button type="button" data-d="-1" aria-label="' + lab + ': меньше добавки">−</button><output></output><button type="button" data-d="1" aria-label="' + lab + ': больше добавки">+</button></div></div>';
+      }).join('') + '</div></div>' +
+      '<p class="gc-note"></p>';
     var menu = document.querySelector('#menu .col, #menu .menu-col') || document.querySelector('#menu');
-    var play=menu.querySelector('#playBtn'); if(play){var anchor=play;while(anchor.parentElement!==menu)anchor=anchor.parentElement;menu.insertBefore(root,anchor);}else menu.appendChild(root);
-    var enabled = root.querySelector('#gc-enabled'), options = root.querySelector('.gc-options');
-    function config() { return {enabled: enabled.checked, left:a.labels.map(function(_,i){return Math.max(6000,Math.min(10800000,(+document.getElementById('gc-min-'+i).value||5)*60000));}), inc:a.labels.map(function(_,i){return Math.max(0,Math.min(120000,(+document.getElementById('gc-inc-'+i).value||0)*1000));})}; }
-    function save() { options.hidden=!enabled.checked; try {localStorage.setItem('clock-'+a.id,JSON.stringify(config()));}catch(e){} }
-    try { var saved=JSON.parse(localStorage.getItem('clock-'+a.id)); if(saved){enabled.checked=!!saved.enabled;a.labels.forEach(function(_,i){document.getElementById('gc-min-'+i).value=(saved.left[i]||300000)/60000;document.getElementById('gc-inc-'+i).value=(saved.inc[i]||0)/1000;});} } catch(e){}
-    options.hidden=!enabled.checked; root.addEventListener('change',save);
-    root.querySelectorAll('[data-time]').forEach(function(b){b.onclick=function(){var v=b.dataset.time.split(',');a.labels.forEach(function(_,i){document.getElementById('gc-min-'+i).value=v[0];document.getElementById('gc-inc-'+i).value=v[1];});save();};});
-    var bar=document.createElement('div');bar.className='gc-bar';bar.hidden=true; document.getElementById('game').prepend(bar);
-    var result=document.createElement('div');result.className='gc-result';result.hidden=true;result.setAttribute('role','dialog');result.setAttribute('aria-label','Партия завершена по времени');
-    result.innerHTML='<div><h2>Время вышло</h2><p></p><button type="button">В меню</button></div>';document.body.appendChild(result);
-    result.querySelector('button').onclick=function(){result.hidden=true;a.menu();sync();};
-    function guest(){return a.role()==='guest';}
-    function expire() {
-      if(!model || model.flag===null || ended)return;
-      ended=true;a.expire(model.flag);result.querySelector('p').textContent=a.labels[model.flag]+' — поражение по времени. Партия окончена.';result.hidden=false;
+    var play = menu.querySelector('#playBtn'); if (play) { var anchor = play; while (anchor.parentElement !== menu) anchor = anchor.parentElement; menu.insertBefore(root, anchor); } else menu.appendChild(root);
+
+    function times() {
+      if (!cfg.enabled) return null;
+      var m = [], s = [];
+      for (var i = 0; i < n; i++) {
+        if (cfg.preset !== 'custom') { var p = cfg.preset.split('+'); m.push(+p[0]); s.push(+p[1]); }
+        else if (cfg.per) { m.push(cfg.pmin[i]); s.push(cfg.pinc[i]); }
+        else { m.push(cfg.min); s.push(cfg.inc); }
+      }
+      return { m: m, s: s };
     }
-    function packet(){return model?{left:model.left.slice(),inc:model.inc.slice(),turn:model.turn,running:model.running,flag:model.flag}:null;}
-    function publish(){if(a.role()==='host'){a.send({t:'clock-v1',clock:packet()});lastSend=Date.now();}}
+    function config() {
+      var t = times();
+      if (!t) return { enabled: false, left: [], inc: [] };
+      return { enabled: true, left: t.m.map(function (x) { return Math.round(x * 60000); }), inc: t.s.map(function (x) { return x * 1000; }) };
+    }
+    function save() { cfg.v = 2; try { localStorage.setItem('clock-' + a.id, JSON.stringify(cfg)); } catch (e) {} }
+    function paint() {
+      Array.prototype.forEach.call(root.querySelectorAll('[data-p]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.p === (cfg.enabled ? cfg.preset : 'off'))); });
+      var custom = cfg.enabled && cfg.preset === 'custom';
+      root.querySelector('.gc-custom').hidden = !custom;
+      root.querySelector('.gc-per input').checked = !!cfg.per;
+      root.querySelector('.gc-players').hidden = !cfg.per;
+      root.querySelector('[data-k="min"]').hidden = root.querySelector('[data-k="inc"]').hidden = !!cfg.per;
+      root.querySelector('[data-k="min"] output').textContent = fmtMin(cfg.min) + ' мин';
+      root.querySelector('[data-k="inc"] output').textContent = cfg.inc + ' с';
+      Array.prototype.forEach.call(root.querySelectorAll('[data-k="pmin"]'), function (el) { el.querySelector('output').textContent = fmtMin(cfg.pmin[+el.dataset.i]) + ' мин'; });
+      Array.prototype.forEach.call(root.querySelectorAll('[data-k="pinc"]'), function (el) { el.querySelector('output').textContent = '+' + cfg.pinc[+el.dataset.i] + ' с'; });
+      var t = times(), note = root.querySelector('.gc-note');
+      if (!t) note.textContent = 'Играете без ограничения времени.';
+      else {
+        var same = t.m.every(function (x, i) { return x === t.m[0] && t.s[i] === t.s[0]; });
+        note.textContent = (same ? 'У каждого ' + fmtTime(t.m[0], t.s[0]) + (t.s[0] ? ' за ход' : '') : a.labels.map(function (l, i) { return l + ': ' + fmtTime(t.m[i], t.s[i]); }).join(' · ')) +
+          '. Время кончилось — партия проиграна. Онлайн у всех время хозяина игры.';
+      }
+    }
+    root.addEventListener('click', function (e) {
+      var p = e.target.closest('[data-p]');
+      if (p) { if (p.dataset.p === 'off') cfg.enabled = false; else { cfg.enabled = true; cfg.preset = p.dataset.p; } save(); paint(); return; }
+      var d = e.target.closest('[data-d]'); if (!d) return;
+      var st = d.closest('.gc-step'), k = st.dataset.k, dir = +d.dataset.d, i = +st.dataset.i;
+      if (k === 'min') cfg.min = stepIn(MIN_STEPS, cfg.min, dir);
+      else if (k === 'inc') cfg.inc = stepIn(INC_STEPS, cfg.inc, dir);
+      else if (k === 'pmin') cfg.pmin[i] = stepIn(MIN_STEPS, cfg.pmin[i], dir);
+      else if (k === 'pinc') cfg.pinc[i] = stepIn(INC_STEPS, cfg.pinc[i], dir);
+      save(); paint();
+    });
+    root.querySelector('.gc-per input').addEventListener('change', function () {
+      cfg.per = this.checked;
+      if (cfg.per) for (var i = 0; i < n; i++) { cfg.pmin[i] = cfg.min; cfg.pinc[i] = cfg.inc; }
+      save(); paint();
+    });
+    paint();
+
+    // ---------- clock faces in the game ----------
+    var bar = document.createElement('div'); bar.className = 'gc-bar'; bar.hidden = true; document.getElementById('game').prepend(bar);
+    var result = document.createElement('div'); result.className = 'gc-result'; result.hidden = true; result.setAttribute('role', 'dialog'); result.setAttribute('aria-label', 'Партия завершена по времени');
+    result.innerHTML = '<div><h2>Время вышло</h2><p></p><button type="button">В меню</button></div>'; document.body.appendChild(result);
+    result.querySelector('button').onclick = function () { result.hidden = true; a.menu(); sync(); };
+    function guest() { return a.role() === 'guest'; }
+    function expire() {
+      if (!model || model.flag === null || ended) return;
+      ended = true; a.expire(model.flag); result.querySelector('p').textContent = a.labels[model.flag] + ' — поражение по времени. Партия окончена.'; result.hidden = false;
+    }
+    function packet() { return model ? { left: model.left.slice(), inc: model.inc.slice(), turn: model.turn, running: model.running && !paused, flag: model.flag } : null; }
+    function publish() { if (a.role() === 'host') { a.send({ t: 'clock-v1', clock: packet() }); lastSend = Date.now(); } }
     function sync() {
-      var s=a.state(),now=Date.now();
-      if(!s){game=null;model=null;bar.hidden=true;result.hidden=true;return;}
-      if(game!==s.game){game=s.game;lastMove=s.moves;ended=false;result.hidden=true;received=0;var c=config();model=!guest()&&c.enabled&&s.ready?new FischerClock(c.left,c.inc,s.turn,now):null;}
-      if(!model&&!guest()&&s.ready&&!s.over){var c=config();if(c.enabled)model=new FischerClock(c.left,c.inc,s.turn,now);}
-      if(model&&!guest()) {
-        if(s.moves>lastMove)model.move(s.turn,now);else model.tick(now);
+      var s = a.state(), now = Date.now();
+      if (!s) { game = null; model = null; bar.hidden = true; result.hidden = true; paused = false; return; }
+      if (game !== s.game) { game = s.game; lastMove = s.moves; ended = false; result.hidden = true; received = 0; var c = config(); model = !guest() && c.enabled && s.ready ? new FischerClock(c.left, c.inc, s.turn, now) : null; }
+      if (!model && !guest() && s.ready && !s.over) { var c2 = config(); if (c2.enabled) model = new FischerClock(c2.left, c2.inc, s.turn, now); }
+      var wasPaused = paused; paused = !!s.paused;
+      if (model && !guest()) {
+        if (s.moves > lastMove) model.move(s.turn, now);
+        else if (paused) model.at = now;          // анимация хода: часы стоят
+        else model.tick(now);
         // При отмене хода сохраняем потраченное время, не добавляем прибавку.
-        if(s.moves<lastMove){model.turn=s.turn;if(model.flag===null)model.running=!s.over;}
-        if(s.over)model.stop(now);
-        lastMove=s.moves;expire();
-        if(now-lastSend>500)publish();
+        if (s.moves < lastMove) { model.turn = s.turn; if (model.flag === null) model.running = !s.over; }
+        if (s.over) model.stop(now);
+        lastMove = s.moves; expire();
+        if (now - lastSend > 500 || wasPaused !== paused) publish();
       }
       draw();
     }
-    function draw(){
-      bar.hidden=!model;var timed=!!model;if(document.body.classList.contains('gc-timed')!==timed){document.body.classList.toggle('gc-timed',timed);setTimeout(function(){window.dispatchEvent(new Event('resize'));},0);}if(!model)return;
-      var now=Date.now(),s=a.state();
-      bar.innerHTML=a.labels.map(function(label,i){
-        if(s&&s.active&&s.active.indexOf(i)<0)return '';
-        var ms=model.left[i];if(guest()&&model.running&&i===model.turn)ms=Math.max(0,ms-(now-received));
-        var sec=Math.ceil(ms/1000),text=Math.floor(sec/60)+':'+('0'+sec%60).slice(-2);
-        return '<div class="gc-face '+(model.running&&i===model.turn?'gc-active ':'')+(ms<10000?'gc-low':'')+'"><span>'+label+' <small>+'+model.inc[i]/1000+'</small></span><strong>'+text+'</strong></div>';
+    function draw() {
+      bar.hidden = !model; var timed = !!model;
+      if (document.body.classList.contains('gc-timed') !== timed) { document.body.classList.toggle('gc-timed', timed); setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 0); }
+      if (!model) return;
+      var now = Date.now(), s = a.state();
+      bar.innerHTML = a.labels.map(function (label, i) {
+        if (s && s.active && s.active.indexOf(i) < 0) return '';
+        var ms = model.left[i]; if (guest() && model.running && i === model.turn) ms = Math.max(0, ms - (now - received));
+        var sec = Math.ceil(ms / 1000), text = ms < 10000 ? (ms / 1000).toFixed(1) : Math.floor(sec / 60) + ':' + ('0' + sec % 60).slice(-2);
+        return '<div class="gc-face ' + (model.running && i === model.turn ? 'gc-active ' : '') + (ms < 10000 ? 'gc-low' : '') + '"><span>' + label + (model.inc[i] ? ' <small>+' + model.inc[i] / 1000 + '</small>' : '') + '</span><strong>' + text + '</strong></div>';
       }).join('');
     }
-    function receive(d){
-      if(!d||d.t!=='clock-v1')return false;
-      if(!guest())return true;
-      sync();var c=d.clock;
-      if(c&&Array.isArray(c.left)&&c.left.length===a.labels.length&&Array.isArray(c.inc)&&Number.isInteger(c.turn)&&c.turn>=0&&c.turn<a.labels.length&&c.left.every(function(x){return Number.isFinite(x)&&x>=0;})) {
-        model=new FischerClock(c.left,c.inc,c.turn,Date.now());model.running=!!c.running;model.flag=c.flag;received=Date.now();expire();
-      }else model=null;
-      draw();return true;
+    function receive(d) {
+      if (!d || d.t !== 'clock-v1') return false;
+      if (!guest()) return true;
+      sync(); var c = d.clock;
+      if (c && Array.isArray(c.left) && c.left.length === a.labels.length && Array.isArray(c.inc) && Number.isInteger(c.turn) && c.turn >= 0 && c.turn < a.labels.length && c.left.every(function (x) { return Number.isFinite(x) && x >= 0; })) {
+        model = new FischerClock(c.left, c.inc, c.turn, Date.now()); model.running = !!c.running; model.flag = c.flag; received = Date.now(); expire();
+      } else model = null;
+      draw(); return true;
     }
-    function before(){sync();return !(model&&model.flag!==null);}
-    setInterval(sync,100);
-    return {sync:sync,before:before,receive:receive,publish:publish,enabled:function(){return !!model;}};
+    function before() { sync(); return !(model && model.flag !== null); }
+    setInterval(sync, 100);
+    return { sync: sync, before: before, receive: receive, publish: publish, enabled: function () { return !!model; } };
   }
-  return {attach:attach};
+  return { attach: attach };
 })();
 </script>
 <script>// ===== Онлайн на двоих: прямое соединение браузеров через PeerJS =====
@@ -1183,7 +1293,7 @@ onmessage = function (e) {
     if (!G) return;
     var W = Math.min(window.innerWidth - 24, 760);
     var other = $('topRow').offsetHeight + $('status').offsetHeight + $('passRow').offsetHeight + $('rvMount').offsetHeight + $('barRow').offsetHeight + 5 * 8 + 20;
-    var B = Math.max(200, Math.min(W, window.innerHeight - (GC && GC.enabled()?68:0) - other));
+    var B = Math.max(200, Math.min(W, window.innerHeight - (GC && GC.enabled()?68:0) - (window.hubH ? hubH() : 0) - other));
     document.documentElement.style.setProperty('--B', Math.floor(B) + 'px');
     RV.refresh();
   }

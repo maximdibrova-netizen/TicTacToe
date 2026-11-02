@@ -3,7 +3,7 @@
 (function () {
   try {
     if (window.parent !== window && window.parent.ROOM && window.parent.ROOM.active()) {
-      window.IN_ROOM = true;
+      window.IN_ROOM = true; document.documentElement.classList.add('in-room');
       window.Peer = window.parent.ROOM.peerFor(window);
     }
   } catch (e) {}

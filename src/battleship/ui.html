@@ -313,7 +313,7 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
   cellsEn.forEach(function (b) { b.addEventListener('click', onShoot); });
 
   function layout() {
-    var vw = window.innerWidth, vh = window.innerHeight - (GC && GC.enabled()?68:0), place = G && G.phase === 'place';
+    var vw = window.innerWidth, vh = window.innerHeight - (GC && GC.enabled()?68:0) - (window.hubH ? hubH() : 0), place = G && G.phase === 'place';
     var cs;
     if (place) cs = Math.floor(Math.min((vw - 40) / 11, (vh - 300) / 11, 40));
     else if (vw >= 760) cs = Math.floor(Math.min((vw - 90) / 22, (vh - 170) / 11, 40));

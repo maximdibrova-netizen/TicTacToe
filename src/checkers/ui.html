@@ -286,7 +286,7 @@ onmessage = function (e) {
       n.style.top = 'calc(var(--B) * .045 + var(--B) / 8 * ' + (k + .5) + ')'; n.style.left = 'calc(var(--B) * .014)'; n.style.transform = 'translateY(-50%)'; wrap.appendChild(n);
     }
   }
-  function layout() { var extra = $('rvMount').offsetHeight + 8, B = Math.max(240, Math.min(window.innerWidth - 40, window.innerHeight - (GC && GC.enabled()?68:0) - 200 - extra, 620)); document.documentElement.style.setProperty('--B', Math.floor(B / 8) * 8 + 'px'); if (window.RVready) RV.refresh(); }
+  function layout() { var extra = $('rvMount').offsetHeight + 8, B = Math.max(240, Math.min(window.innerWidth - 40, window.innerHeight - (GC && GC.enabled()?68:0) - (window.hubH ? hubH() : 0) - 200 - extra, 620)); document.documentElement.style.setProperty('--B', Math.floor(B / 8) * 8 + 'px'); if (window.RVready) RV.refresh(); }
   window.addEventListener('resize', layout);
   function mySide() { return G.kind[1] === 'me' && G.kind[-1] !== 'me' ? 1 : G.kind[-1] === 'me' && G.kind[1] !== 'me' ? -1 : 0; }
 

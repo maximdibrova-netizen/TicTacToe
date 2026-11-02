@@ -320,7 +320,7 @@ onmessage = function (e) {
     if (!G) return;
     var W = Math.min(window.innerWidth - 24, 760);
     var other = $('topRow').offsetHeight + $('status').offsetHeight + $('passRow').offsetHeight + $('rvMount').offsetHeight + $('barRow').offsetHeight + 5 * 8 + 20;
-    var B = Math.max(200, Math.min(W, window.innerHeight - (GC && GC.enabled()?68:0) - other));
+    var B = Math.max(200, Math.min(W, window.innerHeight - (GC && GC.enabled()?68:0) - (window.hubH ? hubH() : 0) - other));
     document.documentElement.style.setProperty('--B', Math.floor(B) + 'px');
     RV.refresh();
   }

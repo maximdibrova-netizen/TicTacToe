@@ -400,7 +400,7 @@ onmessage = function (e) {
     var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.id = 'bigLine'; svg.setAttribute('viewBox', '0 0 100 100'); big.appendChild(svg);
   }
   function layout() {
-    var cd = S.coords ? 22 : 0, top = 52 + 30 + 58 + 40 + $('rvMount').offsetHeight + 8 + cd, w = window.innerWidth - 24 - cd, h = window.innerHeight - (GC && GC.enabled()?68:0) - top;
+    var cd = S.coords ? 22 : 0, top = 52 + 30 + 58 + 40 + $('rvMount').offsetHeight + 8 + cd, w = window.innerWidth - 24 - cd, h = window.innerHeight - (GC && GC.enabled()?68:0) - (window.hubH ? hubH() : 0) - top;
     var B = Math.max(240, Math.min(w, h, 640));
     document.documentElement.style.setProperty('--B', B + 'px');
     $('big').style.marginLeft = cd ? '16px' : ''; $('big').style.marginBottom = cd ? '12px' : '';

@@ -1,4 +1,9 @@
-<style>:root{--gc-bg:#07525a;--gc-active:#07525a;--gc-accent:#e8bb63;}</style>
+<style>:root{--gc-bg:#07525a;--gc-active:#07525a;--gc-accent:#e8bb63;}/* «← Все игры» в партии — рядом с верхним левым углом, без подписи */
+html:not(.in-room) body.in-game .hub-back { left: calc(var(--R) + 4px); padding: 0 8px; }
+html:not(.in-room) body.in-game .hub-back span { display: none; }
+html:not(.in-room) body.in-game .topbar { padding-left: calc(var(--R) + 46px); }
+html:not(.in-room) body.in-game .gc-bar { left: calc(50% + 22px); width: min(calc(100% - 2 * var(--R) - 60px), 480px); }
+</style>
 <title>BGC Точки</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1886,7 +1891,7 @@ onmessage = function (e) {
   // a shared link (…/#CODE) drops the friend straight into the game
 
   var GC = GameClock.attach({id:"tochki", labels:["Фиолетовые", "Зелёные", "Синие", "Красные"],
-    state:function(){return G?{game:G,turn:(G.turn),moves:G.moves,over:!!(G.over),ready:true,active:[0,1,2,3].filter(function(i){return !!(G.mask&(1<<i));})}:null;}, role:function(){return NET && NET.role;},
+    state:function(){return G?{game:G,turn:(G.turn),moves:G.moves,over:!!(G.over),ready:true,paused:!!(G.playing||G.queue.length),active:[0,1,2,3].filter(function(i){return !!(G.mask&(1<<i));})}:null;}, role:function(){return NET && NET.role;},
     send:function(m){netBroadcast(m);}, menu:toMenu,
     expire:function(i){if(!G)return;token++;G.over=true; G.winner=nextAlive(G.mask,i); stopAnims();}
   });

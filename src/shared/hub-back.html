@@ -1,0 +1,15 @@
+<style>
+/* «← Все игры» — на каждой странице игры, слева сверху. В комнате не нужна: там своя панель «← Игры». */
+:root{--hub-h:50px}html.in-room{--hub-h:0px}
+.hub-back{position:fixed;z-index:60;top:calc(env(safe-area-inset-top,0px) + 8px);left:calc(env(safe-area-inset-left,0px) + 8px);display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 13px 0 8px;border-radius:999px;background:var(--hub-bg,rgba(8,10,20,.5));color:var(--hub-ink,#fff);font:800 13px/1 system-ui,-apple-system,"Segoe UI",sans-serif;text-decoration:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(0,0,0,.25),inset 0 0 0 1px rgba(255,255,255,.12);transition:transform .12s}
+.hub-back:active{transform:scale(.96)}.hub-back svg{width:18px;height:18px;flex:none}
+.hub-back:focus-visible{outline:3px solid #ffd166;outline-offset:2px}
+html.in-room .hub-back{display:none}
+#menu{padding-top:calc(var(--hub-h) + 12px)!important}
+#game{padding-top:calc(var(--hub-h) + env(safe-area-inset-top,0px))!important}
+</style>
+<script>
+window.hubH=function(){return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hub-h'))||0;};
+document.addEventListener('DOMContentLoaded',function(){var a=document.createElement('a');a.className='hub-back';a.href='../';a.setAttribute('aria-label','Все игры');a.title='Все игры';
+a.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>Все игры</span>';document.body.appendChild(a);});
+</script>
