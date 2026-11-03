@@ -203,7 +203,7 @@ body.blind.peek .sq .pc { visibility: visible; }
       <p class="hint">Цвет хозяина берётся из «Я играю». В реванше цвета меняются. Во время онлайн-партии движка и базы нет — после конца разбор у обоих.</p>
     </div>
     <button class="play" id="playBtn">Играть</button>
-    <button class="ghost" id="anaBtn">Доска для анализа</button>
+    <button class="ghost" id="anaBtn">Анализ</button><p class="hint">Своя позиция или партия, дебюты и Stockfish — без соперника и часов.</p>
     <div class="card"><h2>Правила</h2>
       <ol class="rules">
         <li>Белые ходят первыми. Цель — <b>мат</b>: король под ударом, и спасти его нечем.</li>
@@ -238,6 +238,7 @@ body.blind.peek .sq .pc { visibility: visible; }
       </div>
     </div>
     <aside id="side" aria-label="Анализ">
+      <button class="study-edit" id="editPositionBtn" hidden>Выставить позицию / импорт</button>
       <div id="playEval" class="play-eval" hidden aria-label="Шансы по оценке Stockfish"><i id="playEvalFill"></i><span id="playEvalText">Оценка Stockfish…</span></div>
       <div class="tabs" role="tablist">
         <button role="tab" id="tab-eng" data-tab="eng" aria-selected="false">Движок</button>
@@ -249,7 +250,7 @@ body.blind.peek .sq .pc { visibility: visible; }
         <div class="ebar"><i id="engBar"></i></div>
         <div id="engLines"></div>
       </div>
-      <div class="pane" id="pane-db" hidden><div id="dbBox"></div></div>
+      <div class="pane" id="pane-db" hidden><div class="study-controls"><label>База <select id="dbSource"><option value="masters">Мастера · TWIC (офлайн)</option><option value="lichess">Игроки Lichess · онлайн</option></select></label><div id="onlineFilters" hidden><details id="explorerSettings" open><summary>Рейтинг, время и подключение</summary><label>Рейтинг <select id="dbRating"><option value="all">Все рейтинги</option><option value="beginner">До 1400</option><option value="club">1000–1799</option><option value="strong">1800+</option></select></label><label>Время <select id="dbSpeed"><option value="all">Все контроли</option><option value="blitz">Блиц</option><option value="rapid">Рапид</option><option value="classical">Классика</option><option value="bullet">Пуля</option></select></label><div id="explorerConnect"><p class="hint">Lichess требует личный токен без дополнительных разрешений. Он используется только в этом окне и отправляется только Lichess.</p><a href="https://lichess.org/account/oauth/token/create?description=Games%20Opening%20Explorer" target="_blank" rel="noopener noreferrer">Создать токен на Lichess</a><input type="password" id="explorerToken" autocomplete="off" aria-label="Личный токен Lichess" placeholder="Вставить токен"><button id="connectExplorer">Подключить</button></div><button id="disconnectExplorer" hidden>Отключить Lichess</button></details></div></div><div id="dbBox"></div></div>
       <div class="pane" id="pane-nota"><div id="nota"></div></div>
       <div class="navrow">
         <button id="nvFirst" aria-label="К началу"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5v14M18 6l-7 6 7 6"/></svg></button>
@@ -273,6 +274,9 @@ body.blind.peek .sq .pc { visibility: visible; }
 <div class="ov" id="askOv" hidden><div class="dlg"><h3 id="askTitle">Друг просит отменить ход</h3><p id="askText"></p><p id="askTimer" style="font-size:12.5px"></p>
   <div class="btns"><button id="askYes">Согласен</button><button id="askNo" class="alt">Нет</button></div></div></div>
 <div class="toast" id="toast" hidden></div>
+
+
+<dialog id="positionDialog" aria-labelledby="editorTitle"><h2 id="editorTitle">Позиция для анализа</h2><p class="hint">Выберите фигуру и нажмите поле. Ластик убирает фигуру. Изменения применятся только после подтверждения.</p><div id="editorPalette" class="editor-palette"></div><div id="editorBoard" class="editor-board" aria-label="Редактор позиции"></div><div class="study-actions"><button id="editorCurrent">Текущая</button><button id="editorStart">Начальная</button><button id="editorClear">Очистить</button></div><label>Ход <select id="editorTurn"><option value="w">Белых</option><option value="b">Чёрных</option></select></label><fieldset><legend>Рокировка</legend><label><input type="checkbox" data-castle="K"> Белые O-O</label><label><input type="checkbox" data-castle="Q"> Белые O-O-O</label><label><input type="checkbox" data-castle="k"> Чёрные O-O</label><label><input type="checkbox" data-castle="q"> Чёрные O-O-O</label></fieldset><label>FEN<input id="fenInput" autocomplete="off" spellcheck="false"></label><button id="fenLoad">Загрузить FEN</button><label>Партия PGN<textarea id="pgnInput" rows="3" spellcheck="false" placeholder="1. e4 e5 2. Nf3…"></textarea></label><button id="pgnLoad">Открыть PGN в анализе</button><p id="editorError" role="alert"></p><div class="study-actions"><button id="editorCancel">Отмена</button><button id="editorApply">Анализировать позицию</button></div></dialog>
 
 <script>/*CLOCK*/</script>
 <script>/*NET*/</script>
@@ -395,7 +399,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   // Узел: { san, lan, fen, parent, ch: [], by } — корень без хода. Основная линия = партия; ch[1..] — варианты.
   function node(parent, mv, fen) { return { san: mv ? mv.san : null, lan: mv ? mv.lan : null, fen: fen, parent: parent, ch: [], by: mv ? mv.color : null }; }
   function pathTo(n) { var out = []; for (var t = n; t && t.parent; t = t.parent) out.push(t); return out.reverse(); }
-  function chessOf(n) { var c = new Chess(); pathTo(n).forEach(function (x) { c.move(x.san); }); return c; }
+  function chessOf(n) { var root=n;while(root.parent)root=root.parent;var c = new Chess(root.fen); pathTo(n).forEach(function (x) { c.move(x.san); }); return c; }
   function mainTip() { var t = G.root; while (t.ch.length) t = t.ch[0]; return t; }
   function onMain(n) { for (var t = n; t.parent; t = t.parent) if (t.parent.ch[0] !== t) return false; return true; }
   function addChild(parent, mv, fen, asMain) {
@@ -422,14 +426,14 @@ body.blind.peek .sq .pc { visibility: visible; }
   function mySide() { return G.kind.w === 'me' && G.kind.b !== 'me' ? 'w' : G.kind.b === 'me' && G.kind.w !== 'me' ? 'b' : ''; }
   function newGame(kind, opts) {
     token++; opts = opts || {};
-    G = { evalOn: !!S.evalOn, kind: kind, level: S.level || 8, c: new Chess(), root: node(null, null, START), sel: null, busy: false, over: false, result: null, endShown: false, analysis: !!opts.analysis, drawOffer: null, drawAsked: -1 };
+    G = { evalOn: !!S.evalOn, kind: kind, level: S.level || 8, c: new Chess(opts.fen || START), root: node(null, null, opts.fen || START), sel: null, busy: false, over: false, result: null, endShown: false, analysis: !!opts.analysis, drawOffer: null, drawAsked: -1 };
     G.tip = G.cur = G.root;
     G.flip = mySide() === 'b';
     if (G.analysis) G.over = true;
     $('menu').hidden = true; $('game').hidden = false;
     ['endOv', 'lobbyOv', 'askOv', 'confirmOv', 'promoOv'].forEach(function (id) { $(id).hidden = true; });
     renderMenu(); buildBoard(); if (kind.w === 'bot' || kind.b === 'bot') botEng.send('ucinewgame');
-    if (G.evalOn) S.engine = true;
+    if (G.evalOn || G.analysis) S.engine = true;
     if (!G.evalOn && !G.analysis) S.tab = 'nota';
     if (G.analysis && S.tab === 'nota') S.tab = 'eng';
     if (net() && !G.over && S.tab !== 'nota') S.tab = 'nota';
@@ -441,7 +445,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   }
   // партия из списка ходов (SAN) — для онлайна, отмены, «играть отсюда»
   function rebuild(list) {
-    var keep = G.root, c = new Chess(); G.c = c; G.root = node(null, null, START); var t = G.root;
+    var keep = G.root, base = G.analysis ? G.root.fen : START, c = new Chess(base); G.c = c; G.root = node(null, null, base); var t = G.root;
     for (var k = 0; k < list.length; k++) { var mv; try { mv = c.move(list[k]); } catch (e) { break; } var n = node(t, mv, c.fen()); t.ch.push(n); t = n; }
     G.tip = G.cur = t; G.sel = null; G.pre = null;
     var oc = outcomeOf(c); G.over = !!oc || G.analysis; G.result = oc;
@@ -487,7 +491,7 @@ body.blind.peek .sq .pc { visibility: visible; }
       SW = Math.min(380, Math.max(300, vw * .3));
       B = Math.min(vh - hubH() - head - bar - clock - 3 * 8 - 28 - cd, vw - SW - 18 - 48 - cd, 760);
     } else {
-      var panel = Math.max(170, Math.min(260, vh * .27));
+      var panel = G.analysis ? Math.max(300,Math.min(370,vh*.42)) : Math.max(170, Math.min(260, vh * .27));
       B = Math.min(vw - 24 - cd, vh - hubH() - head - bar - clock - panel - 5 * 8 - 24 - cd, 640);
       SH = panel;
     }
@@ -578,15 +582,16 @@ body.blind.peek .sq .pc { visibility: visible; }
   function renderSide() {
     if (!G) return;
     var ok = engineOK();
+    $('editPositionBtn').hidden = !G.analysis;
     $('tab-eng').hidden = !ok;
-    $('playEval').hidden = !ok || !S.engine || !G.evalOn || G.over || G.analysis;
+    $('playEval').hidden = !ok || !S.engine || (!G.analysis && (!G.evalOn || G.over));
     if (!ok && S.tab !== 'nota') S.tab = 'nota';
     ['eng', 'db', 'nota'].forEach(function (t) {
       var b = $('tab-' + t); b.setAttribute('aria-selected', String(S.tab === t)); $('pane-' + t).hidden = S.tab !== t;
       if (t !== 'nota') { b.disabled = !ok; b.title = ok ? '' : 'В онлайн-партии — после её конца'; }
     });
     renderNav(); renderNota();
-    if (S.tab === 'eng' || (G.evalOn && !G.over && engineOK())) analyse(); else stopAnalysis();
+    if (S.tab === 'eng' || ((G.analysis || (G.evalOn && !G.over)) && engineOK())) analyse(); else stopAnalysis();
     if (S.tab === 'db') explore();
     drawArrows();
   }
@@ -703,6 +708,78 @@ body.blind.peek .sq .pc { visibility: visible; }
     svg.innerHTML = out;
   }
 
+  // Личная онлайн-база: токен остаётся только в памяти этой страницы.
+  var EX={token:'',cache:new Map(),abort:null,timer:null,key:null,cooldown:0};
+  function onlineURL(fen) {
+    var ratings={all:'0,1000,1200,1400,1600,1800,2000,2200,2500',beginner:'0,1000,1200',club:'1000,1200,1400,1600',strong:'1800,2000,2200,2500'};
+    var q=new URLSearchParams({variant:'standard',fen:fen,ratings:ratings[$('dbRating').value]||ratings.all,speeds:$('dbSpeed').value==='all'?'ultraBullet,bullet,blitz,rapid,classical,correspondence':$('dbSpeed').value,moves:'12',topGames:'4',recentGames:'4'});
+    return 'https://explorer.lichess.org/lichess?'+q.toString();
+  }
+  function onlineError(message){$('dbBox').innerHTML='<div class="online-src" role="status">'+esc(message)+'</div>';}
+  function exploreOnline() {
+    if(!G||!engineOK())return;
+    $('explorerConnect').hidden=!!EX.token;$('disconnectExplorer').hidden=!EX.token;
+    if(!EX.token){onlineError('Подключите Lichess личным токеном. База включает рейтинговые партии обычных игроков, не только мастеров.');return;}
+    var fen=G.cur.fen,key=onlineURL(fen),n=G.cur;
+    if(EX.cache.has(key)){if(EX.abort)EX.abort.abort();clearTimeout(EX.timer);EX.key=null;paintOnline(EX.cache.get(key));return;}
+    if(EX.key===key)return;
+    if(EX.abort)EX.abort.abort();clearTimeout(EX.timer);EX.key=key;
+    if(Date.now()<EX.cooldown){EX.key=null;onlineError('Лимит Lichess. Подождите минуту и выберите позицию ещё раз.');return;}
+    onlineError('Загружаю партии Lichess…');
+    EX.timer=setTimeout(function(){
+      var controller=new AbortController();EX.abort=controller;var timeout=setTimeout(function(){controller.abort();},20000);
+      fetch(key,{headers:{Authorization:'Bearer '+EX.token},signal:controller.signal}).then(function(r){
+        if(r.status===401||r.status===403)throw Error('Lichess не принял токен. Создайте личный токен без дополнительных разрешений и подключитесь снова.');
+        if(r.status===429){EX.cooldown=Date.now()+60000;throw Error('Лимит запросов Lichess. Повторите через минуту.');}
+        if(!r.ok)throw Error('База Lichess временно недоступна. Можно выбрать базу мастеров.');return r.json();
+      }).then(function(data){
+        EX.cache.set(key,data);if(EX.cache.size>100)EX.cache.delete(EX.cache.keys().next().value);
+        if(G&&G.cur===n&&$('dbSource').value==='lichess'&&EX.key===key)paintOnline(data);
+      }).catch(function(e){
+        if(EX.key!==key||!G||G.cur!==n||$('dbSource').value!=='lichess')return;
+        if(/токен/.test(e.message)){EX.token='';$('explorerSettings').open=true;$('explorerConnect').hidden=false;$('disconnectExplorer').hidden=true;}
+        onlineError(e.name==='AbortError'?'Lichess не ответил вовремя. Выберите позицию ещё раз.':e.message||'Нет связи с Lichess.');
+      }).finally(function(){clearTimeout(timeout);if(EX.key===key)EX.key=null;});
+    },350);
+  }
+  function paintOnline(data) {
+    var total=(data.white||0)+(data.draws||0)+(data.black||0),op=data.opening,html='<div class="op-name">'+(op?'<small>'+esc(op.eco)+'</small>'+esc(op.name):'Позиция на доске')+'</div><div class="online-src">'+total.toLocaleString('ru')+' рейтинговых партий · выбранные рейтинги и контроль времени</div>';
+    if(!(data.moves||[]).length)html+='<div class="online-src">Для этих фильтров партий нет. Попробуйте другие рейтинги или время.</div>';
+    (data.moves||[]).forEach(function(m){var tot=m.white+m.draws+m.black;if(!tot)return;var w=100*m.white/tot,d=100*m.draws/tot,b=100*m.black/tot;html+='<button class="ex-row" data-online-move="'+esc(m.san)+'"><span>'+esc(m.san)+'</span><span class="n">'+tot.toLocaleString('ru')+'</span><span class="wdl"><i class="w" style="width:'+w+'%">'+Math.round(w)+'%</i><i class="d" style="width:'+d+'%"></i><i class="b" style="width:'+b+'%">'+Math.round(b)+'%</i></span></button>';});
+    var seen={};[['Недавние партии',data.recentGames],['Сильные игроки',data.topGames]].forEach(function(group){var rows=(group[1]||[]).filter(function(g){if(!/^[a-zA-Z0-9]{8}$/.test(g.id)||seen[g.id])return false;seen[g.id]=true;return true;});if(rows.length)html+='<div class="ex-h">'+group[0]+'</div>';rows.forEach(function(g){html+='<div class="gm"><button class="online-game" data-online-game="'+g.id+'">'+esc(g.white.name)+' ('+(+g.white.rating||'—')+') — '+esc(g.black.name)+' ('+(+g.black.rating||'—')+')</button><a href="https://lichess.org/'+g.id+'" target="_blank" rel="noopener noreferrer">Lichess ↗</a></div>';});});
+    html+='<div class="online-src">Источник: <a href="https://database.lichess.org/" target="_blank" rel="noopener noreferrer">открытая база Lichess, CC0</a>. Статистика реальных партий, не оценка движка. Нажмите ход или откройте партию для анализа.</div>';
+    $('dbBox').innerHTML=html;
+  }
+  $('dbSource').onchange=function(){$('pane-db').scrollTop=0;if(EX.abort)EX.abort.abort();clearTimeout(EX.timer);EX.key=null;explore();};
+  $('dbRating').onchange=$('dbSpeed').onchange=function(){EX.key=null;explore();};
+  $('connectExplorer').onclick=function(){var token=$('explorerToken').value.trim();$('explorerToken').value='';if(!token)return;EX.token=token;$('explorerSettings').open=false;EX.cache.clear();EX.key=null;explore();};
+  $('disconnectExplorer').onclick=function(){if(EX.abort)EX.abort.abort();EX.token='';$('explorerSettings').open=true;EX.key=null;EX.cache.clear();explore();};
+  function openOnlineGame(id) {
+    if(!G||(!G.analysis&&!G.over)){toast('Откройте партию на отдельной доске анализа после окончания игры');return;}
+    if(!/^[a-zA-Z0-9]{8}$/.test(id))return;
+    var current=G;onlineError('Загружаю партию…');
+    fetch('https://lichess.org/game/export/'+id+'?clocks=false&evals=false&opening=true',{headers:{Authorization:'Bearer '+EX.token,Accept:'application/x-chess-pgn'},signal:AbortSignal.timeout(20000)}).then(function(r){if(!r.ok)throw Error('Не удалось открыть партию. Можно посмотреть её по ссылке Lichess.');return r.text();}).then(function(pgn){if(G===current&&engineOK()){importPGN(pgn);toast('Партия Lichess открыта для анализа');}}).catch(function(e){if(G===current)onlineError(e.message);});
+  }
+
+  // Своя позиция: редактор, FEN и PGN. Ни часы, ни соперник не запускаются.
+  var EDIT={board:{},piece:'wp',ep:'-',half:'0',full:'1'};
+  function editorFEN(){var rows=[];for(var rank=8;rank>=1;rank--){var row='',empty=0;for(var file=0;file<8;file++){var pc=EDIT.board[FILES[file]+rank];if(!pc){empty++;continue;}if(empty){row+=empty;empty=0;}row+=pc.color==='w'?pc.type.toUpperCase():pc.type;}if(empty)row+=empty;rows.push(row);}var castle='';document.querySelectorAll('[data-castle]').forEach(function(c){if(c.checked)castle+=c.dataset.castle;});return rows.join('/')+' '+$('editorTurn').value+' '+(castle||'-')+' '+EDIT.ep+' '+EDIT.half+' '+EDIT.full;}
+  function legalEditorFEN(fen){var c=new Chess(fen),parts=c.fen().split(' '),other=parts.slice();other[1]=parts[1]==='w'?'b':'w';other[3]='-';if(new Chess(other.join(' ')).isCheck())throw Error('Король стороны, которая уже сходила, не может оставаться под шахом.');for(var r of ['K','Q','k','q'])if(parts[2].indexOf(r)>=0){var color=r===r.toUpperCase()?'w':'b',rank=color==='w'?'1':'8',king=c.get('e'+rank),rook=c.get((r.toLowerCase()==='k'?'h':'a')+rank);if(!king||king.type!=='k'||king.color!==color||!rook||rook.type!=='r'||rook.color!==color)throw Error('Для выбранной рокировки нужны король и ладья на исходных полях.');}return c;}
+  function editorLoad(fen){var c=new Chess(fen),parts=c.fen().split(' ');EDIT.board={};c.board().forEach(function(row){row.forEach(function(pc){if(pc)EDIT.board[pc.square]={color:pc.color,type:pc.type};});});EDIT.ep=parts[3];EDIT.half=parts[4];EDIT.full=parts[5];$('editorTurn').value=parts[1];document.querySelectorAll('[data-castle]').forEach(function(el){el.checked=parts[2].indexOf(el.dataset.castle)>=0;});$('editorError').textContent='';editorDraw();}
+  function editorDraw(){var board=$('editorBoard');board.innerHTML='';for(var rank=8;rank>=1;rank--)for(var file=0;file<8;file++){var sq=FILES[file]+rank,b=document.createElement('button'),pc=EDIT.board[sq];b.dataset.edcell=sq;b.className=(rank+file)%2?'':'dark';b.setAttribute('aria-label',sq+(pc?' '+(pc.color==='w'?'белые ':'чёрные ')+PNAME[pc.type]:''));b.innerHTML=pc?pieceSVG(pc.color,pc.type):'';b.onclick=function(){if(EDIT.piece==='erase')delete EDIT.board[this.dataset.edcell];else EDIT.board[this.dataset.edcell]={color:EDIT.piece[0],type:EDIT.piece[1]};EDIT.ep='-';EDIT.half='0';editorDraw();};board.appendChild(b);}$('fenInput').value=editorFEN();document.querySelectorAll('[data-piece]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.piece===EDIT.piece));});}
+  ['w','b'].forEach(function(color){['k','q','r','b','n','p'].forEach(function(type){var b=document.createElement('button');b.dataset.piece=color+type;b.innerHTML=pieceSVG(color,type);b.setAttribute('aria-label',(color==='w'?'Белые: ':'Чёрные: ')+PNAME[type]);b.onclick=function(){EDIT.piece=color+type;editorDraw();};$('editorPalette').appendChild(b);});});
+  var erase=document.createElement('button');erase.dataset.piece='erase';erase.textContent='⌫';erase.setAttribute('aria-label','Убрать фигуру');erase.onclick=function(){EDIT.piece='erase';editorDraw();};$('editorPalette').appendChild(erase);
+  $('editPositionBtn').onclick=function(){if(!G||!G.analysis)return;stopAnalysis();editorLoad(G.cur.fen);$('positionDialog').showModal();};
+  $('editorCancel').onclick=function(){$('positionDialog').close();renderSide();};
+  $('positionDialog').addEventListener('close',function(){if(G)renderSide();});
+  $('editorCurrent').onclick=function(){editorLoad(G.cur.fen);};$('editorStart').onclick=function(){editorLoad(START);};
+  $('editorClear').onclick=function(){EDIT.board={};EDIT.ep='-';EDIT.half='0';EDIT.full='1';document.querySelectorAll('[data-castle]').forEach(function(c){c.checked=false;});editorDraw();};
+  $('editorTurn').onchange=editorDraw;document.querySelectorAll('[data-castle]').forEach(function(c){c.onchange=editorDraw;});
+  $('fenLoad').onclick=function(){try{var c=legalEditorFEN($('fenInput').value.trim());editorLoad(c.fen());}catch(e){$('editorError').textContent='Некорректная позиция: '+e.message;}};
+  $('editorApply').onclick=function(){try{var c=legalEditorFEN(editorFEN());$('positionDialog').close();S.tab='eng';newGame({w:'me',b:'me'},{analysis:true,fen:c.fen()});}catch(e){$('editorError').textContent='Некорректная позиция: '+e.message;}};
+  function importPGN(pgn){var c=new Chess();c.loadPgn(pgn);var base=c.getHeaders().FEN||START,list=c.history();S.tab='nota';newGame({w:'me',b:'me'},{analysis:true,fen:base});rebuild(list);G.over=true;G.cur=G.tip;render();}
+  $('pgnLoad').onclick=function(){try{var text=$('pgnInput').value.trim();if(!text)throw Error('Вставьте запись партии PGN.');importPGN(text);$('positionDialog').close();}catch(e){$('editorError').textContent='Не удалось прочитать PGN: '+e.message;}};
+
   // openings tab: master games from The Week in Chess
   var DB = { pos: {}, games: {}, names: null, meta: null, loading: {} };
   var CRC = (function () { var t = new Int32Array(256); for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c; } return t; })();
@@ -722,12 +799,15 @@ body.blind.peek .sq .pc { visibility: visible; }
   }
   function explore() {
     if (!G || !engineOK()) { $('dbBox').innerHTML = '<span class="muted">Во время онлайн-партии база недоступна.</span>'; return; }
+    $('onlineFilters').hidden = $('dbSource').value !== 'lichess';
+    if ($('dbSource').value === 'lichess') { exploreOnline(); return; }
+    if (EX.abort) EX.abort.abort(); clearTimeout(EX.timer); EX.key=null;
     var n = G.cur, k = posKey(n.fen), my = n;
     if (!DB.meta) getJSON('db/meta.json', function (m) { DB.meta = m || {}; if (S.tab === 'db' && G && G.cur === my) explore(); });
     loadShard(k.slice(0, 2), function (d) {
-      if (!G || G.cur !== my || S.tab !== 'db') return;
+      if ($('dbSource').value !== 'masters' || !G || G.cur !== my || S.tab !== 'db') return;
       openingName(n, function (nm) {
-        if (!G || G.cur !== my) return;
+        if ($('dbSource').value !== 'masters' || !G || G.cur !== my) return;
         var rows = d[k] || [], games = d[k + '~g'] || [], html = '';
         html += '<div class="op-name">' + (nm ? '<small>' + esc(nm[0]) + '</small>' + esc(nm[1]) : '<span class="muted">' + (n === G.root ? 'Начальная позиция' : 'Название дебюта не найдено') + '</span>') + '</div>';
         if (!rows.length) html += '<span class="muted">В базе нет партий мастеров с этой позицией.</span>';
@@ -741,7 +821,7 @@ body.blind.peek .sq .pc { visibility: visible; }
         html += '<div class="src">База: The Week in Chess' + (m && m.games ? ', ' + m.games.toLocaleString('ru') + ' партий ' + m.from + '–' + m.to + ', классика, рейтинг 2300+' : '') + '. Нажми ход — он сыграется на доске.</div>';
         $('dbBox').innerHTML = html; $('dbBox').dataset.k = k;
         if (games.length) loadGames(games, function (list) {
-          if (!G || G.cur !== my || !$('gmList')) return;
+          if ($('dbSource').value !== 'masters' || !G || G.cur !== my || !$('gmList')) return;
           $('gmList').innerHTML = list.map(function (g) {
             if (!g) return '';
             var r = g.d[6] === '1-0' ? '1–0' : g.d[6] === '0-1' ? '0–1' : '½–½';
@@ -760,6 +840,7 @@ body.blind.peek .sq .pc { visibility: visible; }
     });
   }
   $('dbBox').addEventListener('click', function (e) {
+    if ($('dbSource').value === 'lichess') { var online=e.target.closest('[data-online-move]'), game=e.target.closest('[data-online-game]');if(online)tryMove(online.dataset.onlineMove);else if(game)openOnlineGame(game.dataset.onlineGame);return; }
     var r = e.target.closest('.ex-row');
     if (r) { var d = DB.pos[$('dbBox').dataset.k.slice(0, 2)], row = d && d[$('dbBox').dataset.k][+r.dataset.i]; if (row) tryMove(row[0]); return; }
     var g = e.target.closest('.gm'); if (!g) return;
@@ -1222,3 +1303,12 @@ body.blind.peek .sq .pc { visibility: visible; }
 </script>
 
 <style>.play-eval{position:relative;height:26px;flex:none;background:#394254;border-radius:5px;overflow:hidden;margin:8px}.play-eval i{position:absolute;inset:0 auto 0 0;width:50%;background:#bdab88}.play-eval span{position:relative;display:block;text-align:center;font:700 12px/26px system-ui;color:#fff;text-shadow:0 1px 3px #000}</style>
+
+<style>.study-controls{padding:10px;display:grid;gap:10px;border-bottom:1px solid var(--line)}.study-controls label{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font:700 13px var(--body)}.study-controls select,.study-controls input,#positionDialog input:not([type=checkbox]),#positionDialog textarea,#positionDialog select{width:100%;min-width:0;padding:9px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);font:inherit}.study-controls button,.study-edit,#positionDialog button{border:1px solid var(--line);padding:9px 12px;border-radius:8px;background:var(--btn);color:var(--ink);font:700 13px var(--body);cursor:pointer}.study-edit{margin:8px;flex:none}.study-controls a,.online-src a{color:var(--gold)}#onlineFilters{display:grid;gap:10px}#onlineFilters[hidden]{display:none}#explorerConnect{display:grid;gap:8px}.online-src{padding:10px;font:600 12px/1.5 var(--body);color:var(--ink-dim)}#positionDialog{width:min(550px,calc(100% - 24px));max-height:calc(100dvh - 24px);overflow:auto;padding:20px;background:var(--bg-2);color:var(--ink);border:1px solid var(--line);border-radius:16px}#positionDialog::backdrop{background:#080d1dcc;backdrop-filter:blur(4px)}#positionDialog h2{font:800 22px var(--display)}#positionDialog label{display:block;font:700 13px/1.5 var(--body);margin:10px 0}.editor-palette{display:flex;flex-wrap:wrap;gap:3px;margin:10px 0}.editor-palette button{width:38px;height:38px;padding:2px!important}.editor-palette svg,.editor-board svg{width:100%;height:100%;pointer-events:none}.editor-palette [aria-pressed=true]{outline:2px solid var(--gold)}.editor-board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;max-width:340px;margin:12px auto}.editor-board button{aspect-ratio:1;border:0!important;border-radius:0!important;padding:2px!important;background:var(--light)!important}.editor-board button.dark{background:var(--dark)!important}.study-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:space-between;margin:12px 0}#editorApply{background:var(--gold)!important;color:#241900!important}#editorError{color:#ffaaa0;font:700 13px var(--body)}#positionDialog fieldset{border:1px solid var(--line);border-radius:8px;display:flex;gap:10px;flex-wrap:wrap}#positionDialog fieldset label{margin:0}
+</style>
+
+<style>button.ex-row{width:100%;border:0;background:transparent;color:var(--ink);font:inherit;text-align:left}button.ex-row:hover{background:rgba(255,255,255,.06)}.online-game{display:block;width:100%;border:0;background:transparent;color:inherit;text-align:left;padding:0;font:inherit;cursor:pointer}.gm a{color:var(--gold);font-size:12px}#explorerConnect[hidden]{display:none!important}</style>
+
+<style>#game{overflow-y:auto}.study-controls{border-radius:8px;background:var(--bg-2)}</style>
+
+<style>.editor-board{grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr))}.editor-board button{min-width:0;min-height:0;line-height:0}.editor-board svg{display:block}#explorerSettings summary{cursor:pointer;color:var(--gold);font:700 12px/1.5 var(--body);padding:5px 0}</style>
