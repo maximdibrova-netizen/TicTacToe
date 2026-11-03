@@ -267,7 +267,7 @@ body.blind.peek .sq .pc { visibility: visible; }
         <li>Можно сдаться. На время — проигрывает тот, у кого кончились часы.</li>
       </ol>
     </div>
-    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 03.11.2026 19:31</span></p>
+    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 03.11.2026 19:52</span></p>
   </div>
 </section>
 
@@ -4734,6 +4734,7 @@ function chessBot(chess) {
   function endGhost() { if (DRAG.ghost) { DRAG.ghost.remove(); DRAG.ghost = null; } setOver(null); Array.prototype.forEach.call(document.querySelectorAll('.drag-src'), function (x) { x.classList.remove('drag-src'); }); }
   $('board').addEventListener('pointerdown', function (e) {
     if (!G || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    G.drawings=G.drawings||{};G.drawings[G.cur.fen]=[];MANUAL=null;drawArrows();
     var el = e.target.closest('.sq'); if (!el) return;
     e.preventDefault(); endGhost();
     var sq = el.dataset.square;

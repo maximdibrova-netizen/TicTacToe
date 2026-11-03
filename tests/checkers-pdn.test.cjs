@@ -1,0 +1,10 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),vm=require('vm'),path=require('path');const root=path.resolve(__dirname,'..'),ctx={};vm.createContext(ctx);vm.runInContext(fs.readFileSync(path.join(root,'src/checkers/core.js'),'utf8'),ctx);const file=path.join(root,'src/checkers/pdn.js');if(fs.existsSync(file))vm.runInContext(fs.readFileSync(file,'utf8'),ctx);
+test('Russian draughts PDN is implemented',()=>assert.equal(typeof ctx.ckPdnRead,'function'));
+if(typeof ctx.ckPdnRead==='function'){
+test('PDN main line and variants round trip; foreign rules and illegal moves rejected',()=>{const g=ctx.ckPdnRead('[GameType "25"]\n1. c3-d4 (1. a3-b4 b6-a5) d6-c5 *');assert.equal(g.moves.length,2);assert.equal(g.branches.length,1);const text=ctx.ckPdnWrite(g.moves,g.headers,g.fen,g.branches),again=ctx.ckPdnRead(text);assert.deepEqual(Array.from(again.moves),Array.from(g.moves));assert.deepEqual(Array.from(again.branches[0]),Array.from(g.branches[0]));assert.throws(()=>ctx.ckPdnRead('[GameType "20"]\n1. 32-28 *'));assert.throws(()=>ctx.ckPdnRead('1. a3-h8 *'));});
+test('custom position handles backward capture and promotion during a capture sequence',()=>{let g=ctx.ckPdnRead('[GameType "25"]\n[FEN "W:Wc3:Bd2"]\n1. c3:e1 1-0');assert.equal(g.moves[0],'42,60');let s=ctx.ckPdnPosition('W:Wb6:Bc7,f6');let moves=ctx.ckMoves(s),m=moves.find(m=>m.path.map(ctx.ckName).join(':')==='b6:d8:g5');assert.ok(m);ctx.ckApply(s,m,true);assert.equal(s.b[30],2);assert.equal(s.b[10],0);assert.equal(s.b[21],0);});
+}
+
+test('blocked imported position has a terminal engine result',()=>{const s=ctx.ckPdnPosition('W:Wa7:Bb8,c7');assert.equal(s.winner,-1);assert.equal(ctx.ckAnalyze(s).p,0);assert.equal(ctx.ckAnalyze(s).best,null);});
+
+test('black-to-move PDN numbers the following white move correctly',()=>{const g=ctx.ckPdnRead('[GameType \"25\"]\n[FEN \"B:Wa3:Bb6\"]\n1... b6-a5 2. a3-b4 *');const out=ctx.ckPdnWrite(g.moves,g.headers,g.fen);assert.match(out,/1\.\.\. b6-a5 2\. a3-b4/);assert.equal(ctx.ckPdnRead(out).moves.length,2);});

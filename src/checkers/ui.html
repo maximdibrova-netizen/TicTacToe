@@ -133,7 +133,7 @@ body.nocoord .coord { display: none; }
       <div class="join" id="joinRow" hidden><input id="joinCode" maxlength="5" placeholder="КОД" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Код игры"><button id="joinGo">Войти</button></div>
       <p class="hint">Цвет хозяина берётся из «Я играю». В реванше цвета меняются.</p>
     </div>
-    <button class="play" id="playBtn">Играть</button>
+    <button class="play" id="playBtn">Играть</button><button class="play ck-analyze" id="ckAnalyzeBtn">Анализ партии</button>
     <div class="card"><h2>Правила</h2>
       <ol class="rules">
         <li>Белые ходят первыми. Простая шашка ходит <b>вперёд</b> по диагонали на одно поле.</li>
@@ -154,7 +154,7 @@ body.nocoord .coord { display: none; }
     <div class="pl r" id="plB"><span class="dot" id="dotB"></span><div><div class="nm" id="nmB"></div><div class="sc" id="scB"></div></div></div>
   </div>
   <div class="status" id="status"></div>
-  <div class="wrap" id="wrap"><div id="board"></div></div>
+  <div id="ckMain"><div id="ckBoardColumn"><div class="wrap" id="wrap"><div id="board"></div></div>
   <div id="rvMount"></div>
   <div class="bar">
     <button id="homeBtn" aria-label="В меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"><path d="M3.5 11 12 3.8 20.5 11M6 9v11h12V9"/></svg></button>
@@ -164,6 +164,7 @@ body.nocoord .coord { display: none; }
     <button id="coordBtn" aria-label="Координаты"><span class="txt">a1</span></button>
     <button id="soundBtn" aria-label="Звук"></button>
   </div>
+</div><aside id="ckStudy"><div class="ck-tools"><button id="ckExport">Экспорт PDN</button><button id="ckImport">Импорт PDN</button></div><div class="ck-tabs" role="tablist"><button id="ckTabNota" role="tab" aria-selected="true">Нотация</button><button id="ckTabEngine" role="tab" aria-selected="false">Движок</button></div><div id="ckNotation"></div><div id="ckEngine" hidden><strong id="ckEngineScore">…</strong><p id="ckEngineNote"></p><button id="ckBestMove" disabled>Лучший ход…</button><p class="hint">Оценка встроенного движка русских шашек с точки зрения белых. Плюс — преимущество белых.</p></div></aside></div>
 </section>
 
 <div class="ov" id="endOv" hidden><div class="dlg"><h3 id="endTitle"></h3><p id="endText"></p>
@@ -175,13 +176,16 @@ body.nocoord .coord { display: none; }
   <div class="btns"><button id="askYes">Согласен</button><button id="askNo" class="alt">Нет</button></div></div></div>
 <div class="toast" id="toast" hidden></div>
 
+<dialog id="ckPdnDialog" aria-labelledby="ckPdnTitle"><h2 id="ckPdnTitle">Партия PDN</h2><p class="hint">Русские шашки 8×8 (GameType 25). Импорт откроет отдельный анализ и заменит текущую партию. Взятия записываются через «:».</p><label id="ckScopeRow">Экспорт<select id="ckScope"><option value="all">Основная партия и варианты</option><option value="path">Ветка до позиции на доске</option></select></label><textarea id="ckPdnText" rows="10" aria-label="Запись PDN"></textarea><input type="file" id="ckPdnFile" accept=".pdn,text/plain" aria-label="Открыть файл PDN"><p id="ckPdnError" role="alert"></p><div class="ck-tools"><button id="ckPdnClose">Закрыть</button><button id="ckPdnApply">Открыть в анализе</button><button id="ckPdnDownload">Скачать .pdn</button><button id="ckPdnShare" hidden>Поделиться</button></div></dialog>
+
 <script>/*CLOCK*/</script>
 <script>/*NET*/</script>
 <script>/*REVIEW*/</script>
-<script id="core">/*CORE*/</script>
+<script id="core">/*CORE*/
+/*PDN*/</script>
 <script id="workerGlue" type="text/plain">
 onmessage = function (e) {
-  var d = e.data, s = ckNew();
+  var d = e.data, s = ckPdnPosition(d.fen);
   for (var k = 0; k < d.moves.length; k++) { var mv = ckMoves(s).filter(function (m) { return m.path.join(',') === d.moves[k]; })[0]; ckApply(s, mv, true); }
   if (d.kind === 'analyze') postMessage({ id: d.id, path: ckAnalyze(s, d.ms) });
   else postMessage({ id: d.id, path: ckMoves(s)[ckThink(s, d.level)].path.join(',') });
@@ -240,29 +244,31 @@ onmessage = function (e) {
   var anW = null, anId = 0, anPend = {};
   try {
     anW = new Worker(URL.createObjectURL(new Blob([$('core').textContent + '\n' + $('workerGlue').textContent], { type: 'text/javascript' })));
-    anW.onmessage = function (e) { var cb = anPend[e.data.id]; delete anPend[e.data.id]; if (cb) cb(e.data.path); };
+    anW.onmessage = function (e) { var cb = anPend[e.data.id]; delete anPend[e.data.id]; if (cb) { cb(e.data.path); if(G)setTimeout(renderStudyPanel,0); } };
     anW.onerror = function () { anW = null; };
   } catch (e) { anW = null; }
   function askAnalyze(moves, cb) {
-    if (anW) { var id = ++anId; anPend[id] = cb; try { anW.postMessage({ id: id, moves: moves, kind: 'analyze', ms: 700 }); return; } catch (e) { delete anPend[id]; anW = null; } }
-    setTimeout(function () { cb(ckAnalyze(replay(moves), 250)); }, 30);
+    var base=G&&G.baseFen;
+    if (anW) { var id = ++anId; anPend[id] = cb; try { anW.postMessage({ id: id, moves: moves, fen:base, kind: 'analyze', ms: 700 }); return; } catch (e) { delete anPend[id]; anW = null; } }
+    setTimeout(function () { cb(ckAnalyze(replay(moves,base), 250));if(G)renderStudyPanel(); }, 30);
   }
   function askBot(moves, level, cb) {
-    if (worker) { var id = ++reqId; pending[id] = cb; try { worker.postMessage({ id: id, moves: moves, level: level }); return; } catch (e) { delete pending[id]; worker = null; } }
-    setTimeout(function () { var s = replay(moves); cb(ckMoves(s)[ckThink(s, level)].path.join(',')); }, 30);
+    var base=G&&G.baseFen;
+    if (worker) { var id = ++reqId; pending[id] = cb; try { worker.postMessage({ id: id, moves: moves, fen:base, level: level }); return; } catch (e) { delete pending[id]; worker = null; } }
+    setTimeout(function () { var s = replay(moves,base); cb(ckMoves(s)[ckThink(s, level)].path.join(',')); }, 30);
   }
 
   // ---------- game ----------
   // G.kind[1|-1]: 'me' | 'bot' | 'net'. Moves are kept as path strings ("21,30") and replayed from the start.
   var G = null, token = 0, sqEls = [];
-  function replay(list) {
-    var s = ckNew();
+  function replay(list,base) {
+    var s = ckPdnPosition(base==null?(G&&G.baseFen):base);
     for (var k = 0; k < list.length; k++) { var mv = findMove(s, list[k]); if (!mv) break; ckApply(s, mv, true); }
     return s;
   }
   function snapOf(s, path) { var t = ckClone(s); t.path = path; return t; }
   function lineOf(list) {
-    var s = ckNew(), L = [{ s: snapOf(s, []), mv: null, by: 0 }];
+    var s = ckPdnPosition(G&&G.baseFen), L = [{ s: snapOf(s, []), mv: null, by: 0 }];
     for (var k = 0; k < list.length; k++) { var mv = findMove(s, list[k]); if (!mv) break; var by = s.side; ckApply(s, mv, true); L.push({ s: snapOf(s, list.slice(0, k + 1)), mv: list[k], by: by }); }
     return L;
   }
@@ -286,13 +292,13 @@ onmessage = function (e) {
       n.style.top = 'calc(var(--B) * .045 + var(--B) / 8 * ' + (k + .5) + ')'; n.style.left = 'calc(var(--B) * .014)'; n.style.transform = 'translateY(-50%)'; wrap.appendChild(n);
     }
   }
-  function layout() { var extra = $('rvMount').offsetHeight + 8, B = Math.max(240, Math.min(window.innerWidth - 40, window.innerHeight - (GC && GC.enabled()?68:0) - (window.hubH ? hubH() : 0) - 200 - extra, 620)); document.documentElement.style.setProperty('--B', Math.floor(B / 8) * 8 + 'px'); if (window.RVready) RV.refresh(); }
+  function layout() { var wide=window.innerWidth>=900,extra=$('rvMount').offsetHeight+8,reserve=wide?0:230,B=Math.max(200,Math.min(window.innerWidth-(wide?400:40),window.innerHeight-(GC&&GC.enabled()?68:0)-(window.hubH?window.hubH():0)-200-extra-reserve,620));B=Math.floor(B/8)*8;document.documentElement.style.setProperty('--B',B+'px');document.documentElement.style.setProperty('--ck-panel-height',(wide?B*1.09+extra+65:230)+'px');if(window.RVready)RV.refresh();}
   window.addEventListener('resize', layout);
   function mySide() { return G.kind[1] === 'me' && G.kind[-1] !== 'me' ? 1 : G.kind[-1] === 'me' && G.kind[1] !== 'me' ? -1 : 0; }
 
-  function newGame(kind) {
-    token++;
-    G = { evalOn: !!S.evalOn, kind: kind, moves: [], s: ckNew(), sel: -1, part: null, vpart: null, busy: false, over: false, endShown: false, lastPath: null };
+  function newGame(kind,opts) {
+    token++;opts=opts||{};
+    G = { analysis:!!opts.analysis,baseFen:opts.fen||'',studyBranches:[],pre:null,evalOn:opts.analysis||!!S.evalOn, kind: kind, moves: [], s: ckPdnPosition(opts.fen), sel: -1, part: null, vpart: null, busy: false, over: false, endShown: false, lastPath: null };
     G.line = lineOf([]);
     G.flip = mySide() === -1;
     RV.reset();
@@ -348,11 +354,13 @@ onmessage = function (e) {
       el.classList.toggle('lastmv', !!lastSet[i] && !part);
       el.classList.toggle('hintf', !!hp && i === hp[0]);
       el.classList.toggle('hintt', !!hp && i === hp[hp.length - 1]);
+      el.classList.toggle('pre',!!G.pre&&(G.pre.from===i||G.pre.to===i)||G.preFrom===i);
     }
     var cnt = { 1: 0, '-1': 0 }; for (i = 0; i < 64; i++) if (s.b[i]) cnt[s.b[i] > 0 ? 1 : -1]++;
     var top = G.flip ? 1 : -1, bot = -top;                    // the side shown at the bottom is on the left card
     fill('A', bot, cnt, s); fill('B', top, cnt, s);
     if (live) setStatus(all);
+    renderStudyPanel();
     var viewOff = RV.viewing() && !Net2P.active();
     $('undoBtn').disabled = viewOff ? false : (undoTarget() < 0 || !!G.undoVote);
     var lbl = Net2P.active() ? 'Попросить отменить ход' : viewOff ? 'Играть с этой позиции' : 'Отменить ход';
@@ -378,6 +386,7 @@ onmessage = function (e) {
     if (s.winner === 3) { st.textContent = 'Ничья: ' + (s.drawReason || ''); return; }
     if (s.winner) { st.textContent = NAME[s.winner] + ' победили'; return; }
     if (G.undoVote) { st.textContent = 'Ждём ответа про отмену хода'; return; }
+    if(G.pre){st.textContent='Премув: '+ckName(G.pre.from)+'–'+ckName(G.pre.to)+' · ждём ответ соперника';return;}
     var k = G.kind[s.side];
     if (k === 'bot') st.textContent = 'Бот думает…';
     else if (k === 'net') st.textContent = 'Ходит друг…';
@@ -395,13 +404,15 @@ onmessage = function (e) {
   }
   function partialCaps(all, part) { var c = {}, cs = candidates(all, part); if (cs.length) cs[0].caps.slice(0, part.length - 1).forEach(function (x) { c[x] = 1; }); return c; }
 
-  function onSq(e) {
+  function onSq(e){if(e.detail===0||Date.now()-CKDRAG.up>400)tapSquare(+e.currentTarget.dataset.i);}
+  function tapSquare(i) {
     if (!G) return;
+    if(premoveMode()){if(G.preFrom!=null&&G.preFrom!==i){queuePremove(G.preFrom,i);G.preFrom=null;}else G.preFrom=G.s.b[i]*mySide()>0?i:null;render();return;}
     var d = RV.display(), live = d.mode === 'live';
     if (live ? !canTap() : !RV.canPlay()) return;
     var s = live ? G.s : d.s, part = live ? G.part : G.vpart;
     var setPart = function (v) { if (live) G.part = v; else G.vpart = v; };
-    var i = +e.currentTarget.dataset.i, all = ckMoves(s);
+    var all = ckMoves(s);
     if (part && targets(all, part)[i]) {
       part.push(i); knock(520, .12);
       var cs = candidates(all, part), exact = cs.filter(function (m) { return m.path.length === part.length; }), longer = cs.filter(function (m) { return m.path.length > part.length; });
@@ -433,7 +444,7 @@ onmessage = function (e) {
     animate(before, mv, function () {
       if (my !== token) return;
       G.busy = false; render();
-      if (G.s.winner) { G.over = true; setTimeout(showEnd, 500); return; }
+      if (G.s.winner) { G.over = true; if(!G.analysis)setTimeout(showEnd, 500); return; }
       turnLoop();
     });
   }
@@ -459,7 +470,8 @@ onmessage = function (e) {
     })();
   }
   function turnLoop() {
-    if (!G || G.over) return;
+    if (!G || G.over || G.analysis) return;
+    if(runPremove())return;
     var side = G.s.side;
     if (G.kind[side] !== 'bot' || (Net2P.active() && Net2P.role() !== 'host')) { render(); return; }
     if (RV.viewing() && !Net2P.active()) { render(); return; }      // смотришь историю — бот ждёт
@@ -488,7 +500,7 @@ onmessage = function (e) {
   function applyUndo(t, msg) {
     if (!G || t < 0 || t > G.moves.length) return;
     token++;
-    G.moves = G.moves.slice(0, t); G.s = replay(G.moves); G.over = false; G.busy = false; G.endShown = false; G.part = null;
+    G.pre=null;G.preFrom=null;G.moves = G.moves.slice(0, t); G.s = replay(G.moves); G.over = false; G.busy = false; G.endShown = false; G.part = null;
     G.lastPath = null; G.netPending = false; G.line = lineOf(G.moves); G.thinkingAt = -1;
     $('endOv').hidden = true; $('askOv').hidden = true;
     RV.go(-1); RV.sync(); render(); toast(msg || 'Ход отменён'); turnLoop();
@@ -507,6 +519,7 @@ onmessage = function (e) {
 
   // ---------- end ----------
   function showEnd() {
+    if(G&&G.analysis)return;
     if (!G || G.endShown) return; G.endShown = true;
     var w = G.s.winner, me = mySide();
     if (w === 3) { $('endTitle').textContent = 'Ничья'; $('endText').textContent = 'Причина: ' + G.s.drawReason + '.'; }
@@ -656,8 +669,54 @@ onmessage = function (e) {
   $('joinCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('joinGo').click(); });
   $('joinGo').onclick = function () { var c = Net2P.cleanCode($('joinCode').value); if (c.length === 5) joinGame(c); };
 
+  // Перетаскивание и отложенный ход: любой премув проверяется заново по полным правилам.
+  var CKDRAG={d:null,ghost:null,up:0},ckTab='notation';
+  function premoveMode(){return !!G&&!G.analysis&&!G.over&&!RV.viewing()&&!!mySide()&&G.s.side!==mySide()&&!G.netPending;}
+  function queuePremove(from,to){if(!premoveMode()||from===to||G.s.b[from]*mySide()<=0||((to/8|0)+to%8)%2!==1)return;G.pre={from:from,to:to};toast('Премув поставлен. Правый клик или Esc — отменить.');}
+  function runPremove(){if(!G||!G.pre||G.busy||RV.viewing()||G.s.side!==mySide()||G.over)return false;var pre=G.pre;G.pre=null;G.preFrom=null;var choices=ckMoves(G.s).filter(function(m){return m.path[0]===pre.from&&m.path[m.path.length-1]===pre.to;});if(choices.length!==1){toast(choices.length?'Премув отменён: выберите путь взятия.':'Премув отменён: ход стал недопустим.');return false;}var g=G,key=ckKey(G.s),path=choices[0].path.join(',');setTimeout(function(){if(G===g&&!G.over&&!G.busy&&ckKey(G.s)===key&&canTap())submit(path);},40);return true;}
+  function ckAt(x,y){var el=document.elementFromPoint(x,y);el=el&&el.closest('.sq');return el&&$('board').contains(el)?el:null;}
+  function clearCkDrag(){if(CKDRAG.ghost)CKDRAG.ghost.remove();CKDRAG.ghost=null;document.querySelectorAll('.ck-drag-source').forEach(function(el){el.classList.remove('ck-drag-source');});}
+  $('board').addEventListener('pointerdown',function(e){if(!G||(e.pointerType==='mouse'&&e.button!==0))return;var el=e.target.closest('.sq');if(!el)return;var d=RV.display();var pre=premoveMode(),allowed=pre||(d.mode==='live'?canTap():RV.canPlay());if(!allowed)return;e.preventDefault();var from=+el.dataset.i,part=d.mode==='live'?G.part:G.vpart,state=d.mode==='live'?G.s:d.s,selectable=premoveMode()?state.b[from]*mySide()>0:state.b[from]*state.side>0||part&&part[part.length-1]===from;CKDRAG.d={from:from,el:el,x:e.clientX,y:e.clientY,id:e.pointerId,drag:false,selectable:selectable,premove:premoveMode()};});
+  document.addEventListener('pointermove',function(e){var d=CKDRAG.d;if(!d||d.id!==e.pointerId||!d.selectable)return;if(!d.drag){if(Math.abs(e.clientX-d.x)+Math.abs(e.clientY-d.y)<5)return;d.drag=true;var part=RV.display().mode==='live'?G.part:G.vpart;if(!d.premove&&(!part||part[part.length-1]!==d.from))tapSquare(d.from);var piece=d.el.querySelector('.pc');if(!piece)return;var rect=d.el.getBoundingClientRect(),ghost=document.createElement('div');ghost.className='ck-drag-piece';ghost.style.width=ghost.style.height=rect.width+'px';ghost.innerHTML=piece.outerHTML;document.body.appendChild(ghost);CKDRAG.ghost=ghost;d.el.classList.add('ck-drag-source');}if(CKDRAG.ghost){var width=CKDRAG.ghost.getBoundingClientRect().width;CKDRAG.ghost.style.transform='translate('+(e.clientX-width/2)+'px,'+(e.clientY-width/2)+'px)';}}, {passive:false});
+  document.addEventListener('pointerup',function(e){var d=CKDRAG.d;if(!d||d.id!==e.pointerId)return;CKDRAG.d=null;CKDRAG.up=Date.now();clearCkDrag();if(!G)return;var to=ckAt(e.clientX,e.clientY);if(!to)return;var i=+to.dataset.i;if(d.drag){if(d.premove){queuePremove(d.from,i);render();}else if(i!==d.from)tapSquare(i);}else if(i===d.from)tapSquare(i);});
+  document.addEventListener('pointercancel',function(){CKDRAG.d=null;clearCkDrag();});
+  $('board').addEventListener('contextmenu',function(e){e.preventDefault();if(G){G.pre=null;G.preFrom=null;render();}});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&G&&!document.querySelector('dialog[open]')){G.pre=null;G.preFrom=null;render();}});
+
+  function studyAllowed(){return !!G&&(!Net2P.active()||G.over)&&(G.evalOn||G.over||G.analysis);}
+  function pathName(path,state){var mv=state&&findMove(state,path);return path.split(',').map(function(i){return ckName(+i);}).join(mv&&mv.caps.length?':':'–');}
+  function saveCurrentBranch(){if(!G||RV.display().mode!=='var')return;var path=RV.pathHere(),key=path.join(' ');if(G.studyBranches.some(function(line){var old=line.join(' ');return old===key||old.indexOf(key+' ')===0;}))return;G.studyBranches=G.studyBranches.filter(function(line){return key.indexOf(line.join(' ')+' ')!==0;});G.studyBranches.push(path);}
+  function selectBranch(path){if(!G||!studyAllowed())return;var same=0;while(same<path.length&&same<G.moves.length&&path[same]===G.moves[same])same++;RV.go(same);for(var i=same;i<path.length;i++)if(!RV.play(path[i]))break;}
+  function renderStudyPanel(){
+    if(!G)return;saveCurrentBranch();var allowed=studyAllowed(),d=RV.display(),path=d.s.path||[],idx=d.mode==='live'?G.moves.length:path.length;
+    $('ckTabEngine').hidden=!allowed;if(!allowed)ckTab='notation';
+    $('ckTabNota').setAttribute('aria-selected',String(ckTab==='notation'));$('ckTabEngine').setAttribute('aria-selected',String(ckTab==='engine'));
+    $('ckNotation').hidden=ckTab!=='notation';$('ckEngine').hidden=ckTab!=='engine';$('ckImport').disabled=Net2P.active()&&!G.over;
+    var html='<button data-ck-go="0">Начало</button>';
+    G.moves.forEach(function(m,i){html+='<button data-ck-go="'+(i+1)+'" class="'+(d.mode!=='var'&&idx===i+1?'current':'')+'">'+(G.line[i].s.side===1?(1+((i+(G.line[0].s.side===-1?1:0))/2|0))+'. ':i===0?'1… ':'')+pathName(m,G.line[i].s)+'</button>';});
+    if(d.mode==='var')html+='<p>Вариант: '+path.map(function(m,i){return pathName(m,lineOf(path)[i].s);}).join(' ')+'</p>';
+    if(G.studyBranches.length){html+='<details><summary>Варианты ('+G.studyBranches.length+')</summary>';G.studyBranches.forEach(function(branch,i){html+='<button data-ck-branch="'+i+'">Вариант '+(i+1)+': '+branch.slice(0,5).map(function(m){return moveName(m);}).join(' ')+'</button>';});html+='</details>';}
+    if(G.over&&!G.analysis)html+='<p>'+((G.s.winner===3)?'Ничья':NAME[G.s.winner]+' победили')+'</p>';
+    $('ckNotation').innerHTML=html;
+    if(allowed){var r=RV.evalOf(d.s),white=r&&Number.isFinite(r.v)?r.v*d.s.side/100:null;$('ckEngineScore').textContent=d.s.winner?(d.s.winner===3?'½–½':d.s.winner===1?'1–0':'0–1'):white==null?'…':(white>0?'+':white<0?'−':'')+Math.abs(white).toFixed(2);$('ckEngineNote').textContent=r?'Оценка позиции · белые '+Math.round((d.s.side===1?r.p:1-r.p)*100)+'%':'Движок считает…';$('ckBestMove').disabled=!r||!r.best||!(d.mode==='live'?canTap():RV.canPlay());$('ckBestMove').textContent=r&&r.best?'Лучший ход: '+pathName(r.best,d.s):'Лучший ход…';$('ckBestMove').dataset.path=r&&r.best||'';}
+  }
+  $('ckTabNota').onclick=function(){ckTab='notation';renderStudyPanel();};$('ckTabEngine').onclick=function(){if(studyAllowed()){ckTab='engine';RV.refresh();renderStudyPanel();}};
+  $('ckNotation').onclick=function(e){var go=e.target.closest('[data-ck-go]'),branch=e.target.closest('[data-ck-branch]');if(go)RV.go(+go.dataset.ckGo);if(branch)selectBranch(G.studyBranches[+branch.dataset.ckBranch]);};
+  $('ckBestMove').onclick=function(){if(!studyAllowed())return;var path=this.dataset.path;if(!path)return;if(RV.display().mode==='live'){if(canTap())submit(path);}else RV.play(path);};
+  $('ckAnalyzeBtn').onclick=function(){Net2P.close();newGame({1:'me','-1':'me'},{analysis:true});ckTab='engine';renderStudyPanel();};
+  function pdnText(){var scope=$('ckScope').value,headers=Object.assign({},G.pdnHeaders||{});headers.Result=scope==='path'||G.analysis?'*':G.s.winner===3?'1/2-1/2':G.s.winner===1?'1-0':G.s.winner===-1?'0-1':'*';saveCurrentBranch();return ckPdnWrite(scope==='path'?RV.pathHere():G.moves,headers,G.baseFen,scope==='path'?[]:G.studyBranches);}
+  function pdnFile(){return new File([pdnText()],'russian-draughts-'+new Date().toISOString().slice(0,10)+'.pdn',{type:'application/x-draughts-pdn'});}
+  function refreshPdn(){try{$('ckPdnText').value=pdnText();$('ckPdnError').textContent='';$('ckPdnShare').hidden=!(navigator.canShare&&navigator.canShare({files:[pdnFile()]}));}catch(e){$('ckPdnError').textContent=e.message;}}
+  $('ckExport').onclick=function(){if(!G)return;$('ckPdnTitle').textContent='Сохранить PDN';$('ckScopeRow').hidden=false;$('ckPdnFile').hidden=true;$('ckPdnApply').hidden=true;$('ckPdnDownload').hidden=false;$('ckPdnText').readOnly=true;$('ckScope').value='all';refreshPdn();$('ckPdnDialog').showModal();};
+  $('ckImport').onclick=function(){if(Net2P.active()&&!G.over)return;$('ckPdnTitle').textContent='Импорт русских шашек';$('ckScopeRow').hidden=true;$('ckPdnFile').hidden=false;$('ckPdnApply').hidden=false;$('ckPdnDownload').hidden=true;$('ckPdnShare').hidden=true;$('ckPdnText').readOnly=false;$('ckPdnText').value='';$('ckPdnError').textContent='';$('ckPdnDialog').showModal();};
+  $('ckPdnFile').onchange=function(){var file=this.files[0];if(!file)return;if(file.size>2000000){$('ckPdnError').textContent='Выберите одну партию, файл до 2 МБ.';return;}file.text().then(function(text){$('ckPdnText').value=text;});};
+  $('ckPdnApply').onclick=function(){try{var game=ckPdnRead($('ckPdnText').value);Net2P.close();newGame({1:'me','-1':'me'},{analysis:true,fen:game.fen});G.moves=game.moves;G.s=replay(G.moves);G.line=lineOf(G.moves);G.over=!!G.s.winner;G.endShown=true;G.studyBranches=game.branches;G.pdnHeaders=game.headers;G.pre=null;RV.reset();RV.go(0);ckTab='notation';render();layout();$('ckPdnDialog').close();}catch(e){$('ckPdnError').textContent=e.message;}};
+  $('ckScope').onchange=refreshPdn;$('ckPdnClose').onclick=function(){$('ckPdnDialog').close();};
+  $('ckPdnDownload').onclick=function(){try{var file=pdnFile(),url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download=file.name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},60000);}catch(e){$('ckPdnError').textContent=e.message;}};
+  $('ckPdnShare').onclick=function(){navigator.share({files:[pdnFile()],title:'Русские шашки · PDN'}).catch(function(e){if(e.name!=='AbortError')$('ckPdnError').textContent='Используйте скачивание .pdn';});};
+
   var GC = GameClock.attach({id:"checkers", labels:["Белые", "Чёрные"],
-    state:function(){return G?{game:G,turn:(G.s.side===1?0:1),moves:G.moves.length,over:!!(G.over || G.s.winner),ready:true}:null;}, role:function(){return Net2P.role();},
+    state:function(){return G&&!G.analysis?{game:G,turn:(G.s.side===1?0:1),moves:G.moves.length,over:!!(G.over || G.s.winner),ready:true}:null;}, role:function(){return Net2P.role();},
     send:function(m){Net2P.send(m);}, menu:toMenu,
     expire:function(i){if(!G)return;token++;G.over=true; G.s.winner=i===0?-1:1;}
   });
@@ -666,3 +725,6 @@ onmessage = function (e) {
   renderMenu();
 })();
 </script>
+
+<style>#game{overflow-y:auto}#ckMain{display:flex;gap:18px;align-items:flex-start;max-width:100%}#ckBoardColumn{display:flex;flex-direction:column;align-items:center;gap:8px}#ckStudy{width:310px;height:var(--ck-panel-height,360px);background:var(--table-2);border:1px solid #65503c;border-radius:12px;display:flex;flex-direction:column;overflow:hidden}.ck-tools{display:flex;flex-wrap:wrap;gap:6px;padding:8px}.ck-tools button,.ck-tabs button,#ckEngine button,.ck-branch{border:1px solid #65503c;background:var(--btn);color:var(--ink);border-radius:7px;padding:8px;cursor:pointer;font:700 12px var(--body)}.ck-tabs{display:flex;border-bottom:1px solid #65503c}.ck-tabs button{flex:1;border:0;border-radius:0;background:transparent}.ck-tabs [aria-selected=true]{border-bottom:2px solid var(--gold);color:var(--gold)}#ckNotation,#ckEngine{flex:1;min-height:0;overflow:auto;padding:12px;font:700 13px/1.7 var(--body)}#ckNotation button{border:0;padding:3px 5px;margin:2px;background:transparent;color:var(--ink);border-radius:5px;cursor:pointer;font:inherit}#ckNotation button.current{background:var(--gold);color:#241900}#ckEngineScore{font:800 24px var(--display)}#ckBestMove{width:100%}.sq.pre{box-shadow:inset 0 0 0 4px #77b8ea}.sq{touch-action:none}#board{touch-action:none}.ck-drag-piece{position:fixed;left:0;top:0;z-index:70;width:40px;height:40px;pointer-events:none;opacity:.9}.ck-drag-piece .pc{inset:0;position:absolute}.ck-drag-source .pc{opacity:.35}.ck-analyze{background:var(--btn);box-shadow:none;color:var(--ink);font-size:16px}#ckPdnDialog{width:min(600px,calc(100% - 24px));max-height:calc(100dvh - 24px);overflow:auto;background:var(--table-2);color:var(--ink);border:1px solid #65503c;border-radius:14px;padding:20px}#ckPdnDialog::backdrop{background:#100b08cc;backdrop-filter:blur(4px)}#ckPdnDialog textarea,#ckPdnDialog select{display:block;width:100%;padding:10px;background:var(--table);color:var(--ink);border:1px solid #65503c;border-radius:8px;font:13px/1.5 monospace}#ckPdnError{color:#ffb4a4}#ckEngine[hidden],#ckNotation[hidden]{display:none}@media(max-width:899px){#ckMain{flex-direction:column;align-items:center;gap:12px}#ckStudy{width:min(calc(var(--B)*1.09),95vw);min-width:270px}.ck-tools{padding:6px}.ck-tools button{flex:1}}
+</style>
