@@ -427,9 +427,11 @@ body.blind.peek .sq .pc { visibility: visible; }
   function net() { return Net2P.active(); }
   function mySide() { return G.kind.w === 'me' && G.kind.b !== 'me' ? 'w' : G.kind.b === 'me' && G.kind.w !== 'me' ? 'b' : ''; }
   function newGame(kind, opts) {
-    token++; MANUAL=null; opts = opts || {};
+    $('toast').hidden=true;token++; MANUAL=null; opts = opts || {};
     G = { evalOn: !!S.evalOn, kind: kind, level: S.level || 8, c: new Chess(opts.fen || START), root: node(null, null, opts.fen || START), sel: null, busy: false, over: false, result: null, endShown: false, analysis: !!opts.analysis, drawOffer: null, drawAsked: -1 };
     G.tip = G.cur = G.root;
+    if(opts.moves)rebuild(opts.moves);
+    pendingContinuation=null;
     G.flip = mySide() === 'b';
     if (G.analysis) G.over = true;
     $('menu').hidden = true; $('game').hidden = false;
@@ -447,7 +449,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   }
   // партия из списка ходов (SAN) — для онлайна, отмены, «играть отсюда»
   function rebuild(list) {
-    var keep = G.root, base = G.analysis ? G.root.fen : START, c = new Chess(base); G.c = c; G.root = node(null, null, base); var t = G.root;
+    var keep = G.root, base = G.root.fen, c = new Chess(base); G.c = c; G.root = node(null, null, base); var t = G.root;
     for (var k = 0; k < list.length; k++) { var mv; try { mv = c.move(list[k]); } catch (e) { break; } var n = node(t, mv, c.fen()); t.ch.push(n); t = n; }
     G.tip = G.cur = t; G.sel = null; G.pre = null;
     var oc = outcomeOf(c); G.over = !!oc || G.analysis; G.result = oc;
@@ -463,7 +465,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   // ---------- clock (shared) ----------
   var GC = GameClock.attach({ id: 'chess', labels: ['Белые', 'Чёрные'],
     state: function () { return G && !G.analysis ? { game: G, turn: G.c.turn() === 'w' ? 0 : 1, moves: G.c.history().length, over: !!G.over, ready: true } : null; },
-    role: function () { return Net2P.role(); }, send: function (m) { Net2P.send(m); }, menu: toMenu,
+    role: function () { return Net2P.role(); }, send: function (m) { Net2P.send(m); }, menu: toMenu, analyze: analyzeFinished,
     expire: function (i) { if (!G) return; token++; G.over = true; G.result = { w: i === 0 ? 'b' : 'w', t: 'время ' + (i === 0 ? 'белых' : 'чёрных') + ' вышло' }; G.endShown = true; render(); }
   });
 
@@ -488,7 +490,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   function layout() {
     if (!G) return;
     var cd = S.coords ? Math.max(26,Math.min(34,Math.ceil(Math.min(window.innerWidth,window.innerHeight)*.045))) : 0, vw = window.innerWidth, vh = window.innerHeight, wide = vw >= 860;
-    var head = $('topRow').offsetHeight + $('status').offsetHeight, bar = $('barRow').offsetHeight || 42, clock = GC.enabled() ? 60 : 0, B, SW, SH;
+    var head = $('topRow').offsetHeight + $('status').offsetHeight, bar = $('barRow').offsetHeight || 42, clock = (GC.enabled() ? 60 : 0)+(CONT&&!$('continueBtn').hidden?46:0), B, SW, SH;
     if (wide) {
       SW = Math.min(380, Math.max(300, vw * .3));
       B = Math.min(vh - hubH() - head - bar - clock - 3 * 8 - 28 - cd, vw - SW - 18 - 48 - cd, 760);
@@ -511,6 +513,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   window.addEventListener('resize', function () { layout(); });
 
   function render() {
+    if(CONT)CONT.refresh();
     if (!G) return;
     var c = curChess(), live = !viewing() && !G.over;
     var can = canTap(), sel = G.sel, pm = premoveMode();
@@ -1081,7 +1084,7 @@ body.blind.peek .sq .pc { visibility: visible; }
     };
     var LV = LEVELS[G.level - 1], ck = GC.info();
     setStrength(LV);
-    botEng.send('position startpos' + (lan ? ' moves ' + lan : ''));
+    botEng.send('position fen ' + G.root.fen + (lan ? ' moves ' + lan : ''));
     if (LV.n === 8) {
       if (ck) botEng.send('go wtime ' + Math.round(ck.left[0]) + ' btime ' + Math.round(ck.left[1]) + ' winc ' + ck.inc[0] + ' binc ' + ck.inc[1]);
       else botEng.send('go movetime 1500');
@@ -1098,7 +1101,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   }
 
   // ---------- undo ----------
-  function undoTargetFor(side) { var h = G.c.history().length; for (var k = h - 1; k >= 0; k--) if ((k % 2 === 0 ? 'w' : 'b') === side) return k; return -1; }
+  function undoTargetFor(side) { var h = G.c.history().length,first=new Chess(G.root.fen).turn(); for (var k = h - 1; k >= 0; k--) if ((k % 2 === 0 ? first : other(first)) === side) return k; return -1; }
   function undoTarget() {
     if (!G) return -1;
     if (net()) return undoTargetFor(mySide());
@@ -1189,7 +1192,8 @@ body.blind.peek .sq .pc { visibility: visible; }
     $('endAgain').hidden = net() && Net2P.role() === 'guest';
     $('endOv').hidden = false;
   }
-  $('endLook').onclick = function () { $('endOv').hidden = true; S.tab = 'eng'; saveS(); go(G.root); };
+  function analyzeFinished(){if(!G)return;if(G.result){G.pgnHeaders=Object.assign({},G.pgnHeaders||{},{Result:G.result.w==='d'?'1/2-1/2':G.result.w==='w'?'1-0':'0-1'});G.pgnMain=moves().join(' ');}token++;botEng.send('stop');Net2P.close();G.analysis=true;G.evalOn=true;G.over=true;G.busy=false;G.pre=null;G.sel=null;G.kind={w:'me',b:'me'};G.endShown=true;$('endOv').hidden=true;S.engine=true;S.tab='eng';go(G.root);GC.sync();render();}
+  $('endLook').onclick=analyzeFinished;
   $('endAgain').onclick = again; $('againBtn').onclick = again;
   function again() {
     if (net()) { if (Net2P.role() === 'host') hostStart(true); return; }
@@ -1198,8 +1202,19 @@ body.blind.peek .sq .pc { visibility: visible; }
     G && G.kind.w === 'me' && G.kind.b === 'me' ? newGame({ w: 'me', b: 'me' }) : startLocal();
   }
   $('endMenu').onclick = toMenu; $('homeBtn').onclick = toMenu;
-  function toMenu() { MANUAL=null; Net2P.close(); token++; stopAnalysis(); G = null; GC.sync(); $('game').hidden = true; ['endOv', 'lobbyOv', 'askOv', 'confirmOv', 'promoOv'].forEach(function (id) { $(id).hidden = true; }); $('menu').hidden = false; renderMenu(); }
+  function toMenu() { pendingContinuation=null; MANUAL=null; Net2P.close(); token++; stopAnalysis(); G = null; GC.sync(); $('game').hidden = true; ['endOv', 'lobbyOv', 'askOv', 'confirmOv', 'promoOv'].forEach(function (id) { $(id).hidden = true; }); $('menu').hidden = false; renderMenu(); }
   $('playBtn').onclick = function () { knock(440, .12); startLocal(); };
+
+  var pendingContinuation=null;
+  var CONT=ContinueGame.attach({mount:$('game'),clock:GC,
+    available:function(){return !!G&&!$('game').hidden&&(!net()||G.over)&&(G.analysis||G.over||viewing());},
+    evalOn:function(){return S.evalOn;},level:function(){return S.level||8;},
+    levels:LEVELS.map(function(l){return{value:l.n,label:l.n+' · '+l.cap};}),
+    sides:function(){return[{value:'w',label:'Белые'},{value:'b',label:'Чёрные'}];},notify:toast,
+    capture:function(){var c=chessOf(G.cur);if(outcomeOf(c))throw Error('Позиция завершена. Вернитесь на ход назад в анализе.');return{fen:G.root.fen,moves:pathTo(G.cur).map(function(n){return n.san;})};},
+    start:function(seed,o){token++;botEng.send('stop');BOT.cb=null;Net2P.close();G.analysis=true;G.busy=false;GC.sync();S.mode=o.mode;S.side=o.side;S.level=o.level;S.evalOn=o.evalOn;saveS();if(o.mode==='net'){pendingContinuation=seed;hostGame();return;}var k={w:'me',b:'me'};if(o.mode==='bot')k[other(o.side)]='bot';newGame(k,seed);}
+  });
+
   $('anaBtn').onclick = function () { knock(440, .12); newGame({ w: 'me', b: 'me' }, { analysis: true }); };
   $('soundBtn').onclick = function () { S.sound = !S.sound; saveS(); renderMenu(); };
   var toastT = null;
@@ -1227,7 +1242,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   var lastJoin = null;
   $('lbRetry').onclick = function () { if (lastJoin) joinGame(lastJoin); else hostGame(); };
   function other(s) { return s === 'w' ? 'b' : 'w'; }
-  function syncMsg() { return { t: 'sync', hostSide: hostSide, moves: moves(), result: G.over ? G.result : null, coords: S.coords }; }
+  function syncMsg() { return { t: 'sync', hostSide: hostSide, seed:{fen:G.root.fen,moves:moves()}, moves: moves(), result: G.over ? G.result : null, coords: S.coords }; }
   function hostGame() {
     lastJoin = null; hostSide = '';
     lobby('Создаю игру', 'Подключаюсь к серверу связи…');
@@ -1242,8 +1257,8 @@ body.blind.peek .sq .pc { visibility: visible; }
   }
   function hostStart(swap) {
     if (!hostSide) hostSide = S.side === 'r' ? (Math.random() < .5 ? 'w' : 'b') : S.side; else if (swap) hostSide = other(hostSide);
-    Net2P.send({ t: 'start', hostSide: hostSide, coords: S.coords });
-    var k = {}; k[hostSide] = 'me'; k[other(hostSide)] = 'net'; newGame(k); GC.publish();
+    var seed=pendingContinuation;Net2P.send({ t: 'start', hostSide: hostSide, seed:seed, coords: S.coords });
+    var k = {}; k[hostSide] = 'me'; k[other(hostSide)] = 'net'; newGame(k,seed||{}); GC.publish();
     toast('Ты играешь ' + (hostSide === 'w' ? 'белыми' : 'чёрными'));
   }
   function hostData(d) {
@@ -1281,8 +1296,8 @@ body.blind.peek .sq .pc { visibility: visible; }
   function guestCoords(hostOn) { if (hostOn) setCoords(true, true); else if (S.coords) Net2P.send({ t: 'coords', on: true }); }
   function guestData(d) {
     if (GC.receive(d)) return;
-    if (d.t === 'start') { newGame(guestKinds(d.hostSide)); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 'w' ? 'чёрными' : 'белыми')); }
-    else if (d.t === 'sync') { newGame(guestKinds(d.hostSide)); rebuild(d.moves); if (d.result) { G.over = true; G.result = d.result; } G.endShown = G.over; guestCoords(d.coords); render(); }
+    if (d.t === 'start') { newGame(guestKinds(d.hostSide),d.seed||{}); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 'w' ? 'чёрными' : 'белыми')); }
+    else if (d.t === 'sync') { newGame(guestKinds(d.hostSide),d.seed||{}); if(!d.seed)rebuild(d.moves); if (d.result) { G.over = true; G.result = d.result; } G.endShown = G.over; guestCoords(d.coords); render(); }
     else if (!G) return;
     else if (d.t === 'move') { G.netPending = false; if (d.n === G.c.history().length) apply(d.mv); else if (d.n > G.c.history().length) Net2P.send({ t: 'needsync' }); }
     else if (d.t === 'nack') { G.netPending = false; render(); }

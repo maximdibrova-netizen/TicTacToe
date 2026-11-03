@@ -105,8 +105,9 @@ var GameClock = (function () {
     // ---------- clock faces in the game ----------
     var bar = document.createElement('div'); bar.className = 'gc-bar'; bar.hidden = true; document.getElementById('game').prepend(bar);
     var result = document.createElement('div'); result.className = 'gc-result'; result.hidden = true; result.setAttribute('role', 'dialog'); result.setAttribute('aria-label', 'Партия завершена по времени');
-    result.innerHTML = '<div><h2>Время вышло</h2><p></p><button type="button">В меню</button></div>'; document.body.appendChild(result);
-    result.querySelector('button').onclick = function () { result.hidden = true; a.menu(); sync(); };
+    result.innerHTML = '<div><h2>Время вышло</h2><p></p><div class="gc-result-actions"><button type="button" class="gc-analyze">Анализ</button><button type="button" class="gc-menu">В меню</button></div></div>'; document.body.appendChild(result);
+    result.querySelector('.gc-menu').onclick = function () { result.hidden = true; a.menu(); sync(); };
+    result.querySelector('.gc-analyze').onclick = function () { result.hidden = true; a.analyze(); sync(); };
     function guest() { return a.role() === 'guest'; }
     function expire() {
       if (!model || model.flag === null || ended) return;
@@ -157,7 +158,7 @@ var GameClock = (function () {
     setInterval(sync, 100);
     // для бота: сколько осталось у каждого (мс) и добавка
     function info() { if (!model) return null; sync(); return { left: model.left.slice(), inc: model.inc.slice(), running: model.running }; }
-    return { sync: sync, before: before, receive: receive, publish: publish, info: info, enabled: function () { return !!model; } };
+    return { sync: sync, before: before, receive: receive, publish: publish, info: info, settings: root, enabled: function () { return !!model; } };
   }
   return { attach: attach };
 })();

@@ -538,7 +538,7 @@ onmessage = function (e) {
     turnLoop();
   }
   function turnLoop() {
-    if (!G || G.over) return;
+    if (!G || G.over || G.analysis) return;
     var p = G.s.turn;
     if (G.kind[p] !== 'bot' || (NET && NET.role !== 'host')) { render(); return; }
     if (RV.viewing() && !NET) { render(); return; }      // смотришь историю — бот ждёт
@@ -597,7 +597,7 @@ onmessage = function (e) {
 
   // ---------- end ----------
   function showEnd() {
-    if (!G || G.endShown) return; G.endShown = true;
+    if (!G || G.analysis || G.endShown) return; G.endShown = true;
     var w = G.s.winner, me = mySide();
     $('endMark').innerHTML = w === 3 ? '' : markSVG(w, true);
     if (w === 3) { $('endTitle').textContent = 'Ничья'; $('endText').textContent = 'Три в ряд не собрал никто.'; }
@@ -608,7 +608,8 @@ onmessage = function (e) {
     $('endAgain').hidden = !!(NET && NET.role === 'guest');
     $('endOv').hidden = false;
   }
-  $('endLook').onclick = function () { $('endOv').hidden = true; RV.go(0); };
+  function analyzeFinished(){if(!G)return;token++;netClose(true);G.analysis=true;G.evalOn=true;G.kind={1:'me',2:'me'};G.line=lineOf(G.moves);G.s=cloneState(G.line[G.line.length-1].s);G.over=!!G.s.winner;G.busy=false;G.endShown=true;$('endOv').hidden=true;RV.reset();RV.go(0);GC.sync();render(true);}
+  $('endLook').onclick=analyzeFinished;
   // ---------- coordinates (shared with the friend online) ----------
   function setCoords(on, fromNet) {
     S.coords = !!on; saveS(); renderMenu(); if (G) layout();
@@ -852,8 +853,8 @@ onmessage = function (e) {
 
 
   var GC = GameClock.attach({id:"ttt", labels:["Крестики", "Нолики"],
-    state:function(){return G?{game:G,turn:(G.s.turn-1),moves:G.moves.length,over:!!(G.over || G.s.winner),ready:true}:null;}, role:function(){return NET && NET.role;},
-    send:function(m){netBroadcast(m);}, menu:toMenu,
+    state:function(){return G&&!G.analysis?{game:G,turn:(G.s.turn-1),moves:G.moves.length,over:!!(G.over || G.s.winner),ready:true}:null;}, role:function(){return NET && NET.role;},
+    send:function(m){netBroadcast(m);}, menu:toMenu, analyze:analyzeFinished,
     expire:function(i){if(!G)return;token++;G.over=true; G.s.winner=i===0?2:1;}
   });
   (function autoJoin() { if (!ONLINE) return; var m = /^#([A-Za-z0-9]{5})$/.exec(location.hash || ''); if (m) { S.mode = 'net'; renderMenu(); guestJoin(m[1]); } })();

@@ -267,10 +267,12 @@ onmessage = function (e) {
     if (mv === -2) { if (s.over) return null; return { N: s.N, komi: s.komi, b: s.b, turn: 3 - s.turn, ko: -1, caps: s.caps, passes: 0, moves: s.moves + 1, over: true, resign: s.turn, key: s.key, parent: s, lastMove: -1, mv: -2 }; }
     return goPlay(s, mv);
   }
-  function newGame(kind, N, komi) {
-    token++;
+  function newGame(kind, N, komi, opts) {
+    opts=opts||{};
+    $('toast').hidden=true;token++;
     var s = goNew(N, komi == null ? 7.5 : komi);
     G = { evalOn: !!S.evalOn, kind: kind, N: N, level: S.level, s: s, line: [{ s: s, mv: null, by: 0 }], busy: false, endShown: false, dead: null, own: null, scoreTok: 0 };
+    if(opts.moves)rebuild(opts.moves);pendingContinuation=null;
     $('menu').hidden = true; $('game').hidden = false; $('endOv').hidden = true; $('lobbyOv').hidden = true; $('askOv').hidden = true; $('confirmOv').hidden = true;
     RV.reset(); layout(); render(); turnLoop();
   }
@@ -319,7 +321,7 @@ onmessage = function (e) {
   function layout() {
     if (!G) return;
     var W = Math.min(window.innerWidth - 24, 760);
-    var other = $('topRow').offsetHeight + $('status').offsetHeight + $('passRow').offsetHeight + $('rvMount').offsetHeight + $('barRow').offsetHeight + 5 * 8 + 20;
+    var other = $('topRow').offsetHeight + $('status').offsetHeight + $('passRow').offsetHeight + $('rvMount').offsetHeight + $('barRow').offsetHeight + 5 * 8 + 66;
     var B = Math.max(200, Math.min(W, window.innerHeight - (GC && GC.enabled()?68:0) - (window.hubH ? hubH() : 0) - other));
     document.documentElement.style.setProperty('--B', Math.floor(B) + 'px');
     RV.refresh();
@@ -327,6 +329,7 @@ onmessage = function (e) {
   window.addEventListener('resize', layout);
   function geom() { var N = G.N, m = S.coords ? 1.05 : .62; return { N: N, m: m, size: N - 1 + 2 * m }; }
   function render() {
+    if(CONT)CONT.refresh();
     if (GC) GC.sync();
     if (!G) return;
     var d = RV.display(), s = d.s, g = geom(), N = g.N, m = g.m, out = [];
@@ -454,7 +457,7 @@ onmessage = function (e) {
     turnLoop();
   }
   function turnLoop() {
-    if (!G || G.s.over) return;
+    if (!G || G.s.over || G.analysis) return;
     var side = G.s.turn;
     if (G.kind[side] !== 'bot' || (net() && Net2P.role() !== 'host')) { render(); return; }
     var my = token, n = G.line.length, t0 = Date.now();
@@ -487,7 +490,7 @@ onmessage = function (e) {
   }
   function flipGroup(i) { var ch = goChain(G.s, i), v = G.dead[i] ? 0 : 1; ch.forEach(function (x) { G.dead[x] = v; }); render(); }
   function showEnd() {
-    if (!G || G.endShown) return; G.endShown = true;
+    if (!G || G.analysis || G.endShown) return; G.endShown = true;
     var s = G.s, me = mySide(), w;
     if (s.resign) w = 3 - s.resign; else { var sc = goScore(s, G.dead); w = sc.diff > 0 ? 1 : 2; }
     if (me && w === me) $('endTitle').textContent = 'Победа!';
@@ -498,7 +501,8 @@ onmessage = function (e) {
     $('endAgain').hidden = net() && Net2P.role() === 'guest';
     $('endOv').hidden = false;
   }
-  $('endLook').onclick = function () { $('endOv').hidden = true; render(); };
+  function analyzeFinished(){if(!G)return;var list=moves();token++;Net2P.close();G.analysis=true;G.evalOn=true;G.kind={1:'me',2:'me'};rebuild(list);G.busy=false;G.endShown=true;$('endOv').hidden=true;RV.reset();RV.go(0);GC.sync();render();}
+  $('endLook').onclick=analyzeFinished;
 
   // ---------- coordinates (shared with the friend online) ----------
   function setCoords(on, fromNet) {
@@ -552,7 +556,7 @@ onmessage = function (e) {
   function again() { if (net()) { if (Net2P.role() === 'host') hostStart(true); } else { $('endOv').hidden = true; G && G.kind[1] === 'me' && G.kind[2] === 'me' ? newGame({ 1: 'me', 2: 'me' }, G.N) : restartBot(); } }
   function restartBot() { var side = S.side || (Math.random() < .5 ? 1 : 2), k = {}; k[side] = 'me'; k[3 - side] = 'bot'; newGame(k, G ? G.N : boardN()); }
   $('endMenu').onclick = toMenu; $('homeBtn').onclick = toMenu;
-  function toMenu() { Net2P.close(); token++; G = null; $('game').hidden = true; $('endOv').hidden = true; $('lobbyOv').hidden = true; $('askOv').hidden = true; $('confirmOv').hidden = true; $('menu').hidden = false; renderMenu(); }
+  function toMenu() { pendingContinuation=null; Net2P.close(); token++; G = null; $('game').hidden = true; $('endOv').hidden = true; $('lobbyOv').hidden = true; $('askOv').hidden = true; $('confirmOv').hidden = true; $('menu').hidden = false; renderMenu(); }
   $('playBtn').onclick = function () { clack(.4); startLocal(); };
   $('soundBtn').onclick = function () { S.sound = !S.sound; saveS(); renderMenu(); };
   var toastT = null;
@@ -574,7 +578,7 @@ onmessage = function (e) {
   $('lbRetry').onclick = function () { if (lastJoin) joinGame(lastJoin); else hostGame(); };
   function syncMsg() { return { t: 'sync', hostSide: hostSide, N: G.N, komi: G.s.komi, moves: moves(), dead: G.dead ? Array.from(G.dead) : null, coords: S.coords }; }
   function hostGame() {
-    lastJoin = null; hostSide = 0; hostN = boardN();
+    lastJoin = null; hostSide = 0; hostN = pendingContinuation?pendingContinuation.N:boardN();
     lobby('Создаю игру', 'Подключаюсь к серверу связи…');
     Net2P.host({ prefix: PREFIX,
       onReady: function (code, link) { lobby('Игра создана', link ? 'Отправь другу ссылку или код. Партия начнётся, как только он зайдёт.' : 'Скажи другу код: он вводит его в «Войти по коду».', { code: code, link: link }); },
@@ -587,8 +591,8 @@ onmessage = function (e) {
   }
   function hostStart(swap) {
     if (!hostSide) hostSide = S.side || (Math.random() < .5 ? 1 : 2); else if (swap) hostSide = 3 - hostSide;
-    Net2P.send({ t: 'start', hostSide: hostSide, N: hostN, komi: 7.5, coords: S.coords });
-    var k = {}; k[hostSide] = 'me'; k[3 - hostSide] = 'net'; newGame(k, hostN);
+    var seed=pendingContinuation,komi=seed?seed.komi:7.5;Net2P.send({ t: 'start', hostSide: hostSide, N: hostN, komi:komi, seed:seed, coords: S.coords });
+    var k = {}; k[hostSide] = 'me'; k[3 - hostSide] = 'net'; newGame(k, hostN,komi,seed||{});
     toast('Ты играешь ' + (hostSide === 1 ? 'чёрными' : 'белыми'));
   }
   function hostData(d) {
@@ -618,7 +622,7 @@ onmessage = function (e) {
   function guestData(d) {
     if (GC && GC.receive(d)) return;
     if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
-    if (d.t === 'start') { newGame(guestKinds(d.hostSide), d.N, d.komi); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 1 ? 'белыми' : 'чёрными')); }
+    if (d.t === 'start') { newGame(guestKinds(d.hostSide), d.N, d.komi,d.seed||{}); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 1 ? 'белыми' : 'чёрными')); }
     else if (d.t === 'sync') {
       newGame(guestKinds(d.hostSide), d.N, d.komi); rebuild(d.moves); G.endShown = G.s.over; if (d.dead) G.dead = Uint8Array.from(d.dead);
       guestCoords(d.coords); RV.sync(); render(); turnLoop();
@@ -677,10 +681,20 @@ onmessage = function (e) {
   $('joinGo').onclick = function () { var c = Net2P.cleanCode($('joinCode').value); if (c.length === 5) joinGame(c); };
 
   var GC = GameClock.attach({id:"go", labels:["Чёрные", "Белые"],
-    state:function(){return G?{game:G,turn:(G.s.turn-1),moves:G.line.length-1,over:!!(G.s.over),ready:true}:null;}, role:function(){return Net2P.role();},
-    send:function(m){Net2P.send(m);}, menu:toMenu,
+    state:function(){return G&&!G.analysis?{game:G,turn:(G.s.turn-1),moves:G.line.length-1,over:!!(G.s.over),ready:true}:null;}, role:function(){return Net2P.role();},
+    send:function(m){Net2P.send(m);}, menu:toMenu, analyze:analyzeFinished,
     expire:function(i){if(!G)return;token++;G.s.over=true; G.s.resign=i+1;}
   });
+
+  var pendingContinuation=null;
+  var CONT=ContinueGame.attach({mount:$('game'),clock:GC,
+    available:function(){return !!G&&!$('game').hidden&&(!net()||G.s.over)&&(G.analysis||G.s.over||RV.viewing());},
+    evalOn:function(){return S.evalOn;},level:function(){return S.level;},levels:GO_LEVELS.map(function(l){return{label:l.name};}),
+    sides:function(){return[{value:1,label:'Чёрные'},{value:2,label:'Белые'}];},notify:toast,
+    capture:function(){if(RV.display().s.over)throw Error('Позиция завершена. Вернитесь на ход назад в анализе.');return{N:G.N,komi:G.s.komi,moves:RV.pathHere().slice()};},
+    start:function(seed,o){token++;Net2P.close();G.analysis=true;G.busy=false;GC.sync();S.mode=o.mode;S.side=+o.side;S.level=o.level;S.evalOn=o.evalOn;saveS();if(o.mode==='net'){pendingContinuation=seed;hostGame();return;}var k={1:'me',2:'me'};if(o.mode==='bot')k[3-o.side]='bot';newGame(k,seed.N,seed.komi,seed);}
+  });
+
   if (ONLINE && Net2P.hashCode()) { S.mode = 'net'; joinGame(Net2P.hashCode()); }
   renderMenu();
 })();

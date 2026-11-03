@@ -816,10 +816,10 @@ onmessage = function (e) {
 
   // setup: { rows, mapId, kinds (this screen's view of each seat), level, first }
   function newGame(setup) {
-    token++; stopAnims();
+    $('toast').hidden=true;token++; stopAnims();
     var B = buildBoard(setup.rows);
     var cnt = new Int8Array(B.n), own = new Int8Array(B.n).fill(-1), mask = 0;
-    for (var p = 0; p < 4; p++) if (setup.kinds[p] !== 'off') { mask |= 1 << p; cnt[B.starts[p]] = 3; own[B.starts[p]] = p; }
+    for (var p = 0; p < 4; p++) if (setup.seed?(setup.seed.start&(1<<p)):setup.kinds[p] !== 'off') { mask |= 1 << p; cnt[B.starts[p]] = 3; own[B.starts[p]] = p; }
     G = { evalOn: !!S.evalOn, map: { id: setup.mapId, rows: setup.rows }, B: B, cnt: cnt, own: own, mask: mask, start: mask, turn: setup.first,
       over: false, winner: -1, moves: 0, watching: false, kinds: setup.kinds.slice(), level: setup.level,
       hist: [], view: -1, queue: [], playing: false, thinkingAt: -1, endShown: false, outShown: false,
@@ -828,7 +828,9 @@ onmessage = function (e) {
     if (G.me === undefined) G.me = [3, 0, 1, 2].filter(function (q) { return G.kinds[q] !== 'off'; })[0];
     syncEvalUi();
     G.hist.push(snap(-1, -1));
-    queueEval(0);
+    if(setup.seed)setup.seed.moves.forEach(function(m){if(G.over||G.turn!==m.by||G.own[m.cell]!==m.by)throw Error('Недопустимый ход в выбранной ветке.');applyMove(G.B,G.cnt,G.own,m.cell,m.by,false);G.mask=aliveMaskAfter(G.B,G.own,G.mask);G.moves++;G.over=bitCount(G.mask)===1;G.winner=G.over?m.by:-1;G.turn=G.over?m.by:nextAlive(G.mask,m.by);G.hist.push(snap(m.cell,m.by));});
+    pendingContinuation=null;
+    queueEval(G.hist.length-1);
     document.body.classList.add('in-game');
     $('menu').hidden = true; $('game').hidden = false; $('endOv').hidden = true; $('lobbyOv').hidden = true;
     $('againBtn').hidden = !!(NET && NET.role === 'guest');
@@ -862,7 +864,7 @@ onmessage = function (e) {
     var vw = window.innerWidth, vh = window.innerHeight - (GC && GC.enabled()?68:0);
     var R = Math.max(64, Math.min(104, Math.min(vw, vh) * .13)) + 22;
     var ev = !document.body.classList.contains('no-eval');
-    var availW = vw - 32, availH = vh - (ev ? 68 + 160 : 56 + 118) - 12 - (window.IN_ROOM ? 0 : 48) - (ev ? 40 : 0);
+    var availW = vw - 32, availH = vh - (CONT&&!$('continueBtn').hidden?46:0) - (ev ? 68 + 160 : 56 + 118) - 12 - (window.IN_ROOM ? 0 : 48) - (ev ? 40 : 0);
     if (vw > vh) availW = vw - 2 * R - 24; // landscape: keep the corners clear
     var W = G.B.W, H = G.B.H, cx = S.coords ? .55 : 0;   // room for the labels
     pitch = Math.max(16, Math.floor(Math.min(availW / (W + cx), availH / (H + cx), 96)));
@@ -1024,7 +1026,7 @@ onmessage = function (e) {
     if (!G) return;
     renderLive();
     if (G.over) {
-      if (!G.endShown) { G.endShown = true; sfxWin(); showEnd(G.winner); }
+      if (!G.analysis && !G.endShown) { G.endShown = true; sfxWin(); showEnd(G.winner); }
       return;
     }
     var mine = [0, 1, 2, 3].filter(function (q) { return G.kinds[q] === 'human'; });
@@ -1034,7 +1036,7 @@ onmessage = function (e) {
 
   function beginTurn() {
     setStatus();
-    if (!G || G.over || G.playing || G.queue.length) return;
+    if (!G || G.analysis || G.over || G.playing || G.queue.length) return;
     if (G.view >= 0 && !NET) return;              // offline: bots wait while you look back
     var p = G.turn;
     if (G.kinds[p] !== 'bot' || (NET && NET.role !== 'host')) return;
@@ -1216,6 +1218,7 @@ onmessage = function (e) {
     }
   }
   function updateReplay() {
+    if(CONT)CONT.refresh();
     if (!G) return;
     var last = G.hist.length - 1, v = G.view < 0 ? last : G.view;
     $('rpCount').textContent = G.var ? 'вариант ' + (G.var.idx + 1) + ' / ' + G.var.list.length : (v === 0 ? 'старт' : 'ход ' + v) + ' / ' + last;
@@ -1466,7 +1469,8 @@ onmessage = function (e) {
     $('endOv').hidden = false;
   }
   $('endWatch').onclick = function () { if (G) G.watching = true; $('endOv').hidden = true; };
-  $('endReview').onclick = function () { $('endOv').hidden = true; syncEvalUi(); setView(0); };
+  function analyzeFinished(){if(!G)return;token++;netClose(true);stopAnims();G.analysis=true;G.evalOn=true;G.kinds=G.kinds.map(function(k){return k==='off'?'off':'human';});var last=G.hist[G.hist.length-1];G.cnt=last.cnt.slice();G.own=last.own.slice();G.turn=last.turn;G.mask=last.mask;G.over=last.over;G.endShown=true;G.outShown=true;$('endOv').hidden=true;syncEvalUi();queueEval(0,true);G.view=-1;setView(0);GC.sync();if(G.view<0)idle();}
+  $('endReview').onclick=analyzeFinished;
   $('endAgain').onclick = again;
   $('endUndo').onclick = undo;
   $('endMenu').onclick = toMenu;
@@ -1475,7 +1479,7 @@ onmessage = function (e) {
     if (NET && NET.role === 'host') hostStartGame();
     else if (!NET) startLocal();
   }
-  function toMenu() {
+  function toMenu() { pendingContinuation=null;
     netClose(true);
     token++; stopAnims(); G = null;
     document.body.classList.remove('in-game');
@@ -1622,7 +1626,7 @@ onmessage = function (e) {
   function openHostPeer() {
     var n = NET, peer = new window.Peer(PEER_PREFIX + n.code, peerOptions());
     n.peer = peer;
-    peer.on('open', function () { if (NET !== n) return; n.ready = true; if (!G) lobbyRender(); });
+    peer.on('open', function () { if (NET !== n) return; n.ready = true; if (!G||pendingContinuation) lobbyRender(); });
     peer.on('connection', function (conn) {
       conn.on('data', function (d) { if (NET === n) hostOnData(conn, d); });
       conn.on('close', function () { if (NET === n) hostOnClose(conn); });
@@ -1653,7 +1657,7 @@ onmessage = function (e) {
   function lobbyInfo() { return { roles: NET.roles, level: S.level, online: NET.online }; }
   function hostPushPeers() {
     netBroadcast({ t: 'lobby', lobby: lobbyInfo() });
-    if (G) { renderCornersGame(G.cnt, G.own, G.mask, G.over ? -1 : G.turn); setStatus(); } else lobbyRender();
+    if (G&&!pendingContinuation) { renderCornersGame(G.cnt, G.own, G.mask, G.over ? -1 : G.turn); setStatus(); } else lobbyRender();
   }
   function hostOnData(conn, d) {
     if (GC && GC.receive(d)) return;
@@ -1789,13 +1793,13 @@ onmessage = function (e) {
   }
   function hostStartGame() {
     if (!NET || NET.role !== 'host') return;
-    var map = pickMap(S.map);
-    var setup = { rows: map.rows, mapId: map.id, roles: NET.roles.slice(), level: S.level, first: 0 };
+    var seed=pendingContinuation,map=seed?{rows:seed.rows,id:seed.mapId}:pickMap(S.map);
+    var setup = { rows: map.rows, mapId: map.id, roles: NET.roles.slice(), level: S.level, first: 0, seed:seed };
     var kinds = kindsFor(setup);
-    setup.first = firstSeat(kinds, S.first);
+    setup.first = seed?seed.first:firstSeat(kinds, S.first);
     NET.setup = setup;
     netBroadcast({ t: 'start', setup: setup, coords: S.coords });
-    newGame({ rows: setup.rows, mapId: setup.mapId, kinds: kinds, level: setup.level, first: setup.first });
+    newGame({ rows: setup.rows, mapId: setup.mapId, kinds: kinds, level: setup.level, first: setup.first, seed:setup.seed });
   }
 
   // ----- friend (guest) -----
@@ -1849,12 +1853,12 @@ onmessage = function (e) {
     n.seen = Date.now();
     if (d.t === 'ping') { netSend({ t: 'pong' }); return; }
     if (d.t === 'welcome') { n.seat = d.seat; n.lobby = d.lobby; n.online = d.lobby.online || n.online; if (!d.started) lobbyRender(); }
-    else if (d.t === 'lobby') { n.lobby = d.lobby; n.online = d.lobby.online || n.online; if (G) { renderCornersGame(G.cnt, G.own, G.mask, G.over ? -1 : G.turn); setStatus(); } else lobbyRender(); }
+    else if (d.t === 'lobby') { n.lobby = d.lobby; n.online = d.lobby.online || n.online; if (G&&!pendingContinuation) { renderCornersGame(G.cnt, G.own, G.mask, G.over ? -1 : G.turn); setStatus(); } else lobbyRender(); }
     else if (d.t === 'full') guestFail('Все места для друзей в этой игре уже заняты.');
     else if (d.t === 'bye') { n.bye = true; }
     else if (d.t === 'start') {
       n.setup = d.setup;
-      newGame({ rows: d.setup.rows, mapId: d.setup.mapId, kinds: kindsFor(d.setup, n.seat), level: d.setup.level, first: d.setup.first });
+      newGame({ rows: d.setup.rows, mapId: d.setup.mapId, kinds: kindsFor(d.setup, n.seat), level: d.setup.level, first: d.setup.first, seed:d.setup.seed });
       if (d.coords) setCoords(true, true); else if (S.coords) netSend({ t: 'coords', on: true });
     }
     else if (d.t === 'coords') setCoords(d.on, true);
@@ -1876,7 +1880,7 @@ onmessage = function (e) {
   }
   function guestSync(d) {
     var n = NET; n.setup = d.setup;
-    newGame({ rows: d.setup.rows, mapId: d.setup.mapId, kinds: kindsFor(d.setup, n.seat), level: d.setup.level, first: d.setup.first });
+    newGame({ rows: d.setup.rows, mapId: d.setup.mapId, kinds: kindsFor(d.setup, n.seat), level: d.setup.level, first: d.setup.first, seed:d.setup.seed });
     G.hist = d.hist.map(function (h) { return { cnt: Int8Array.from(h.c), own: Int8Array.from(h.o), mask: h.m, turn: h.tu, over: h.ov, cell: h.cell, by: h.by }; });
     var L = G.hist[G.hist.length - 1];
     G.cnt = L.cnt.slice(); G.own = L.own.slice(); G.mask = L.mask; G.turn = L.turn; G.over = L.over; G.winner = d.winner;
@@ -1889,10 +1893,20 @@ onmessage = function (e) {
   // a shared link (…/#CODE) drops the friend straight into the game
 
   var GC = GameClock.attach({id:"tochki", labels:["Фиолетовые", "Зелёные", "Синие", "Красные"],
-    state:function(){return G?{game:G,turn:(G.turn),moves:G.moves,over:!!(G.over),ready:true,paused:!!(G.playing||G.queue.length),active:[0,1,2,3].filter(function(i){return !!(G.mask&(1<<i));})}:null;}, role:function(){return NET && NET.role;},
-    send:function(m){netBroadcast(m);}, menu:toMenu,
+    state:function(){return G&&!G.analysis?{game:G,turn:(G.turn),moves:G.moves,over:!!(G.over),ready:true,paused:!!(G.playing||G.queue.length),active:[0,1,2,3].filter(function(i){return !!(G.mask&(1<<i));})}:null;}, role:function(){return NET && NET.role;},
+    send:function(m){netBroadcast(m);}, menu:toMenu, analyze:analyzeFinished,
     expire:function(i){if(!G)return;token++;G.over=true; G.winner=nextAlive(G.mask,i); stopAnims();}
   });
+
+  var pendingContinuation=null;
+  var CONT=ContinueGame.attach({mount:$('game'),clock:GC,
+    available:function(){return !!G&&!$('game').hidden&&(!NET||G.over)&&(G.analysis||G.over||G.view>=0)&&!G.playing&&!G.varBusy;},
+    evalOn:function(){return S.evalOn;},level:function(){return S.level;},levels:LEVELS.map(function(l){return{label:l.name};}),
+    sides:function(seed){return[0,1,2,3].filter(function(i){return !!(seed.mask&(1<<i));}).map(function(i){return{value:i,label:COLORS[i]};});},notify:toast,
+    capture:function(){var last=curSnap()||G.hist[G.hist.length-1];if(last.over)throw Error('Позиция завершена. Вернитесь на ход назад в анализе.');var path=G.var?G.hist.slice(1,G.var.base+1).concat(G.var.list.slice(0,G.var.idx+1)):G.hist.slice(1,G.view<0?G.hist.length:G.view+1);return{rows:G.map.rows.slice(),mapId:G.map.id,first:G.hist[0].turn,start:G.start,mask:last.mask,moves:path.map(function(h){return{cell:h.cell,by:h.by};})};},
+    start:function(seed,o){token++;netClose(true);stopAnims();G.analysis=true;GC.sync();S.level=o.level;S.evalOn=o.evalOn;var me=+o.side;S.kinds=[0,1,2,3].map(function(i){if(!(seed.start&(1<<i)))return'off';if(o.mode==='duo'||i===me)return'human';return o.mode==='net'&&(seed.mask&(1<<i))?'net':'bot';});saveS();if(o.mode==='net'){pendingContinuation=seed;hostCreate();return;}newGame({rows:seed.rows,mapId:seed.mapId,kinds:S.kinds,level:S.level,first:seed.first,seed:seed});}
+  });
+
   (function autoJoin() {
     if (!ONLINE) return;
     var m = /^#([A-Za-z0-9]{5})$/.exec(location.hash || '');

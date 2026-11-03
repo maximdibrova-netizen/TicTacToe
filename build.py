@@ -5,7 +5,7 @@ src = os.path.join(here, 'src')
 ver = datetime.datetime.now(zoneinfo.ZoneInfo('Europe/Vienna')).strftime('%d.%m.%Y %H:%M')
 read = lambda *p: open(os.path.join(src, *p), encoding='utf-8').read()
 net, room, review = read('shared', 'net.js'), read('shared', 'room-client.js'), read('shared', 'review.js')
-clock = read('shared', 'clock-core.js') + '\n' + read('shared', 'clock.js')
+clock = read('shared', 'clock-core.js') + '\n' + read('shared', 'clock.js') + '\n' + read('shared', 'continue.js')
 clock_css = read('shared', 'clock.css')
 hub_back = read('shared', 'hub-back.html')
 

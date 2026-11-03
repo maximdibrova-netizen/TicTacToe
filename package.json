@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "test": "node --test tests/*.test.cjs",
+    "test:continue": "node tests/continue-ui.cjs",
     "test:checkers": "node tests/checkers-ui.cjs",
     "test:overlays": "node tests/chess-overlays.cjs",
     "test:export": "node tests/export-ui.cjs",

@@ -1,7 +1,7 @@
 // Работа без интернета: при первом заходе сохраняем все игры и шрифты, дальше открываем их и без сети.
 // Страницы: сначала сеть (чтобы сразу видеть новую версию), без сети или при долгом ответе — сохранённая копия.
 // Шрифты и библиотека связи: сохранённая копия, если она есть.
-var VERSION = '03.11.2026 19:52';
+var VERSION = '03.11.2026 20:23';
 var CACHE = 'games-' + VERSION;
 var PAGES = ['./', 'tochki/', 'ttt/', 'battleship/', 'checkers/', 'go/', 'chess/', 'chess/sf/stockfish-19-lite-single.js', 'chess/sf/stockfish-19-lite-single.wasm', 'chess/db/names.json', 'chess/db/meta.json', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 var FONTS = ["https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;700;800&display=swap", "https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Manrope:wght@500;700;800&display=swap", "https://fonts.googleapis.com/css2?family=Rubik:wght@600;800&family=Manrope:wght@500;700;800&display=swap", "https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@500;700;800&display=swap"];

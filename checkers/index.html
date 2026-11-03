@@ -1,6 +1,14 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="../manifest.webmanifest"><meta name="theme-color" content="#121726"><link rel="icon" href="../icon-192.png"><link rel="apple-touch-icon" href="../apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="Игры"><script>if("serviceWorker" in navigator&&window.isSecureContext)addEventListener("load",function(){navigator.serviceWorker.register("../sw.js").catch(function(){})});</script><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}[hidden]{display:none!important}</style><script>window.GAMES_ONLINE=true;window.TTT_ONLINE=true;window.BGC_ONLINE=true;</script><style>.gc-card .gc-presets button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:48px}.gc-card .gc-presets b{font-size:15px;line-height:1}.gc-card .gc-presets small{font-size:10.5px;font-weight:700;opacity:.7;line-height:1;text-transform:lowercase}.gc-custom{display:flex;flex-direction:column;gap:8px;margin-top:2px}.gc-custom[hidden],.gc-players[hidden],.gc-step[hidden]{display:none!important}.gc-step{display:grid;grid-template-columns:1fr 40px minmax(76px,auto) 40px;align-items:center;gap:6px;font-weight:700;font-size:14px}.gc-step.sm{grid-template-columns:34px minmax(58px,auto) 34px;gap:4px}.gc-step button{height:38px;border:0;border-radius:10px;background:rgba(127,127,127,.2);color:inherit;font-family:inherit;font-weight:800;font-size:20px;line-height:1;cursor:pointer;padding:0}.gc-step.sm button{height:34px;font-size:18px}.gc-step button:hover{background:rgba(127,127,127,.32)}.gc-step output{text-align:center;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}.gc-step.sm output{font-size:13.5px}.gc-per{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;cursor:pointer}.gc-per input{width:18px;height:18px;margin:0;accent-color:currentColor}.gc-players{display:flex;flex-direction:column;gap:6px}.gc-prow{display:grid;grid-template-columns:minmax(70px,1fr) auto auto;align-items:center;gap:6px;font-size:13.5px}.gc-prow b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}@media(max-width:400px){.gc-prow{grid-template-columns:1fr 1fr}.gc-prow b{grid-column:1/-1}}.gc-note{margin:0;font-weight:700;font-size:12.5px;line-height:1.4;opacity:.72}
 .gc-bar{display:flex;justify-content:center;gap:8px;width:min(100%,500px);flex-shrink:0;z-index:4;margin:0 auto 6px}.gc-face{background:var(--gc-bg,#293248);color:var(--gc-ink,#f4f1e8);border:2px solid transparent;box-shadow:inset 0 2px 6px #0004;border-radius:12px;padding:5px 12px;min-width:0;flex:1;text-align:center;transition:background .2s,border-color .2s}.gc-face span{font:700 11px/1.2 system-ui,sans-serif;display:block;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gc-face strong{font:800 clamp(19px,5vw,28px)/1.1 system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.02em}.gc-face small{opacity:.7}.gc-active{border-color:var(--gc-accent,#e6b85b);background:var(--gc-active,#4b4a37)}.gc-low strong{color:#ff6969}.gc-result{position:fixed;inset:0;z-index:100;background:#000b;display:grid;place-items:center;padding:20px;color:#f8f4e9}.gc-result>div{max-width:400px;background:#292b2d;border-radius:16px;padding:24px;text-align:center}.gc-result h2{margin:0 0 8px}.gc-result button{padding:12px 25px;font:inherit;font-weight:800;cursor:pointer;border:0;border-radius:10px;background:#e6b85b;color:#2a1d00}.gc-bar[hidden],.gc-result[hidden]{display:none!important}
+
+.gc-result-actions,.continue-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.gc-result .gc-menu{background:#45484d;color:#f8f4e9}.continue-button{flex:none;max-width:calc(100vw - 24px);border:1px solid var(--gold,#ffd166);border-radius:10px;padding:10px 16px;background:var(--btn,var(--panel-dark,#293248));color:var(--ink,#f4f1e8);font:700 14px/1.3 var(--body,system-ui);cursor:pointer}#continueDialog{box-sizing:border-box;width:min(480px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;border:1px solid var(--gold,#ffd166);border-radius:16px;padding:20px;background:var(--bg-2,var(--table-2,var(--panel,#263149)));color:var(--ink,#f4f1e8);font:14px/1.5 var(--body,system-ui)}#continueDialog::backdrop{background:#080b16cc;backdrop-filter:blur(4px)}#continueDialog h2{margin:0 0 8px;font-size:21px}#continueDialog p{opacity:.8}#continueDialog>label{display:block;margin:12px 0;font-weight:700}#continueDialog select{display:block;box-sizing:border-box;width:100%;margin-top:4px;padding:10px;border:1px solid var(--ink-dim,#8995aa);border-radius:8px;color:inherit;background:var(--btn,var(--panel-dark,#293248));font:inherit}#continueDialog .card{margin:14px 0;padding:12px;border-radius:10px;background:var(--bg-3,var(--table,#1c2537))}#continueDialog .seg{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}#continueDialog button{cursor:pointer}#continueDialog .continue-actions button{border:0;border-radius:9px;padding:11px 13px;background:var(--btn,var(--panel-dark,#293248));color:inherit;font:700 14px var(--body,system-ui)}#continueDialog #continueStart{background:var(--gold,#ffd166);color:#211700}#continueError{color:#ffb4a4}#continueDialog [hidden]{display:none!important}
+
+#game:has(.continue-button:not([hidden])){overflow-y:auto}#game:has(#replay) .continue-button{position:absolute;bottom:110px;left:50%;transform:translateX(-50%);z-index:6;white-space:nowrap}
+
+#game:has(#replay):has(.continue-button:not([hidden])) .evalgraph{bottom:158px}#game:has(#replay):has(.continue-button:not([hidden])) #boardWrap{bottom:206px}body.no-eval #game:has(#replay):has(.continue-button:not([hidden])) #boardWrap{bottom:164px}
+
+#continueDialog .card{background:var(--bg-3,var(--table,var(--bg-2,#1c2537)));color:inherit}#continueDialog .card h2{color:inherit;font:800 12px/1.4 var(--body,system-ui);letter-spacing:.08em}#continueDialog .gc-note{color:inherit;opacity:.85}#continueDialog .gc-presets button{background:var(--btn,var(--panel-dark,#293248));color:inherit}#continueDialog .gc-presets button[aria-pressed=true]{background:var(--gold,#ffd166);color:#211700}
 </style><script>// Подключение игры к «комнате» (главная страница). Работает, только если игра открыта внутри главной.
 // Подменяет PeerJS мостом комнаты и подстраивает интерфейс: код не нужен, друг подключается сам.
 (function () {
@@ -199,7 +207,7 @@ body.nocoord .coord { display: none; }
         <li>Проигрывает тот, у кого не осталось шашек или ходов. Ничья: позиция повторилась трижды или 15 ходов подряд только дамками без взятий.</li>
       </ol>
     </div>
-    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 03.11.2026 19:52</span></p>
+    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 03.11.2026 20:23</span></p>
   </div>
 </section>
 
@@ -359,8 +367,9 @@ var GameClock = (function () {
     // ---------- clock faces in the game ----------
     var bar = document.createElement('div'); bar.className = 'gc-bar'; bar.hidden = true; document.getElementById('game').prepend(bar);
     var result = document.createElement('div'); result.className = 'gc-result'; result.hidden = true; result.setAttribute('role', 'dialog'); result.setAttribute('aria-label', 'Партия завершена по времени');
-    result.innerHTML = '<div><h2>Время вышло</h2><p></p><button type="button">В меню</button></div>'; document.body.appendChild(result);
-    result.querySelector('button').onclick = function () { result.hidden = true; a.menu(); sync(); };
+    result.innerHTML = '<div><h2>Время вышло</h2><p></p><div class="gc-result-actions"><button type="button" class="gc-analyze">Анализ</button><button type="button" class="gc-menu">В меню</button></div></div>'; document.body.appendChild(result);
+    result.querySelector('.gc-menu').onclick = function () { result.hidden = true; a.menu(); sync(); };
+    result.querySelector('.gc-analyze').onclick = function () { result.hidden = true; a.analyze(); sync(); };
     function guest() { return a.role() === 'guest'; }
     function expire() {
       if (!model || model.flag === null || ended) return;
@@ -411,10 +420,53 @@ var GameClock = (function () {
     setInterval(sync, 100);
     // для бота: сколько осталось у каждого (мс) и добавка
     function info() { if (!model) return null; sync(); return { left: model.left.slice(), inc: model.inc.slice(), running: model.running }; }
-    return { sync: sync, before: before, receive: receive, publish: publish, info: info, enabled: function () { return !!model; } };
+    return { sync: sync, before: before, receive: receive, publish: publish, info: info, settings: root, enabled: function () { return !!model; } };
   }
   return { attach: attach };
 })();
+
+// A fresh game from the displayed analysis branch. Each game owns its rules/seed.
+var ContinueGame = {
+  attach: function (a) {
+    var button = document.createElement('button'); button.id = 'continueBtn'; button.className = 'continue-button'; button.textContent = 'Продолжить с этой позиции'; button.hidden = true;
+    a.mount.appendChild(button);
+    var dialog = document.createElement('dialog'); dialog.id = 'continueDialog'; dialog.setAttribute('aria-labelledby', 'continueTitle');
+    dialog.innerHTML = '<h2 id="continueTitle">Продолжить с этой позиции</h2><p>Новая партия с позиции на доске. Очередь хода и история выбранной ветки сохраняются, часы запускаются заново.</p>' +
+      '<label>С кем играть<select id="continueMode"><option value="duo">Друг на одном устройстве</option><option value="bot">С ботом</option><option value="net">Онлайн по коду</option></select></label>' +
+      '<label id="continueSideRow">Я играю за<select id="continueSide"></select></label>' +
+      '<label id="continueLevelRow">Сложность бота<select id="continueLevel"></select></label>' +
+      '<label>Оценка во время партии<select id="continueEval"><option value="0">Без оценки</option><option value="1">С оценкой</option></select></label>' +
+      '<div id="continueClock"></div><p id="continueError" role="alert"></p><div class="continue-actions"><button id="continueCancel">Назад к анализу</button><button id="continueStart">Начать</button></div>';
+    document.body.appendChild(dialog);
+    var q = function (id) { return dialog.querySelector('#' + id); }, seed = null, anchor = null;
+    a.levels.forEach(function (level, i) { var option = document.createElement('option'); option.value = level.value == null ? i : level.value; option.textContent = level.label; q('continueLevel').appendChild(option); });
+    function modeChanged() { var mode = q('continueMode').value; q('continueSideRow').hidden = mode === 'duo'; q('continueLevelRow').hidden = mode !== 'bot'; q('continueEval').disabled = mode === 'net'; }
+    q('continueMode').onchange = modeChanged;
+    function restoreSettings() { if (anchor && anchor.parentNode) { anchor.parentNode.insertBefore(a.clock.settings, anchor); anchor.remove(); anchor = null; } }
+    dialog.addEventListener('close', restoreSettings);
+    q('continueCancel').onclick = function () { dialog.close(); };
+    button.onclick = function () {
+      if (!a.available()) return;
+      try { seed = a.capture(); } catch (e) { a.notify(e.message); return; }
+      q('continueError').textContent = ''; q('continueMode').value = 'duo'; q('continueEval').value = a.evalOn() ? '1' : '0';
+      q('continueLevel').value = String(a.level()); q('continueSide').innerHTML = '';
+      a.sides(seed).forEach(function (side) { var option = document.createElement('option'); option.value = side.value; option.textContent = side.label; q('continueSide').appendChild(option); });
+      anchor = document.createComment('clock settings'); a.clock.settings.before(anchor); q('continueClock').appendChild(a.clock.settings);
+      modeChanged(); dialog.showModal();
+    };
+    q('continueStart').onclick = function () {
+      var options = { mode: q('continueMode').value, side: q('continueSide').value, level: +q('continueLevel').value, evalOn: q('continueEval').value === '1' };
+      try { restoreSettings(); a.start(seed, options); dialog.close(); }
+      catch (e) { q('continueError').textContent = e.message; if (!anchor) { anchor = document.createComment('clock settings'); a.clock.settings.before(anchor); q('continueClock').appendChild(a.clock.settings); } }
+    };
+    return { refresh: function () {
+      var hidden = !a.available();
+      if (button.hidden === hidden) return;
+      button.hidden = hidden;
+      setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 0);
+    } };
+  }
+};
 </script>
 <script>// ===== Онлайн на двоих: прямое соединение браузеров через PeerJS =====
 // Хозяин создаёт игру (код из 5 символов), друг подключается по коду или ссылке …#КОД.
@@ -1125,14 +1177,15 @@ onmessage = function (e) {
       n.style.top = 'calc(var(--B) * .045 + var(--B) / 8 * ' + (k + .5) + ')'; n.style.left = 'calc(var(--B) * .014)'; n.style.transform = 'translateY(-50%)'; wrap.appendChild(n);
     }
   }
-  function layout() { var wide=window.innerWidth>=900,extra=$('rvMount').offsetHeight+8,reserve=wide?0:230,B=Math.max(200,Math.min(window.innerWidth-(wide?400:40),window.innerHeight-(GC&&GC.enabled()?68:0)-(window.hubH?window.hubH():0)-200-extra-reserve,620));B=Math.floor(B/8)*8;document.documentElement.style.setProperty('--B',B+'px');document.documentElement.style.setProperty('--ck-panel-height',(wide?B*1.09+extra+65:230)+'px');if(window.RVready)RV.refresh();}
+  function layout() { var wide=window.innerWidth>=900,extra=$('rvMount').offsetHeight+8,reserve=wide?0:230,B=Math.max(200,Math.min(window.innerWidth-(wide?400:40),window.innerHeight-(GC&&GC.enabled()?68:0)-(window.hubH?window.hubH():0)-246-extra-reserve,620));B=Math.floor(B/8)*8;document.documentElement.style.setProperty('--B',B+'px');document.documentElement.style.setProperty('--ck-panel-height',(wide?B*1.09+extra+65:230)+'px');if(window.RVready)RV.refresh();}
   window.addEventListener('resize', layout);
   function mySide() { return G.kind[1] === 'me' && G.kind[-1] !== 'me' ? 1 : G.kind[-1] === 'me' && G.kind[1] !== 'me' ? -1 : 0; }
 
   function newGame(kind,opts) {
-    token++;opts=opts||{};
+    $('toast').hidden=true;token++;opts=opts||{};
     G = { analysis:!!opts.analysis,baseFen:opts.fen||'',studyBranches:[],pre:null,evalOn:opts.analysis||!!S.evalOn, kind: kind, moves: [], s: ckPdnPosition(opts.fen), sel: -1, part: null, vpart: null, busy: false, over: false, endShown: false, lastPath: null };
-    G.line = lineOf([]);
+    if(opts.moves){G.moves=opts.moves.slice();G.s=replay(G.moves);G.over=!!G.s.winner;}pendingContinuation=null;
+    G.line = lineOf(G.moves);
     G.flip = mySide() === -1;
     RV.reset();
     $('menu').hidden = true; $('game').hidden = false; $('endOv').hidden = true; $('lobbyOv').hidden = true; $('askOv').hidden = true;
@@ -1166,6 +1219,7 @@ onmessage = function (e) {
   });
 
   function render() {
+    if(CONT)CONT.refresh();
     if (GC) GC.sync();
     var d = RV.display(), live = d.mode === 'live', s = live ? G.s : d.s, part = live ? G.part : G.vpart;
     var all = (live ? canTap() : RV.canPlay()) ? ckMoves(s) : [], must = {}, from = {};
@@ -1363,7 +1417,8 @@ onmessage = function (e) {
     $('endAgain').hidden = Net2P.active() && Net2P.role() === 'guest';
     $('endOv').hidden = false;
   }
-  $('endLook').onclick = function () { $('endOv').hidden = true; RV.go(0); };
+  function analyzeFinished(){if(!G)return;G.pdnHeaders=Object.assign({},G.pdnHeaders||{},{Result:G.s.winner===3?'1/2-1/2':G.s.winner===1?'1-0':G.s.winner===-1?'0-1':'*'});G.pdnMain=G.moves.join(' ');token++;Net2P.close();G.analysis=true;G.evalOn=true;G.kind={1:'me','-1':'me'};G.s=replay(G.moves);G.over=!!G.s.winner;G.busy=false;G.part=null;G.pre=null;G.endShown=true;G.line=lineOf(G.moves);$('endOv').hidden=true;RV.reset();RV.go(0);GC.sync();render();}
+  $('endLook').onclick=analyzeFinished;
   // ---------- coordinates (shared with the friend online) ----------
   function setCoords(on, fromNet) {
     S.coords = !!on; saveS(); renderMenu();
@@ -1384,7 +1439,7 @@ onmessage = function (e) {
   $('endAgain').onclick = again; $('againBtn').onclick = again;
   function again() { if (Net2P.active()) { if (Net2P.role() === 'host') hostStart(true); } else startLocal(); }
   $('endMenu').onclick = toMenu; $('homeBtn').onclick = toMenu;
-  function toMenu() { Net2P.close(); token++; G = null; $('game').hidden = true; $('endOv').hidden = true; $('lobbyOv').hidden = true; $('askOv').hidden = true; $('menu').hidden = false; renderMenu(); }
+  function toMenu() { pendingContinuation=null; Net2P.close(); token++; G = null; $('game').hidden = true; $('endOv').hidden = true; $('lobbyOv').hidden = true; $('askOv').hidden = true; $('menu').hidden = false; renderMenu(); }
   $('playBtn').onclick = function () { knock(500, .1); startLocal(); };
   $('soundBtn').onclick = function () { S.sound = !S.sound; saveS(); renderMenu(); };
   var toastT = null;
@@ -1409,7 +1464,7 @@ onmessage = function (e) {
     lobby('Создаю игру', 'Подключаюсь к серверу связи…');
     Net2P.host({ prefix: PREFIX,
       onReady: function (code, link) { lobby('Игра создана', link ? 'Отправь другу ссылку или код. Партия начнётся, как только он зайдёт.' : 'Скажи другу код: он вводит его в «Войти по коду».', { code: code, link: link }); },
-      onJoin: function (o) { if (o.returning && G) { Net2P.send({ t: 'sync', hostSide: hostSide, moves: G.moves, coords: S.coords }); toast('Друг вернулся'); render(); } else hostStart(false); },
+      onJoin: function (o) { if (o.returning && G) { Net2P.send({ t: 'sync', hostSide: hostSide, seed:{fen:G.baseFen,moves:G.moves}, moves: G.moves, coords: S.coords }); toast('Друг вернулся'); render(); } else hostStart(false); },
       onPeer: function (on) { if (G) render(); if (!on) { toast('Связь с другом пропала'); if (G && G.undoVote) endVote(false, 'gone'); } },
       onLeave: function () { toast('Друг вышел'); },
       onData: hostData,
@@ -1418,8 +1473,8 @@ onmessage = function (e) {
   }
   function hostStart(swap) {
     if (!hostSide) hostSide = S.side || (Math.random() < .5 ? 1 : -1); else if (swap) hostSide = -hostSide;
-    Net2P.send({ t: 'start', hostSide: hostSide, coords: S.coords });
-    var k = {}; k[hostSide] = 'me'; k[-hostSide] = 'net'; newGame(k);
+    var seed=pendingContinuation;Net2P.send({ t: 'start', hostSide: hostSide, seed:seed, coords: S.coords });
+    var k = {}; k[hostSide] = 'me'; k[-hostSide] = 'net'; newGame(k,seed||{});
     toast('Ты играешь ' + (hostSide === 1 ? 'белыми' : 'чёрными'));
   }
   function hostData(d) {
@@ -1430,7 +1485,7 @@ onmessage = function (e) {
       if (ok) decide(d.path); else Net2P.send({ t: 'nack' });
     } else if (d.t === 'undoReq') startVote('friend');
     else if (d.t === 'undoVote') endVote(!!d.ok, d.ok ? '' : 'no');
-    else if (d.t === 'needsync') { if (G) Net2P.send({ t: 'sync', hostSide: hostSide, moves: G.moves, coords: S.coords }); }
+    else if (d.t === 'needsync') { if (G) Net2P.send({ t: 'sync', hostSide: hostSide, seed:{fen:G.baseFen,moves:G.moves}, moves: G.moves, coords: S.coords }); }
     else if (d.t === 'coords') setCoords(d.on, true);
   }
   function joinGame(code) {
@@ -1448,8 +1503,8 @@ onmessage = function (e) {
   function guestData(d) {
     if (GC && GC.receive(d)) return;
     if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
-    if (d.t === 'start') { newGame(guestKinds(d.hostSide)); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 1 ? 'чёрными' : 'белыми')); }
-    else if (d.t === 'sync') { newGame(guestKinds(d.hostSide)); G.moves = d.moves.slice(); G.s = replay(G.moves); G.line = lineOf(G.moves); G.over = !!G.s.winner; G.endShown = G.over; guestCoords(d.coords); RV.sync(); render(); turnLoop(); }
+    if (d.t === 'start') { newGame(guestKinds(d.hostSide),d.seed||{}); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 1 ? 'чёрными' : 'белыми')); }
+    else if (d.t === 'sync') { newGame(guestKinds(d.hostSide),d.seed||{}); G.moves = d.moves.slice(); G.s = replay(G.moves); G.line = lineOf(G.moves); G.over = !!G.s.winner; G.endShown = G.over; guestCoords(d.coords); RV.sync(); render(); turnLoop(); }
     else if (d.t === 'coords') setCoords(d.on, true);
     else if (!G) return;
     else if (d.t === 'move') { G.netPending = false; if (d.n === G.moves.length) apply(d.path); else if (d.n > G.moves.length) Net2P.send({ t: 'needsync' }); }
@@ -1537,22 +1592,32 @@ onmessage = function (e) {
   $('ckNotation').onclick=function(e){var go=e.target.closest('[data-ck-go]'),branch=e.target.closest('[data-ck-branch]');if(go)RV.go(+go.dataset.ckGo);if(branch)selectBranch(G.studyBranches[+branch.dataset.ckBranch]);};
   $('ckBestMove').onclick=function(){if(!studyAllowed())return;var path=this.dataset.path;if(!path)return;if(RV.display().mode==='live'){if(canTap())submit(path);}else RV.play(path);};
   $('ckAnalyzeBtn').onclick=function(){Net2P.close();newGame({1:'me','-1':'me'},{analysis:true});ckTab='engine';renderStudyPanel();};
-  function pdnText(){var scope=$('ckScope').value,headers=Object.assign({},G.pdnHeaders||{});headers.Result=scope==='path'||G.analysis?'*':G.s.winner===3?'1/2-1/2':G.s.winner===1?'1-0':G.s.winner===-1?'0-1':'*';saveCurrentBranch();return ckPdnWrite(scope==='path'?RV.pathHere():G.moves,headers,G.baseFen,scope==='path'?[]:G.studyBranches);}
+  function pdnText(){var scope=$('ckScope').value,headers=Object.assign({},G.pdnHeaders||{});headers.Result=scope==='path'?'*':G.analysis?(G.pdnMain===G.moves.join(' ')?headers.Result||'*':'*'):G.s.winner===3?'1/2-1/2':G.s.winner===1?'1-0':G.s.winner===-1?'0-1':'*';saveCurrentBranch();return ckPdnWrite(scope==='path'?RV.pathHere():G.moves,headers,G.baseFen,scope==='path'?[]:G.studyBranches);}
   function pdnFile(){return new File([pdnText()],'russian-draughts-'+new Date().toISOString().slice(0,10)+'.pdn',{type:'application/x-draughts-pdn'});}
   function refreshPdn(){try{$('ckPdnText').value=pdnText();$('ckPdnError').textContent='';$('ckPdnShare').hidden=!(navigator.canShare&&navigator.canShare({files:[pdnFile()]}));}catch(e){$('ckPdnError').textContent=e.message;}}
   $('ckExport').onclick=function(){if(!G)return;$('ckPdnTitle').textContent='Сохранить PDN';$('ckScopeRow').hidden=false;$('ckPdnFile').hidden=true;$('ckPdnApply').hidden=true;$('ckPdnDownload').hidden=false;$('ckPdnText').readOnly=true;$('ckScope').value='all';refreshPdn();$('ckPdnDialog').showModal();};
   $('ckImport').onclick=function(){if(Net2P.active()&&!G.over)return;$('ckPdnTitle').textContent='Импорт русских шашек';$('ckScopeRow').hidden=true;$('ckPdnFile').hidden=false;$('ckPdnApply').hidden=false;$('ckPdnDownload').hidden=true;$('ckPdnShare').hidden=true;$('ckPdnText').readOnly=false;$('ckPdnText').value='';$('ckPdnError').textContent='';$('ckPdnDialog').showModal();};
   $('ckPdnFile').onchange=function(){var file=this.files[0];if(!file)return;if(file.size>2000000){$('ckPdnError').textContent='Выберите одну партию, файл до 2 МБ.';return;}file.text().then(function(text){$('ckPdnText').value=text;});};
-  $('ckPdnApply').onclick=function(){try{var game=ckPdnRead($('ckPdnText').value);Net2P.close();newGame({1:'me','-1':'me'},{analysis:true,fen:game.fen});G.moves=game.moves;G.s=replay(G.moves);G.line=lineOf(G.moves);G.over=!!G.s.winner;G.endShown=true;G.studyBranches=game.branches;G.pdnHeaders=game.headers;G.pre=null;RV.reset();RV.go(0);ckTab='notation';render();layout();$('ckPdnDialog').close();}catch(e){$('ckPdnError').textContent=e.message;}};
+  $('ckPdnApply').onclick=function(){try{var game=ckPdnRead($('ckPdnText').value);Net2P.close();newGame({1:'me','-1':'me'},{analysis:true,fen:game.fen});G.moves=game.moves;G.s=replay(G.moves);G.line=lineOf(G.moves);G.over=!!G.s.winner;G.endShown=true;G.studyBranches=game.branches;G.pdnHeaders=game.headers;G.pdnMain=G.moves.join(' ');G.pre=null;RV.reset();RV.go(0);ckTab='notation';render();layout();$('ckPdnDialog').close();}catch(e){$('ckPdnError').textContent=e.message;}};
   $('ckScope').onchange=refreshPdn;$('ckPdnClose').onclick=function(){$('ckPdnDialog').close();};
   $('ckPdnDownload').onclick=function(){try{var file=pdnFile(),url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download=file.name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},60000);}catch(e){$('ckPdnError').textContent=e.message;}};
   $('ckPdnShare').onclick=function(){navigator.share({files:[pdnFile()],title:'Русские шашки · PDN'}).catch(function(e){if(e.name!=='AbortError')$('ckPdnError').textContent='Используйте скачивание .pdn';});};
 
   var GC = GameClock.attach({id:"checkers", labels:["Белые", "Чёрные"],
     state:function(){return G&&!G.analysis?{game:G,turn:(G.s.side===1?0:1),moves:G.moves.length,over:!!(G.over || G.s.winner),ready:true}:null;}, role:function(){return Net2P.role();},
-    send:function(m){Net2P.send(m);}, menu:toMenu,
+    send:function(m){Net2P.send(m);}, menu:toMenu, analyze:analyzeFinished,
     expire:function(i){if(!G)return;token++;G.over=true; G.s.winner=i===0?-1:1;}
   });
+
+  var pendingContinuation=null;
+  var CONT=ContinueGame.attach({mount:$('game'),clock:GC,
+    available:function(){return !!G&&!$('game').hidden&&(!Net2P.active()||G.over)&&(G.analysis||G.over||RV.viewing());},
+    evalOn:function(){return S.evalOn;},level:function(){return S.level;},levels:CK_LEVELS.map(function(l){return{label:l.name};}),
+    sides:function(){return[{value:1,label:'Белые'},{value:-1,label:'Чёрные'}];},notify:toast,
+    capture:function(){if(RV.display().s.winner)throw Error('Позиция завершена. Вернитесь на ход назад в анализе.');return{fen:G.baseFen,moves:RV.pathHere().slice()};},
+    start:function(seed,o){token++;Net2P.close();G.analysis=true;G.busy=false;GC.sync();S.mode=o.mode;S.side=+o.side;S.level=o.level;S.evalOn=o.evalOn;saveS();if(o.mode==='net'){pendingContinuation=seed;hostGame();return;}var k={1:'me','-1':'me'};if(o.mode==='bot')k[-o.side]='bot';newGame(k,seed);}
+  });
+
   if (ONLINE && Net2P.hashCode()) { S.mode = 'net'; joinGame(Net2P.hashCode()); }
   window.RVready = true;
   renderMenu();

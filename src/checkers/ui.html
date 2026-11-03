@@ -292,14 +292,15 @@ onmessage = function (e) {
       n.style.top = 'calc(var(--B) * .045 + var(--B) / 8 * ' + (k + .5) + ')'; n.style.left = 'calc(var(--B) * .014)'; n.style.transform = 'translateY(-50%)'; wrap.appendChild(n);
     }
   }
-  function layout() { var wide=window.innerWidth>=900,extra=$('rvMount').offsetHeight+8,reserve=wide?0:230,B=Math.max(200,Math.min(window.innerWidth-(wide?400:40),window.innerHeight-(GC&&GC.enabled()?68:0)-(window.hubH?window.hubH():0)-200-extra-reserve,620));B=Math.floor(B/8)*8;document.documentElement.style.setProperty('--B',B+'px');document.documentElement.style.setProperty('--ck-panel-height',(wide?B*1.09+extra+65:230)+'px');if(window.RVready)RV.refresh();}
+  function layout() { var wide=window.innerWidth>=900,extra=$('rvMount').offsetHeight+8,reserve=wide?0:230,B=Math.max(200,Math.min(window.innerWidth-(wide?400:40),window.innerHeight-(GC&&GC.enabled()?68:0)-(window.hubH?window.hubH():0)-246-extra-reserve,620));B=Math.floor(B/8)*8;document.documentElement.style.setProperty('--B',B+'px');document.documentElement.style.setProperty('--ck-panel-height',(wide?B*1.09+extra+65:230)+'px');if(window.RVready)RV.refresh();}
   window.addEventListener('resize', layout);
   function mySide() { return G.kind[1] === 'me' && G.kind[-1] !== 'me' ? 1 : G.kind[-1] === 'me' && G.kind[1] !== 'me' ? -1 : 0; }
 
   function newGame(kind,opts) {
-    token++;opts=opts||{};
+    $('toast').hidden=true;token++;opts=opts||{};
     G = { analysis:!!opts.analysis,baseFen:opts.fen||'',studyBranches:[],pre:null,evalOn:opts.analysis||!!S.evalOn, kind: kind, moves: [], s: ckPdnPosition(opts.fen), sel: -1, part: null, vpart: null, busy: false, over: false, endShown: false, lastPath: null };
-    G.line = lineOf([]);
+    if(opts.moves){G.moves=opts.moves.slice();G.s=replay(G.moves);G.over=!!G.s.winner;}pendingContinuation=null;
+    G.line = lineOf(G.moves);
     G.flip = mySide() === -1;
     RV.reset();
     $('menu').hidden = true; $('game').hidden = false; $('endOv').hidden = true; $('lobbyOv').hidden = true; $('askOv').hidden = true;
@@ -333,6 +334,7 @@ onmessage = function (e) {
   });
 
   function render() {
+    if(CONT)CONT.refresh();
     if (GC) GC.sync();
     var d = RV.display(), live = d.mode === 'live', s = live ? G.s : d.s, part = live ? G.part : G.vpart;
     var all = (live ? canTap() : RV.canPlay()) ? ckMoves(s) : [], must = {}, from = {};
@@ -530,7 +532,8 @@ onmessage = function (e) {
     $('endAgain').hidden = Net2P.active() && Net2P.role() === 'guest';
     $('endOv').hidden = false;
   }
-  $('endLook').onclick = function () { $('endOv').hidden = true; RV.go(0); };
+  function analyzeFinished(){if(!G)return;G.pdnHeaders=Object.assign({},G.pdnHeaders||{},{Result:G.s.winner===3?'1/2-1/2':G.s.winner===1?'1-0':G.s.winner===-1?'0-1':'*'});G.pdnMain=G.moves.join(' ');token++;Net2P.close();G.analysis=true;G.evalOn=true;G.kind={1:'me','-1':'me'};G.s=replay(G.moves);G.over=!!G.s.winner;G.busy=false;G.part=null;G.pre=null;G.endShown=true;G.line=lineOf(G.moves);$('endOv').hidden=true;RV.reset();RV.go(0);GC.sync();render();}
+  $('endLook').onclick=analyzeFinished;
   // ---------- coordinates (shared with the friend online) ----------
   function setCoords(on, fromNet) {
     S.coords = !!on; saveS(); renderMenu();
@@ -551,7 +554,7 @@ onmessage = function (e) {
   $('endAgain').onclick = again; $('againBtn').onclick = again;
   function again() { if (Net2P.active()) { if (Net2P.role() === 'host') hostStart(true); } else startLocal(); }
   $('endMenu').onclick = toMenu; $('homeBtn').onclick = toMenu;
-  function toMenu() { Net2P.close(); token++; G = null; $('game').hidden = true; $('endOv').hidden = true; $('lobbyOv').hidden = true; $('askOv').hidden = true; $('menu').hidden = false; renderMenu(); }
+  function toMenu() { pendingContinuation=null; Net2P.close(); token++; G = null; $('game').hidden = true; $('endOv').hidden = true; $('lobbyOv').hidden = true; $('askOv').hidden = true; $('menu').hidden = false; renderMenu(); }
   $('playBtn').onclick = function () { knock(500, .1); startLocal(); };
   $('soundBtn').onclick = function () { S.sound = !S.sound; saveS(); renderMenu(); };
   var toastT = null;
@@ -576,7 +579,7 @@ onmessage = function (e) {
     lobby('Создаю игру', 'Подключаюсь к серверу связи…');
     Net2P.host({ prefix: PREFIX,
       onReady: function (code, link) { lobby('Игра создана', link ? 'Отправь другу ссылку или код. Партия начнётся, как только он зайдёт.' : 'Скажи другу код: он вводит его в «Войти по коду».', { code: code, link: link }); },
-      onJoin: function (o) { if (o.returning && G) { Net2P.send({ t: 'sync', hostSide: hostSide, moves: G.moves, coords: S.coords }); toast('Друг вернулся'); render(); } else hostStart(false); },
+      onJoin: function (o) { if (o.returning && G) { Net2P.send({ t: 'sync', hostSide: hostSide, seed:{fen:G.baseFen,moves:G.moves}, moves: G.moves, coords: S.coords }); toast('Друг вернулся'); render(); } else hostStart(false); },
       onPeer: function (on) { if (G) render(); if (!on) { toast('Связь с другом пропала'); if (G && G.undoVote) endVote(false, 'gone'); } },
       onLeave: function () { toast('Друг вышел'); },
       onData: hostData,
@@ -585,8 +588,8 @@ onmessage = function (e) {
   }
   function hostStart(swap) {
     if (!hostSide) hostSide = S.side || (Math.random() < .5 ? 1 : -1); else if (swap) hostSide = -hostSide;
-    Net2P.send({ t: 'start', hostSide: hostSide, coords: S.coords });
-    var k = {}; k[hostSide] = 'me'; k[-hostSide] = 'net'; newGame(k);
+    var seed=pendingContinuation;Net2P.send({ t: 'start', hostSide: hostSide, seed:seed, coords: S.coords });
+    var k = {}; k[hostSide] = 'me'; k[-hostSide] = 'net'; newGame(k,seed||{});
     toast('Ты играешь ' + (hostSide === 1 ? 'белыми' : 'чёрными'));
   }
   function hostData(d) {
@@ -597,7 +600,7 @@ onmessage = function (e) {
       if (ok) decide(d.path); else Net2P.send({ t: 'nack' });
     } else if (d.t === 'undoReq') startVote('friend');
     else if (d.t === 'undoVote') endVote(!!d.ok, d.ok ? '' : 'no');
-    else if (d.t === 'needsync') { if (G) Net2P.send({ t: 'sync', hostSide: hostSide, moves: G.moves, coords: S.coords }); }
+    else if (d.t === 'needsync') { if (G) Net2P.send({ t: 'sync', hostSide: hostSide, seed:{fen:G.baseFen,moves:G.moves}, moves: G.moves, coords: S.coords }); }
     else if (d.t === 'coords') setCoords(d.on, true);
   }
   function joinGame(code) {
@@ -615,8 +618,8 @@ onmessage = function (e) {
   function guestData(d) {
     if (GC && GC.receive(d)) return;
     if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
-    if (d.t === 'start') { newGame(guestKinds(d.hostSide)); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 1 ? 'чёрными' : 'белыми')); }
-    else if (d.t === 'sync') { newGame(guestKinds(d.hostSide)); G.moves = d.moves.slice(); G.s = replay(G.moves); G.line = lineOf(G.moves); G.over = !!G.s.winner; G.endShown = G.over; guestCoords(d.coords); RV.sync(); render(); turnLoop(); }
+    if (d.t === 'start') { newGame(guestKinds(d.hostSide),d.seed||{}); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 1 ? 'чёрными' : 'белыми')); }
+    else if (d.t === 'sync') { newGame(guestKinds(d.hostSide),d.seed||{}); G.moves = d.moves.slice(); G.s = replay(G.moves); G.line = lineOf(G.moves); G.over = !!G.s.winner; G.endShown = G.over; guestCoords(d.coords); RV.sync(); render(); turnLoop(); }
     else if (d.t === 'coords') setCoords(d.on, true);
     else if (!G) return;
     else if (d.t === 'move') { G.netPending = false; if (d.n === G.moves.length) apply(d.path); else if (d.n > G.moves.length) Net2P.send({ t: 'needsync' }); }
@@ -704,22 +707,32 @@ onmessage = function (e) {
   $('ckNotation').onclick=function(e){var go=e.target.closest('[data-ck-go]'),branch=e.target.closest('[data-ck-branch]');if(go)RV.go(+go.dataset.ckGo);if(branch)selectBranch(G.studyBranches[+branch.dataset.ckBranch]);};
   $('ckBestMove').onclick=function(){if(!studyAllowed())return;var path=this.dataset.path;if(!path)return;if(RV.display().mode==='live'){if(canTap())submit(path);}else RV.play(path);};
   $('ckAnalyzeBtn').onclick=function(){Net2P.close();newGame({1:'me','-1':'me'},{analysis:true});ckTab='engine';renderStudyPanel();};
-  function pdnText(){var scope=$('ckScope').value,headers=Object.assign({},G.pdnHeaders||{});headers.Result=scope==='path'||G.analysis?'*':G.s.winner===3?'1/2-1/2':G.s.winner===1?'1-0':G.s.winner===-1?'0-1':'*';saveCurrentBranch();return ckPdnWrite(scope==='path'?RV.pathHere():G.moves,headers,G.baseFen,scope==='path'?[]:G.studyBranches);}
+  function pdnText(){var scope=$('ckScope').value,headers=Object.assign({},G.pdnHeaders||{});headers.Result=scope==='path'?'*':G.analysis?(G.pdnMain===G.moves.join(' ')?headers.Result||'*':'*'):G.s.winner===3?'1/2-1/2':G.s.winner===1?'1-0':G.s.winner===-1?'0-1':'*';saveCurrentBranch();return ckPdnWrite(scope==='path'?RV.pathHere():G.moves,headers,G.baseFen,scope==='path'?[]:G.studyBranches);}
   function pdnFile(){return new File([pdnText()],'russian-draughts-'+new Date().toISOString().slice(0,10)+'.pdn',{type:'application/x-draughts-pdn'});}
   function refreshPdn(){try{$('ckPdnText').value=pdnText();$('ckPdnError').textContent='';$('ckPdnShare').hidden=!(navigator.canShare&&navigator.canShare({files:[pdnFile()]}));}catch(e){$('ckPdnError').textContent=e.message;}}
   $('ckExport').onclick=function(){if(!G)return;$('ckPdnTitle').textContent='Сохранить PDN';$('ckScopeRow').hidden=false;$('ckPdnFile').hidden=true;$('ckPdnApply').hidden=true;$('ckPdnDownload').hidden=false;$('ckPdnText').readOnly=true;$('ckScope').value='all';refreshPdn();$('ckPdnDialog').showModal();};
   $('ckImport').onclick=function(){if(Net2P.active()&&!G.over)return;$('ckPdnTitle').textContent='Импорт русских шашек';$('ckScopeRow').hidden=true;$('ckPdnFile').hidden=false;$('ckPdnApply').hidden=false;$('ckPdnDownload').hidden=true;$('ckPdnShare').hidden=true;$('ckPdnText').readOnly=false;$('ckPdnText').value='';$('ckPdnError').textContent='';$('ckPdnDialog').showModal();};
   $('ckPdnFile').onchange=function(){var file=this.files[0];if(!file)return;if(file.size>2000000){$('ckPdnError').textContent='Выберите одну партию, файл до 2 МБ.';return;}file.text().then(function(text){$('ckPdnText').value=text;});};
-  $('ckPdnApply').onclick=function(){try{var game=ckPdnRead($('ckPdnText').value);Net2P.close();newGame({1:'me','-1':'me'},{analysis:true,fen:game.fen});G.moves=game.moves;G.s=replay(G.moves);G.line=lineOf(G.moves);G.over=!!G.s.winner;G.endShown=true;G.studyBranches=game.branches;G.pdnHeaders=game.headers;G.pre=null;RV.reset();RV.go(0);ckTab='notation';render();layout();$('ckPdnDialog').close();}catch(e){$('ckPdnError').textContent=e.message;}};
+  $('ckPdnApply').onclick=function(){try{var game=ckPdnRead($('ckPdnText').value);Net2P.close();newGame({1:'me','-1':'me'},{analysis:true,fen:game.fen});G.moves=game.moves;G.s=replay(G.moves);G.line=lineOf(G.moves);G.over=!!G.s.winner;G.endShown=true;G.studyBranches=game.branches;G.pdnHeaders=game.headers;G.pdnMain=G.moves.join(' ');G.pre=null;RV.reset();RV.go(0);ckTab='notation';render();layout();$('ckPdnDialog').close();}catch(e){$('ckPdnError').textContent=e.message;}};
   $('ckScope').onchange=refreshPdn;$('ckPdnClose').onclick=function(){$('ckPdnDialog').close();};
   $('ckPdnDownload').onclick=function(){try{var file=pdnFile(),url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download=file.name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},60000);}catch(e){$('ckPdnError').textContent=e.message;}};
   $('ckPdnShare').onclick=function(){navigator.share({files:[pdnFile()],title:'Русские шашки · PDN'}).catch(function(e){if(e.name!=='AbortError')$('ckPdnError').textContent='Используйте скачивание .pdn';});};
 
   var GC = GameClock.attach({id:"checkers", labels:["Белые", "Чёрные"],
     state:function(){return G&&!G.analysis?{game:G,turn:(G.s.side===1?0:1),moves:G.moves.length,over:!!(G.over || G.s.winner),ready:true}:null;}, role:function(){return Net2P.role();},
-    send:function(m){Net2P.send(m);}, menu:toMenu,
+    send:function(m){Net2P.send(m);}, menu:toMenu, analyze:analyzeFinished,
     expire:function(i){if(!G)return;token++;G.over=true; G.s.winner=i===0?-1:1;}
   });
+
+  var pendingContinuation=null;
+  var CONT=ContinueGame.attach({mount:$('game'),clock:GC,
+    available:function(){return !!G&&!$('game').hidden&&(!Net2P.active()||G.over)&&(G.analysis||G.over||RV.viewing());},
+    evalOn:function(){return S.evalOn;},level:function(){return S.level;},levels:CK_LEVELS.map(function(l){return{label:l.name};}),
+    sides:function(){return[{value:1,label:'Белые'},{value:-1,label:'Чёрные'}];},notify:toast,
+    capture:function(){if(RV.display().s.winner)throw Error('Позиция завершена. Вернитесь на ход назад в анализе.');return{fen:G.baseFen,moves:RV.pathHere().slice()};},
+    start:function(seed,o){token++;Net2P.close();G.analysis=true;G.busy=false;GC.sync();S.mode=o.mode;S.side=+o.side;S.level=o.level;S.evalOn=o.evalOn;saveS();if(o.mode==='net'){pendingContinuation=seed;hostGame();return;}var k={1:'me','-1':'me'};if(o.mode==='bot')k[-o.side]='bot';newGame(k,seed);}
+  });
+
   if (ONLINE && Net2P.hashCode()) { S.mode = 'net'; joinGame(Net2P.hashCode()); }
   window.RVready = true;
   renderMenu();

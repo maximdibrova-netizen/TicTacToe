@@ -577,7 +577,8 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
   }
 
   // ---------- end / navigation ----------
-  $('endLook').onclick = function () { $('endOv').hidden = true; RV.go(0); };
+  function analyzeFinished(){if(!G)return;token++;G.analysis=true;G.evalOn=true;G.phase='over';$('endOv').hidden=true;RV.reset();RV.go(0);GC.sync();renderAll();}
+  $('endLook').onclick=analyzeFinished;
   $('endAgain').onclick = function () { again(); };
   function again() {
     if (G && G.opp === 'net') { if (Net2P.role() === 'host') hostNewGame(true); return; }
@@ -682,8 +683,8 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
   $('joinGo').onclick = function () { var c = Net2P.cleanCode($('joinCode').value); if (c.length === 5) joinGame(c); };
 
   var GC = GameClock.attach({id:"battleship", labels:["Вы / хозяин", "Соперник / гость"],
-    state:function(){return G?{game:G,turn:((G.turn==='me') !== (Net2P.role()==='guest') ? 0 : 1),moves:(G.line?G.line.length:1)-1,over:!!(G.phase==='over'),ready:G.phase!=='place'}:null;}, role:function(){return Net2P.role();},
-    send:function(m){Net2P.send(m);}, menu:toMenu,
+    state:function(){return G&&!G.analysis?{game:G,turn:((G.turn==='me') !== (Net2P.role()==='guest') ? 0 : 1),moves:(G.line?G.line.length:1)-1,over:!!(G.phase==='over'),ready:G.phase!=='place'}:null;}, role:function(){return Net2P.role();},
+    send:function(m){Net2P.send(m);}, menu:toMenu, analyze:analyzeFinished,
     expire:function(i){if(!G)return;token++;G.phase='over'; G.won=(Net2P.role()==='guest'?1:0)!==i;}
   });
   if (ONLINE && Net2P.hashCode()) { S.mode = 'net'; joinGame(Net2P.hashCode()); }
