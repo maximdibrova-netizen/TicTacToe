@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "test": "node --test tests/*.test.cjs",
+    "test:preferences": "node tests/preferences.cjs",
     "test:browser": "node tests/browser.cjs"
   },
   "devDependencies": {

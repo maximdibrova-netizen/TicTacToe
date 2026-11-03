@@ -1,0 +1,17 @@
+// Проверка настроек до партии и явного выхода в каталог. Требует Edge.
+const {chromium}=require('playwright'), http=require('http'), fs=require('fs'), path=require('path'), assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'..');
+(async()=>{const server=http.createServer((req,res)=>{let f=path.join(root,decodeURIComponent(req.url.split('?')[0]));if(f.endsWith(path.sep))f+='index.html';fs.readFile(f,(e,b)=>{res.statusCode=e?404:200;res.setHeader('Content-Type',f.endsWith('.html')?'text/html; charset=utf-8':f.endsWith('.wasm')?'application/wasm':'text/javascript');res.end(e?'':b);});}).listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const url='http://127.0.0.1:'+server.address().port;const browser=await chromium.launch({channel:'msedge',headless:true});let failures=[];
+try{for(const game of ['go','checkers','ttt','tochki','battleship','chess'])for(const enabled of [true,false]){const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];page.setDefaultTimeout(5000);page.on('pageerror',e=>errors.push(e.message));try{
+ await page.goto(url+'/'+game+'/',{waitUntil:'domcontentloaded'});
+ await page.locator('#evalSeg button[data-v="'+(enabled?'1':'0')+'"]').click({timeout:3000});
+ if(!enabled&&await page.locator('#m-duo').count())await page.locator('#m-duo').click();
+ await page.locator('#playBtn').click();if(game==='battleship'){await page.locator('#rndBtn').click();await page.locator('#readyBtn').click();}
+ const bar=page.locator(game==='tochki'?'#evalBar':game==='chess'?'#playEval':game==='battleship'?'#shotEval':'.rv-bar');
+ await page.waitForTimeout(500);assert.equal(await bar.isVisible(),enabled,game+' evaluation visibility');
+ if(enabled){await page.waitForFunction(sel=>/\d+%/.test(document.querySelector(sel).textContent),game==='tochki'?'#evalBar':game==='chess'?'#playEval':game==='battleship'?'#shotEval':'.rv-bar',{timeout:20000});await page.screenshot({path:path.join(root,'..',game+'-preferences.png')});}
+ if(!enabled){if(game==='chess'){assert.equal(await page.locator('#tab-eng').isVisible(),false);await page.locator('[data-square="g1"]').click();await page.locator('[data-square="f3"]').click();for(const [from,to] of [['b8','c6'],['e2','e4'],['e7','e5'],['f1','c4']]){await page.waitForTimeout(250);await page.locator('[data-square='+from+']').click();await page.locator('[data-square='+to+']').click();}assert.match(await page.locator('#nota').textContent(),/Bc4/);await page.locator('#nvFirst').click();}else if(game==='ttt'){await page.locator('.cell').first().click();await page.locator('[data-a="first"]').click();}assert.equal(await bar.isVisible(),false,'history must not reveal evaluation');if(await page.locator('#hintBtn').count())assert.equal(await page.locator('#hintBtn').isVisible(),false,'hint disabled for this game');}
+ if(game==='chess'&&!enabled)assert.match(await page.locator('#nota').textContent(),/Nf3/);
+ const back=page.locator('.hub-back');assert.equal(await back.innerText(),'Все игры');assert.equal(await back.isVisible(),true);await back.click();await page.waitForURL(url+'/');assert.deepEqual(errors,[]);console.log(game+' '+enabled+' PASS');
+ }catch(e){failures.push(game+' '+enabled+': '+e.message);}finally{await page.close();}}
+}finally{await browser.close();server.close();}if(failures.length)throw Error(failures.join('\n'));})().catch(e=>{console.error(e);process.exitCode=1;});

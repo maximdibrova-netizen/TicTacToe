@@ -174,7 +174,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     </div>
     <div class="card">
       <h2>Подсказки</h2>
-      <div class="seg" style="--cols:2" id="evalSeg"><button data-v="1">Оценка видна</button><button data-v="0">Без оценки</button></div>
+      <div class="seg" style="--cols:2" aria-label="Оценка выбирается до начала партии" id="evalSeg"><button data-v="1">С оценкой</button><button data-v="0">Без оценки</button></div>
       <div class="seg" style="--cols:2" id="coordSeg"><button data-v="1">Координаты</button><button data-v="0">Без координат</button></div>
       <p class="hint">В онлайн-партии оценки и подсказок нет. После её конца — разбор с движком.</p>
     </div>
@@ -411,7 +411,7 @@ onmessage = function (e) {
 
   function newGame(kind) {
     token++;
-    G = { kind: kind, s: newState(1), moves: [], over: false, endShown: false, busy: false };
+    G = { evalOn: !!S.evalOn, kind: kind, s: newState(1), moves: [], over: false, endShown: false, busy: false };
     G.line = lineOf([]); RV.reset();
     $('menu').hidden = true; $('game').hidden = false; $('endOv').hidden = true; $('lobbyOv').hidden = true; $('askOv').hidden = true;
     buildBoard(); layout(); render(true); turnLoop();
@@ -441,7 +441,7 @@ onmessage = function (e) {
     moveText: function (e) { return cellName(e.mv); },
     overText: function (s) { return s.winner === 3 ? 'Ничья' : NAME[s.winner] + ' победили'; },
     engine: function () { return !!G && (!NET || G.over); },
-    evalOn: function () { return !!S.evalOn; },
+    evalOn: function () { return !!G && G.evalOn; },
     analyze: function (s, cb) { askAnalyze(s.path || [], cb); },
     redraw: function () { if (!G) return; render(true); if (!RV.viewing()) turnLoop(); },
     relayout: function () { layout(); },
@@ -492,7 +492,7 @@ onmessage = function (e) {
     var lbl = NET ? 'Попросить отменить ход' : viewOff ? 'Играть с этой позиции' : 'Отменить ход';
     $('undoBtn').setAttribute('aria-label', lbl); $('undoBtn').title = lbl;
     $('againBtn').hidden = !!(NET && NET.role === 'guest');
-    $('hintBtn').hidden = !!NET && !G.over;
+    $('hintBtn').hidden = !G.over && (!G.evalOn || !!NET);
     $('hintBtn').disabled = !!s.winner || (liveView && !canTap());
   }
   function who(p) {

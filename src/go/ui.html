@@ -112,7 +112,7 @@ h1 { margin: 0; text-align: center; font: 800 clamp(32px, 9vw, 44px)/1 var(--dis
       <div class="size-row" id="customRow" hidden><input type="range" id="sizeIn" min="5" max="25" step="1" aria-label="Размер доски"><b id="sizeVal"></b></div>
     </div>
     <div class="card"><h2>Подсказки</h2>
-      <div class="seg" style="--cols:2" id="evalSeg"><button data-v="1">Оценка видна</button><button data-v="0">Без оценки</button></div>
+      <div class="seg" style="--cols:2" aria-label="Оценка выбирается до начала партии" id="evalSeg"><button data-v="1">С оценкой</button><button data-v="0">Без оценки</button></div>
       <div class="seg" style="--cols:2" id="coordSeg"><button data-v="1">Координаты</button><button data-v="0">Без координат</button></div>
       <p class="hint">В онлайн-партии оценки и подсказок нет. После её конца — разбор с движком.</p>
     </div>
@@ -270,7 +270,7 @@ onmessage = function (e) {
   function newGame(kind, N, komi) {
     token++;
     var s = goNew(N, komi == null ? 7.5 : komi);
-    G = { kind: kind, N: N, level: S.level, s: s, line: [{ s: s, mv: null, by: 0 }], busy: false, endShown: false, dead: null, own: null, scoreTok: 0 };
+    G = { evalOn: !!S.evalOn, kind: kind, N: N, level: S.level, s: s, line: [{ s: s, mv: null, by: 0 }], busy: false, endShown: false, dead: null, own: null, scoreTok: 0 };
     $('menu').hidden = true; $('game').hidden = false; $('endOv').hidden = true; $('lobbyOv').hidden = true; $('askOv').hidden = true; $('confirmOv').hidden = true;
     RV.reset(); layout(); render(); turnLoop();
   }
@@ -301,7 +301,7 @@ onmessage = function (e) {
     moveText: function (e) { return e.mv === -1 ? 'пас' : e.mv === -2 ? 'сдались' : goName(G.N, e.mv); },
     overText: function (s) { return resultText(s); },
     engine: function () { return !!G && (!net() || G.s.over); },
-    evalOn: function () { return !!S.evalOn; },
+    evalOn: function () { return !!G && G.evalOn; },
     analyze: function (s, cb) {
       ask(anW, { kind: 'analyze', N: s.N, komi: s.komi, moves: goPath(s), ms: s.N >= 15 ? 1100 : 800 }, function (r) {
         if (r && r.lead != null) { var me = mySide() || 1, lead = me === 1 ? r.lead : -r.lead, pc = 100 * (s.turn === me ? r.p : 1 - r.p); r.text = (mySide() ? 'Ты' : 'Чёрные') + ' ' + Math.round(pc) + '%' + ((pc > 50) === (lead > 0) && Math.abs(lead) >= .5 ? ' · ' + (lead >= 0 ? '+' : '−') + Math.abs(lead).toFixed(1) : ''); }
@@ -396,7 +396,7 @@ onmessage = function (e) {
     $('passBtn').disabled = live ? !canTap() : !RV.canPlay();
     $('resignBtn').hidden = !live; $('resignBtn').disabled = !canTap();
     var engine = !net() || s.over;
-    $('hintBtn').hidden = !engine;
+    $('hintBtn').hidden = !engine || (!G.s.over && !G.evalOn);
     $('hintBtn').disabled = d.s.over || (live && !canTap());
     var ub = $('undoBtn'), viewOff = RV.viewing() && !net();
     ub.disabled = viewOff ? false : (undoTarget() < 0 || !!G.undoVote);

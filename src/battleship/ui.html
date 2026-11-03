@@ -152,6 +152,7 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
       <h2>Сила бота</h2>
       <div class="seg" id="levelSeg"></div>
     </div>
+    <div class="card"><h2>Оценка выстрела</h2><div class="seg" style="--cols:2" id="evalSeg"><button data-v="1">С оценкой</button><button data-v="0">Без оценки</button></div><p class="hint">Вероятность попадания лучшим выстрелом, не шанс победы. Выбор действует до конца партии. Онлайн — только после партии.</p></div>
     <div class="card" id="netCard" hidden>
       <h2>Онлайн с другом</h2>
       <div class="seg" style="--cols:2">
@@ -185,6 +186,7 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
     <div class="side" id="mySide"><h3 id="myTitle">Мой флот</h3><div class="grid" id="myGrid"></div><div class="left" id="myLeft"></div></div>
     <div class="side" id="enSide"><h3 id="enTitle">Соперник</h3><div class="grid target" id="enGrid"></div><div class="left" id="enLeft"></div></div>
   </div>
+  <div id="shotEval" class="shot-eval" hidden><i id="shotEvalFill"></i><span id="shotEvalText"></span></div>
   <div id="rvMount" hidden></div>
   <div class="place" id="placePanel">
     <div class="dock" id="dock"></div>
@@ -237,7 +239,7 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
   var ICON_SND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>';
   var ICON_MUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></svg>';
 
-  var S = { mode: 'bot', level: 2, sound: true };
+  var S = { mode: 'bot', level: 2, sound: true, evalOn: true };
   try { var sv = JSON.parse(localStorage.getItem('bs-set') || 'null'); if (sv) Object.assign(S, sv); } catch (e) {}
   if (!ONLINE) S.mode = 'bot';
   function saveS() { try { localStorage.setItem('bs-set', JSON.stringify(S)); } catch (e) {} }
@@ -247,7 +249,9 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
     b.onclick = function () { S.mode = b.dataset.v; saveS(); renderMenu(); };
   });
   if (!ONLINE) $('modeSeg').style.setProperty('--cols', 1);
+  document.querySelectorAll('#evalSeg button').forEach(function(b){b.onclick=function(){S.evalOn=b.dataset.v==='1';saveS();renderMenu();};});
   function renderMenu() {
+    document.querySelectorAll('#evalSeg button').forEach(function(b){b.setAttribute('aria-pressed',String((b.dataset.v==='1')===S.evalOn));});
     Array.prototype.forEach.call(document.querySelectorAll('#modeSeg button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === S.mode)); });
     Array.prototype.forEach.call(document.querySelectorAll('#levelSeg button'), function (b) { b.setAttribute('aria-pressed', String(+b.dataset.v === S.level)); });
     $('levelCard').hidden = S.mode !== 'bot'; $('netCard').hidden = S.mode !== 'net'; $('playBtn').hidden = S.mode !== 'bot';
@@ -362,7 +366,7 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
     },
     engine: function () { return !!G && G.phase !== 'place' && (G.opp === 'bot' || G.phase === 'over'); },
     canVary: function () { return !!G && G.phase === 'over' && !!enemyFleet(); },
-    evalOn: function () { return false; },
+    evalOn: function () { return !!G && G.evalOn; },
     analyze: function (s, cb) { var r = bsProb(s.view, s.enemyLeft); cb({ p: .5, best: r.best, P: r.P }); },
     redraw: function () { renderAll(); },
     relayout: function () { layout(); },
@@ -426,7 +430,7 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
   // ---------- battle ----------
   function newGame(opp, first) {
     token++;
-    G = emptyGame(opp); G.first = first || 'me'; G.sel = 4;
+    G = emptyGame(opp); G.evalOn = !!S.evalOn; G.first = first || 'me'; G.sel = 4;
     if (opp === 'bot') { G.bot = { fleet: bsRandomFleet(), hits: new Int8Array(100), view: new Int8Array(100), left: BS_FLEET.slice() }; G.readyThem = true; }
     $('menu').hidden = true; $('game').hidden = false; $('endOv').hidden = true; $('lobbyOv').hidden = true;
     renderAll(); layout();
@@ -524,7 +528,9 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
     var d = !place && G.line ? RV.display() : { mode: 'live' }, live = d.mode === 'live', V = live ? G : d.s;
     $('placePanel').hidden = !place || G.readyMe;
     $('enSide').hidden = place;
-    $('rvMount').hidden = place; $('hintBtn').hidden = place || !RV_engine();
+    $('rvMount').hidden = place; $('hintBtn').hidden = place || !RV_engine() || (!G.evalOn && G.phase!=='over');
+    $('shotEval').hidden = place || G.opp==='net' || !G.evalOn;
+    if (!$('shotEval').hidden) { var prob=bsProb(V.view,V.enemyLeft),pc=prob.best<0?0:Math.round(prob.P[prob.best]*100);$('shotEvalFill').style.width=pc+'%';$('shotEvalText').textContent='Лучший выстрел: шанс попадания '+pc+'%'; }
     var occ = occMap();
     cellsMy.forEach(function (b, i) {
       var m = V.marksMe[i];
@@ -557,7 +563,7 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
     if (place) renderDock();
   }
   function isSunkMine(i, hits) { hits = hits || G.hitsMe; var sh = G.fleet.find(function (s) { return s.cells.indexOf(i) >= 0; }); return sh && sh.cells.every(function (x) { return hits[x]; }); }
-  function RV_engine() { return !!G && G.phase !== 'place' && (G.opp === 'bot' || G.phase === 'over'); }
+  function RV_engine() { return !!G && G.phase !== 'place' && (G.phase === 'over' || (G.opp === 'bot' && G.evalOn)); }
   $('hintBtn').onclick = function () {
     if (!G || !RV_engine()) return;
     var d = RV.display();
@@ -684,3 +690,5 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
   renderMenu();
 })();
 </script>
+
+<style>.shot-eval{position:relative;flex:none;width:min(95%,480px);height:24px;background:#dbe7f6;border:1px solid #4476ab;border-radius:5px;overflow:hidden}.shot-eval i{position:absolute;inset:0 auto 0 0;background:#8eb5df}.shot-eval span{position:relative;display:block;text-align:center;font:700 12px/22px system-ui;color:#163965}</style>

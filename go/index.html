@@ -40,7 +40,7 @@
 </script><style>
 /* «← Все игры» — на каждой странице игры, слева сверху. В комнате не нужна: там своя панель «← Игры». */
 :root{--hub-h:50px}html.in-room{--hub-h:0px}
-.hub-back{position:fixed;z-index:60;top:calc(env(safe-area-inset-top,0px) + 8px);left:calc(env(safe-area-inset-left,0px) + 8px);display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 13px 0 8px;border-radius:999px;background:var(--hub-bg,rgba(8,10,20,.5));color:var(--hub-ink,#fff);font:800 13px/1 system-ui,-apple-system,"Segoe UI",sans-serif;text-decoration:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(0,0,0,.25),inset 0 0 0 1px rgba(255,255,255,.12);transition:transform .12s}
+.hub-back{position:fixed;z-index:60;top:calc(env(safe-area-inset-top,0px) + 8px);left:calc(env(safe-area-inset-left,0px) + 8px);display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 13px 0 8px;border-radius:999px;background:var(--hub-bg,rgba(8,10,20,.95));color:var(--hub-ink,#fff);font:800 13px/1 system-ui,-apple-system,"Segoe UI",sans-serif;text-decoration:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(0,0,0,.25),inset 0 0 0 1px rgba(255,255,255,.12);transition:transform .12s}
 .hub-back:active{transform:scale(.96)}.hub-back svg{width:18px;height:18px;flex:none}
 .hub-back:focus-visible{outline:3px solid #ffd166;outline-offset:2px}
 html.in-room .hub-back{display:none}
@@ -49,8 +49,8 @@ html.in-room .hub-back{display:none}
 </style>
 <script>
 window.hubH=function(){return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hub-h'))||0;};
-document.addEventListener('DOMContentLoaded',function(){var a=document.createElement('a');a.className='hub-back';a.href='../';a.setAttribute('aria-label','Все игры');a.title='Все игры';
-a.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>Все игры</span>';document.body.appendChild(a);});
+document.addEventListener('DOMContentLoaded',function(){var a=document.createElement('a');a.className='hub-back';a.href='../';a.setAttribute('aria-label','Все игры');a.title='Вернуться ко всем играм';
+a.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>Все игры</span>';document.body.appendChild(a);var seg=document.getElementById('evalSeg');if(seg&&!document.getElementById('playEval')&&!document.getElementById('shotEval')){var note=document.createElement('p');note.className='hint';note.textContent='Без оценки: полоса и подсказки скрыты до конца партии. Изменить выбор можно перед новой игрой.';seg.insertAdjacentElement('afterend',note);}});
 </script>
 </head><body>
 <style>:root{--gc-bg:#665037;--gc-active:#665037;--gc-accent:#e8bb63;}</style>
@@ -167,7 +167,7 @@ h1 { margin: 0; text-align: center; font: 800 clamp(32px, 9vw, 44px)/1 var(--dis
       <div class="size-row" id="customRow" hidden><input type="range" id="sizeIn" min="5" max="25" step="1" aria-label="Размер доски"><b id="sizeVal"></b></div>
     </div>
     <div class="card"><h2>Подсказки</h2>
-      <div class="seg" style="--cols:2" id="evalSeg"><button data-v="1">Оценка видна</button><button data-v="0">Без оценки</button></div>
+      <div class="seg" style="--cols:2" aria-label="Оценка выбирается до начала партии" id="evalSeg"><button data-v="1">С оценкой</button><button data-v="0">Без оценки</button></div>
       <div class="seg" style="--cols:2" id="coordSeg"><button data-v="1">Координаты</button><button data-v="0">Без координат</button></div>
       <p class="hint">В онлайн-партии оценки и подсказок нет. После её конца — разбор с движком.</p>
     </div>
@@ -187,7 +187,7 @@ h1 { margin: 0; text-align: center; font: 800 clamp(32px, 9vw, 44px)/1 var(--dis
         <li><b>Счёт:</b> свои камни + окружённая пустая территория. Белые получают 7.5 очка коми за второй ход.</li>
       </ol>
     </div>
-    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 03.11.2026 01:18</span></p>
+    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 03.11.2026 10:12</span></p>
   </div>
 </section>
 
@@ -601,9 +601,9 @@ var Review = function (o) {
 
   function line() { return o.line(); }
   function lastIdx() { return line().length - 1; }
-  function engine() { return !!o.engine(); }
+  function engine() { return !!o.engine() && (o.evalOn() || liveOver()); }
   function liveOver() { var L = line(); return o.over(L[L.length - 1].s); }
-  function evalVisible() { return !o.noBar && engine() && (o.evalOn() || liveOver() || view >= 0); }
+  function evalVisible() { return !o.noBar && engine() && (o.evalOn() || liveOver()); }
   function cur() {
     var L = line();
     if (V) { if (V.idx < 0) return { s: L[V.base].s, e: L[V.base], prev: V.base > 0 ? L[V.base - 1].s : null, k: V.base }; var e = V.list[V.idx]; return { s: e.s, e: e, prev: V.idx > 0 ? V.list[V.idx - 1].s : L[V.base].s, k: V.base }; }
@@ -1245,7 +1245,7 @@ onmessage = function (e) {
   function newGame(kind, N, komi) {
     token++;
     var s = goNew(N, komi == null ? 7.5 : komi);
-    G = { kind: kind, N: N, level: S.level, s: s, line: [{ s: s, mv: null, by: 0 }], busy: false, endShown: false, dead: null, own: null, scoreTok: 0 };
+    G = { evalOn: !!S.evalOn, kind: kind, N: N, level: S.level, s: s, line: [{ s: s, mv: null, by: 0 }], busy: false, endShown: false, dead: null, own: null, scoreTok: 0 };
     $('menu').hidden = true; $('game').hidden = false; $('endOv').hidden = true; $('lobbyOv').hidden = true; $('askOv').hidden = true; $('confirmOv').hidden = true;
     RV.reset(); layout(); render(); turnLoop();
   }
@@ -1276,7 +1276,7 @@ onmessage = function (e) {
     moveText: function (e) { return e.mv === -1 ? 'пас' : e.mv === -2 ? 'сдались' : goName(G.N, e.mv); },
     overText: function (s) { return resultText(s); },
     engine: function () { return !!G && (!net() || G.s.over); },
-    evalOn: function () { return !!S.evalOn; },
+    evalOn: function () { return !!G && G.evalOn; },
     analyze: function (s, cb) {
       ask(anW, { kind: 'analyze', N: s.N, komi: s.komi, moves: goPath(s), ms: s.N >= 15 ? 1100 : 800 }, function (r) {
         if (r && r.lead != null) { var me = mySide() || 1, lead = me === 1 ? r.lead : -r.lead, pc = 100 * (s.turn === me ? r.p : 1 - r.p); r.text = (mySide() ? 'Ты' : 'Чёрные') + ' ' + Math.round(pc) + '%' + ((pc > 50) === (lead > 0) && Math.abs(lead) >= .5 ? ' · ' + (lead >= 0 ? '+' : '−') + Math.abs(lead).toFixed(1) : ''); }
@@ -1371,7 +1371,7 @@ onmessage = function (e) {
     $('passBtn').disabled = live ? !canTap() : !RV.canPlay();
     $('resignBtn').hidden = !live; $('resignBtn').disabled = !canTap();
     var engine = !net() || s.over;
-    $('hintBtn').hidden = !engine;
+    $('hintBtn').hidden = !engine || (!G.s.over && !G.evalOn);
     $('hintBtn').disabled = d.s.over || (live && !canTap());
     var ub = $('undoBtn'), viewOff = RV.viewing() && !net();
     ub.disabled = viewOff ? false : (undoTarget() < 0 || !!G.undoVote);

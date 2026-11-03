@@ -124,7 +124,7 @@ body.nocoord .coord { display: none; }
       <div class="seg" id="sideSeg"><button data-v="1" id="s-w">Белыми</button><button data-v="-1" id="s-b">Чёрными</button><button data-v="0" id="s-r">Случайно</button></div>
     </div>
     <div class="card"><h2>Подсказки</h2>
-      <div class="seg" style="--cols:2" id="evalSeg"><button data-v="1">Оценка видна</button><button data-v="0">Без оценки</button></div>
+      <div class="seg" style="--cols:2" aria-label="Оценка выбирается до начала партии" id="evalSeg"><button data-v="1">С оценкой</button><button data-v="0">Без оценки</button></div>
       <div class="seg" style="--cols:2" id="coordSeg"><button data-v="1">Координаты</button><button data-v="0">Без координат</button></div>
       <p class="hint">В онлайн-партии оценки и подсказок нет. После её конца — разбор с движком.</p>
     </div>
@@ -292,7 +292,7 @@ onmessage = function (e) {
 
   function newGame(kind) {
     token++;
-    G = { kind: kind, moves: [], s: ckNew(), sel: -1, part: null, vpart: null, busy: false, over: false, endShown: false, lastPath: null };
+    G = { evalOn: !!S.evalOn, kind: kind, moves: [], s: ckNew(), sel: -1, part: null, vpart: null, busy: false, over: false, endShown: false, lastPath: null };
     G.line = lineOf([]);
     G.flip = mySide() === -1;
     RV.reset();
@@ -319,7 +319,7 @@ onmessage = function (e) {
     moveText: function (e) { return moveName(e.mv); },
     overText: function (s) { return s.winner === 3 ? 'Ничья: ' + (s.drawReason || '') : NAME[s.winner] + ' победили'; },
     engine: function () { return !!G && (!Net2P.active() || G.over); },
-    evalOn: function () { return !!S.evalOn; },
+    evalOn: function () { return !!G && G.evalOn; },
     analyze: function (s, cb) { askAnalyze(s.path || [], cb); },
     redraw: function () { if (!G) return; G.vpart = null; render(); if (!RV.viewing()) turnLoop(); },
     relayout: function () { layout(); },
@@ -358,7 +358,7 @@ onmessage = function (e) {
     var lbl = Net2P.active() ? 'Попросить отменить ход' : viewOff ? 'Играть с этой позиции' : 'Отменить ход';
     $('undoBtn').setAttribute('aria-label', lbl); $('undoBtn').title = lbl;
     $('againBtn').hidden = Net2P.active() && Net2P.role() === 'guest';
-    $('hintBtn').hidden = Net2P.active() && !G.over;
+    $('hintBtn').hidden = !G.over && (!G.evalOn || Net2P.active());
     $('hintBtn').disabled = !!s.winner || (live && !canTap());
   }
   function fill(slot, side, cnt, s) {

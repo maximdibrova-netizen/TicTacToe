@@ -60,9 +60,9 @@ var Review = function (o) {
 
   function line() { return o.line(); }
   function lastIdx() { return line().length - 1; }
-  function engine() { return !!o.engine(); }
+  function engine() { return !!o.engine() && (o.evalOn() || liveOver()); }
   function liveOver() { var L = line(); return o.over(L[L.length - 1].s); }
-  function evalVisible() { return !o.noBar && engine() && (o.evalOn() || liveOver() || view >= 0); }
+  function evalVisible() { return !o.noBar && engine() && (o.evalOn() || liveOver()); }
   function cur() {
     var L = line();
     if (V) { if (V.idx < 0) return { s: L[V.base].s, e: L[V.base], prev: V.base > 0 ? L[V.base - 1].s : null, k: V.base }; var e = V.list[V.idx]; return { s: e.s, e: e, prev: V.idx > 0 ? V.list[V.idx - 1].s : L[V.base].s, k: V.base }; }

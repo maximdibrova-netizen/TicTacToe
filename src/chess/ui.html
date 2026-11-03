@@ -196,6 +196,7 @@ body.blind.peek .sq .pc { visibility: visible; }
       <div class="seg" style="--cols:2" id="coordSeg"><button data-v="1">Координаты</button><button data-v="0">Без координат</button></div>
       <p class="hint" id="blindHint">Вслепую фигур на доске не видно: держи позицию в голове. Ходы видны в нотации справа. Кнопка с глазом — подсмотреть, пока держишь.</p>
     </div>
+    <div class="card"><h2>Оценка</h2><div class="seg" style="--cols:2" id="evalSeg"><button data-v="1">С оценкой</button><button data-v="0">Без оценки</button></div><p class="hint">Выбор действует до конца партии. Без оценки движок анализа недоступен во время игры. Онлайн — только после партии.</p></div>
     <div class="card" id="netCard" hidden><h2>Онлайн с другом</h2>
       <div class="seg" style="--cols:2"><button id="netCreate">Создать игру</button><button id="netJoinBtn">Войти по коду</button></div>
       <div class="join" id="joinRow" hidden><input id="joinCode" maxlength="5" placeholder="КОД" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Код игры"><button id="joinGo">Войти</button></div>
@@ -237,6 +238,7 @@ body.blind.peek .sq .pc { visibility: visible; }
       </div>
     </div>
     <aside id="side" aria-label="Анализ">
+      <div id="playEval" class="play-eval" hidden aria-label="Шансы по оценке Stockfish"><i id="playEvalFill"></i><span id="playEvalText">Оценка Stockfish…</span></div>
       <div class="tabs" role="tablist">
         <button role="tab" id="tab-eng" data-tab="eng" aria-selected="false">Движок</button>
         <button role="tab" id="tab-db" data-tab="db" aria-selected="false">Дебюты</button>
@@ -282,18 +284,18 @@ body.blind.peek .sq .pc { visibility: visible; }
   var ONLINE = !!window.GAMES_ONLINE;
   var NAME = { w: 'Белые', b: 'Чёрные' };
   var FILES = 'abcdefgh';
-  var RU = { k: 'Кр', q: 'Ф', r: 'Л', b: 'С', n: 'К' }, PNAME = { p: 'пешка', n: 'конь', b: 'слон', r: 'ладья', q: 'ферзь', k: 'король' };
+  var PNAME = { p: 'пешка', n: 'конь', b: 'слон', r: 'ладья', q: 'ферзь', k: 'король' };
   var VAL = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
   var START = new Chess().fen();
   var ICON_SND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>';
   var ICON_MUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></svg>';
   function pieceSVG(color, type) { return PIECES[color + type.toUpperCase()]; }
-  function ruSan(san) { return String(san); }   // запись ходов — английская, как на Lichess и в базах (K, Q, R, B, N)
+  function sanText(san) { return String(san); }   // запись ходов — английская, как на Lichess и в базах (K, Q, R, B, N)
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   $('logoPiece').innerHTML = pieceSVG('w', 'n');
 
   // ---------- settings ----------
-  var S = { mode: 'bot', side: 'w', blind: false, coords: true, sound: true, tab: 'nota', engine: true, level: 8 };
+  var S = { mode: 'bot', side: 'w', blind: false, coords: true, sound: true, tab: 'nota', engine: true, evalOn: true, level: 8 };
   // уровни как на Lichess: 1–3 — ограниченная глубина и «мастерство», 4–7 — по рейтингу (UCI_Elo), 8 — полная сила
   var LEVELS = [
     { n: 1, cap: 'новичок', skill: 0, depth: 1, ms: 60, about: 'зевает фигуры, видит на ход вперёд' },
@@ -315,8 +317,10 @@ body.blind.peek .sq .pc { visibility: visible; }
   bindSeg('levelSeg', 'level', Number);
   bindSeg('modeSeg', 'mode', String); bindSeg('sideSeg', 'side', String); bindSeg('blindSeg', 'blind', function (v) { return v === '1'; });
   Array.prototype.forEach.call(document.querySelectorAll('#coordSeg button'), function (b) { b.onclick = function () { setCoords(b.dataset.v === '1', false); }; });
+  bindSeg('evalSeg', 'evalOn', function(v){return v==='1';});
   function renderMenu() {
     var pr = function (sel, f) { Array.prototype.forEach.call(document.querySelectorAll(sel), function (b) { b.setAttribute('aria-pressed', String(f(b.dataset.v))); }); };
+    pr('#evalSeg button', function(v){return (v==='1')===!!S.evalOn;});
     pr('#modeSeg button', function (v) { return v === S.mode; });
     pr('#sideSeg button', function (v) { return v === S.side; });
     pr('#blindSeg button', function (v) { return (v === '1') === !!S.blind; });
@@ -418,13 +422,15 @@ body.blind.peek .sq .pc { visibility: visible; }
   function mySide() { return G.kind.w === 'me' && G.kind.b !== 'me' ? 'w' : G.kind.b === 'me' && G.kind.w !== 'me' ? 'b' : ''; }
   function newGame(kind, opts) {
     token++; opts = opts || {};
-    G = { kind: kind, level: S.level || 8, c: new Chess(), root: node(null, null, START), sel: null, busy: false, over: false, result: null, endShown: false, analysis: !!opts.analysis, drawOffer: null, drawAsked: -1 };
+    G = { evalOn: !!S.evalOn, kind: kind, level: S.level || 8, c: new Chess(), root: node(null, null, START), sel: null, busy: false, over: false, result: null, endShown: false, analysis: !!opts.analysis, drawOffer: null, drawAsked: -1 };
     G.tip = G.cur = G.root;
     G.flip = mySide() === 'b';
     if (G.analysis) G.over = true;
     $('menu').hidden = true; $('game').hidden = false;
     ['endOv', 'lobbyOv', 'askOv', 'confirmOv', 'promoOv'].forEach(function (id) { $(id).hidden = true; });
     renderMenu(); buildBoard(); if (kind.w === 'bot' || kind.b === 'bot') botEng.send('ucinewgame');
+    if (G.evalOn) S.engine = true;
+    if (!G.evalOn && !G.analysis) S.tab = 'nota';
     if (G.analysis && S.tab === 'nota') S.tab = 'eng';
     if (net() && !G.over && S.tab !== 'nota') S.tab = 'nota';
     layout(); render(); turnLoop();
@@ -442,7 +448,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   }
   function moves() { return pathTo(G.tip).map(function (n) { return n.san; }); }
   function viewing() { return G && G.cur !== G.tip; }
-  function engineOK() { return !!G && (!net() || G.over); }            // онлайн движок и база — только после партии
+  function engineOK() { return !!G && (!net() || G.over) && (G.evalOn || G.over || G.analysis); }            // онлайн движок и база — только после партии
   function canVary() { return !!G && engineOK() && (G.analysis || G.over || viewing()); }
   function canTapLive() { return G && !G.over && !G.busy && G.kind[G.c.turn()] === 'me' && !(net() && (G.netPending || G.undoVote)) && !viewing(); }
   function canTap() { return canTapLive() || canVary(); }
@@ -561,7 +567,7 @@ body.blind.peek .sq .pc { visibility: visible; }
     if (G.undoVote) { st.textContent = 'Ждём ответа про отмену хода'; return; }
     if (G.drawOffer === 'me') { st.textContent = 'Ничья предложена, ждём ответа'; return; }
     var side = c.turn(), k = G.kind[side], chk = c.isCheck() ? ' · шах!' : '';
-    var lastTxt = S.blind && G.tip.san ? (G.kind[G.tip.by] === 'bot' ? 'Stockfish: ' : G.kind[G.tip.by] === 'net' ? 'Друг: ' : mySide() ? 'Ты: ' : NAME[G.tip.by] + ': ') + ruSan(G.tip.san) + ' · ' : '';
+    var lastTxt = S.blind && G.tip.san ? (G.kind[G.tip.by] === 'bot' ? 'Stockfish: ' : G.kind[G.tip.by] === 'net' ? 'Друг: ' : mySide() ? 'Ты: ' : NAME[G.tip.by] + ': ') + sanText(G.tip.san) + ' · ' : '';
     if (k === 'bot') st.textContent = lastTxt + 'Stockfish думает…';
     else if (k === 'net') st.textContent = lastTxt + 'Ходит друг…';
     else st.textContent = lastTxt + (mySide() ? 'Твой ход' : 'Ходят ' + NAME[side].toLowerCase()) + chk;
@@ -572,13 +578,15 @@ body.blind.peek .sq .pc { visibility: visible; }
   function renderSide() {
     if (!G) return;
     var ok = engineOK();
+    $('tab-eng').hidden = !ok;
+    $('playEval').hidden = !ok || !S.engine || !G.evalOn || G.over || G.analysis;
     if (!ok && S.tab !== 'nota') S.tab = 'nota';
     ['eng', 'db', 'nota'].forEach(function (t) {
       var b = $('tab-' + t); b.setAttribute('aria-selected', String(S.tab === t)); $('pane-' + t).hidden = S.tab !== t;
       if (t !== 'nota') { b.disabled = !ok; b.title = ok ? '' : 'В онлайн-партии — после её конца'; }
     });
     renderNav(); renderNota();
-    if (S.tab === 'eng') analyse(); else stopAnalysis();
+    if (S.tab === 'eng' || (G.evalOn && !G.over && engineOK())) analyse(); else stopAnalysis();
     if (S.tab === 'db') explore();
     drawArrows();
   }
@@ -607,7 +615,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   function mvHtml(n, forceNum) {
     var num = moveNumOf(n.parent.fen), id = notaIds.push(n) - 1;
     var pre = n.by === 'w' ? '<span class="mn">' + num.n + '.</span>' : forceNum ? '<span class="mn">' + num.n + '…</span>' : '';
-    return pre + '<span class="mv' + (n === G.cur ? ' cur' : '') + '" data-n="' + id + '">' + ruSan(n.san) + '</span> ';
+    return pre + '<span class="mv' + (n === G.cur ? ' cur' : '') + '" data-n="' + id + '">' + sanText(n.san) + '</span> ';
   }
   // ход, потом его альтернативы (варианты) отдельными строками, потом дальше по линии
   function lineHtml(n, needNum) {
@@ -660,13 +668,15 @@ body.blind.peek .sq .pc { visibility: visible; }
     if (oc) { $('engEval').textContent = oc.w === 'd' ? '½' : oc.w === 'w' ? '1–0' : '0–1'; $('engInfo').textContent = resText(outcomeOf(chessOf(G.cur)) || oc) || 'Партия окончена'; $('engLines').innerHTML = ''; $('engBar').style.width = oc.w === 'w' ? '100%' : oc.w === 'b' ? '0%' : '50%'; return; }
     var best = AN.fen === G.cur.fen ? AN.lines[0] : null;
     $('engEval').textContent = evalText(best);
+    $('playEvalFill').style.width = evalPct(best) + '%';
+    $('playEvalText').textContent = best ? 'Белые ' + Math.round(evalPct(best)) + '% · Чёрные ' + Math.round(100-evalPct(best)) + '%' : 'Оценка Stockfish…';
     $('engBar').style.width = evalPct(best) + '%';
     $('engInfo').textContent = 'Stockfish 19 · глубина ' + (AN.fen === G.cur.fen ? AN.depth : 0) + (AN.busy ? ' · считает…' : '');
     var html = '';
     if (AN.fen === G.cur.fen) AN.lines.forEach(function (r, i) {
       if (!r) return;
       var seq = pvSan(G.cur.fen, r.pv, 10), txt = '', st = moveNumOf(G.cur.fen);
-      seq.forEach(function (m, j) { if (m.color === 'w') txt += m.num + '. '; else if (j === 0) txt += st.n + '… '; txt += ruSan(m.san) + ' '; });
+      seq.forEach(function (m, j) { if (m.color === 'w') txt += m.num + '. '; else if (j === 0) txt += st.n + '… '; txt += sanText(m.san) + ' '; });
       html += '<div class="pv" data-i="' + i + '"><b>' + evalText(r) + '</b><span>' + esc(txt) + '</span></div>';
     });
     $('engLines').innerHTML = html || '<span class="muted">Считаю…</span>';
@@ -1210,3 +1220,5 @@ body.blind.peek .sq .pc { visibility: visible; }
   renderMenu();
 })();
 </script>
+
+<style>.play-eval{position:relative;height:26px;flex:none;background:#394254;border-radius:5px;overflow:hidden;margin:8px}.play-eval i{position:absolute;inset:0 auto 0 0;width:50%;background:#bdab88}.play-eval span{position:relative;display:block;text-align:center;font:700 12px/26px system-ui;color:#fff;text-shadow:0 1px 3px #000}</style>

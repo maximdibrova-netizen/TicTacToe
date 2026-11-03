@@ -1,8 +1,11 @@
 <style>:root{--gc-bg:#07525a;--gc-active:#07525a;--gc-accent:#e8bb63;}/* «← Все игры» в партии — рядом с верхним левым углом, без подписи */
 html:not(.in-room) body.in-game .hub-back { left: calc(var(--R) + 4px); padding: 0 8px; }
-html:not(.in-room) body.in-game .hub-back span { display: none; }
-html:not(.in-room) body.in-game .topbar { padding-left: calc(var(--R) + 46px); }
-html:not(.in-room) body.in-game .gc-bar { left: calc(50% + 22px); width: min(calc(100% - 2 * var(--R) - 60px), 480px); }
+html:not(.in-room) body.in-game .hub-back span { display: inline; }
+html:not(.in-room) body.in-game .topbar { top:48px; padding-inline:12px; }
+html:not(.in-room) body.in-game #boardWrap { top:116px; }
+html:not(.in-room) body.in-game .gc-bar { top:48px;left:50%; width:min(calc(100% - 2 * var(--R) - 24px),480px); }
+html:not(.in-room) body.in-game.gc-timed .topbar { top:110px; }
+html:not(.in-room) body.in-game.gc-timed #boardWrap { top:178px; }
 </style>
 <title>BGC Точки</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -358,7 +361,7 @@ body.no-eval #boardWrap { top: calc(56px + env(safe-area-inset-top, 0px)); botto
     </div>
     <div class="card">
       <h2>Оценка позиции</h2>
-      <div class="seg" id="evalSeg" style="--cols:2">
+      <div class="seg" aria-label="Оценка выбирается до начала партии" id="evalSeg" style="--cols:2">
         <button id="ev-on" data-v="1">Показывать</button>
         <button id="ev-off" data-v="0">Скрыть</button>
       </div>
@@ -817,7 +820,7 @@ onmessage = function (e) {
     var B = buildBoard(setup.rows);
     var cnt = new Int8Array(B.n), own = new Int8Array(B.n).fill(-1), mask = 0;
     for (var p = 0; p < 4; p++) if (setup.kinds[p] !== 'off') { mask |= 1 << p; cnt[B.starts[p]] = 3; own[B.starts[p]] = p; }
-    G = { map: { id: setup.mapId, rows: setup.rows }, B: B, cnt: cnt, own: own, mask: mask, start: mask, turn: setup.first,
+    G = { evalOn: !!S.evalOn, map: { id: setup.mapId, rows: setup.rows }, B: B, cnt: cnt, own: own, mask: mask, start: mask, turn: setup.first,
       over: false, winner: -1, moves: 0, watching: false, kinds: setup.kinds.slice(), level: setup.level,
       hist: [], view: -1, queue: [], playing: false, thinkingAt: -1, endShown: false, outShown: false,
       evals: [], evalQ: [], evalBusy: false, review: -1 };
@@ -859,7 +862,7 @@ onmessage = function (e) {
     var vw = window.innerWidth, vh = window.innerHeight - (GC && GC.enabled()?68:0);
     var R = Math.max(64, Math.min(104, Math.min(vw, vh) * .13)) + 22;
     var ev = !document.body.classList.contains('no-eval');
-    var availW = vw - 32, availH = vh - (ev ? 68 + 160 : 56 + 118) - 12;
+    var availW = vw - 32, availH = vh - (ev ? 68 + 160 : 56 + 118) - 12 - (window.IN_ROOM ? 0 : 48);
     if (vw > vh) availW = vw - 2 * R - 24; // landscape: keep the corners clear
     var W = G.B.W, H = G.B.H, cx = S.coords ? .55 : 0;   // room for the labels
     pitch = Math.max(16, Math.floor(Math.min(availW / (W + cx), availH / (H + cx), 96)));
@@ -910,11 +913,11 @@ onmessage = function (e) {
   function canTap() { return liveIdle() && G.kinds[G.turn] === 'human' && !(NET && (NET.pendingTry || NET.undo)); }
 
   // analysis is shown live only offline with the bar on; once a game is over it is always available
-  function evalActive() { return !!G && (G.over || (S.evalOn && !NET)); }
+  function evalActive() { return !!G && (G.over || (G.evalOn && !NET)); }
   function syncEvalUi() {
     var on = evalActive(), was = !document.body.classList.contains('no-eval');
     document.body.classList.toggle('no-eval', !on);
-    $('hintBtn').hidden = !!NET && !(G && G.over);
+    $('hintBtn').hidden = !(G && G.over) && (!G || !G.evalOn || !!NET);
     if (on !== was) layout();
     if (on && G && G.over) for (var k = 0; k < G.hist.length; k++) if (!G.evals[k]) queueEval(k);
   }
@@ -1408,7 +1411,7 @@ onmessage = function (e) {
   // Live: your move on your turn. While looking back: the best move for whoever was to move in that position.
   var hintTok = 0;
   function hintAvailable() {
-    if (!G || (NET && !G.over)) return false;
+    if (!G || (!G.over && (!G.evalOn || NET))) return false;
     if (G.view >= 0) { var s = curSnap(); return !!s && !s.over && !G.varBusy; }
     return canTap();
   }
