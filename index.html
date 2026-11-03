@@ -68,6 +68,19 @@ a.game.current::after { content: "сейчас играете"; position: absolu
 .sbar .who { display: flex; align-items: center; gap: 7px; font: 700 12.5px/1 var(--body); color: var(--ink-dim); white-space: nowrap; }
 #frame { flex: 1; width: 100%; border: 0; background: #000; }
 .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); transform: translateX(-50%); z-index: 30; background: var(--ink); color: var(--bg); font: 800 14px/1.25 var(--body); padding: 10px 16px; border-radius: 12px; max-width: calc(100% - 32px); text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+.choice { width:min(440px,calc(100% - 32px)); max-height:calc(100dvh - 32px); overflow:auto; padding:24px; border:1px solid var(--line); border-radius:18px; background:var(--bg-2); color:var(--ink); box-shadow:0 24px 80px #0008; }
+.choice::backdrop { background:rgba(6,10,21,.78); backdrop-filter:blur(5px); }
+.choice h2 { margin:0; font:800 22px/1.3 var(--display); text-wrap:balance; }
+.choice p { color:var(--ink-dim); font:600 14px/1.5 var(--body); margin:12px 0 18px; }
+.choice-game { display:flex; align-items:center; gap:14px; margin:18px 0; padding:12px; border:1px solid var(--line); border-radius:12px; }
+.choice-art { flex:none; width:72px; height:60px; border-radius:8px; overflow:hidden; display:grid; place-items:center; }
+.choice-art svg { width:100%; height:100%; }
+.choice-game strong { font:800 18px/1.3 var(--display); }
+.choice .row { flex-wrap:wrap; }
+.choice .row button { flex:1; min-height:44px; }
+.choice .decline { border:1px solid var(--line); }
+.choice .choice-note { margin-bottom:0; font-size:12px; }
+@media(prefers-reduced-motion:reduce){.choice::backdrop{backdrop-filter:none}}
 </style>
 
 <div id="home">
@@ -143,7 +156,7 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     <div><b>Играть без интернета</b><p id="instText"></p></div>
     <button class="btn main" id="instBtn" hidden>Установить</button>
   </section>
-  <p class="foot">Версия от 03.11.2026 10:12<span id="offState"></span></p>
+  <p class="foot">Версия от 03.11.2026 10:36<span id="offState"></span></p>
 </main>
 </div>
 
@@ -156,6 +169,13 @@ a.game.current::after { content: "сейчас играете"; position: absolu
   <iframe id="frame" title="Игра" allow="autoplay; clipboard-write"></iframe>
 </div>
 <div class="toast" id="toast" hidden></div>
+<dialog id="choiceDialog" class="choice" aria-labelledby="choiceTitle" aria-describedby="choiceText">
+  <h2 id="choiceTitle">Друг предлагает игру</h2>
+  <div class="choice-game"><div id="choiceArt" class="choice-art" aria-hidden="true"></div><strong id="choiceName"></strong></div>
+  <p id="choiceText"></p>
+  <div class="row"><button class="btn decline" id="choiceDecline" autofocus>Отклонить</button><button class="btn main" id="choiceAccept">Принять</button><button class="btn" id="choiceCancel">Отменить запрос</button></div>
+  <p class="choice-note">Запрос действует 30 секунд. Текущая партия продолжится, пока вы оба не согласитесь сменить игру.</p>
+</dialog>
 
 <script>// ===== Онлайн на двоих: прямое соединение браузеров через PeerJS =====
 // Хозяин создаёт игру (код из 5 символов), друг подключается по коду или ссылке …#КОД.
@@ -303,6 +323,55 @@ var Net2P = (function () {
   // R.state: idle | creating | waiting (host, no friend yet) | joining | live | error
   var R = { state: 'idle', role: null, code: null, link: '', err: '', inst: null, game: null, seq: 0, retry: 0 };
   var PREFIX = 'room-games-v1-';
+  var choice = null, choiceTimer = null, choiceSeq = 0;
+
+  function validChoice(m) { return m && typeof m.id === 'string' && m.id.length > 0 && m.id.length <= 100 && Object.prototype.hasOwnProperty.call(NAMES,m.g); }
+  function clearChoice() {
+    clearTimeout(choiceTimer); choiceTimer = null; choice = null;
+    if ($('choiceDialog').open) $('choiceDialog').close();
+  }
+  function choiceMessage(reason) {
+    return reason === 'declined' ? 'Предложение отклонено. Можно выбрать другую игру.' : reason === 'busy' ? 'Уже есть другой запрос. Попробуйте ещё раз.' : reason === 'timeout' ? 'Время запроса истекло.' : 'Запрос отменён.';
+  }
+  function showChoice(p) {
+    clearChoice(); choice = p;
+    $('choiceAccept').disabled = false;
+    var mine = p.by === R.role, art = document.querySelector('a.game[data-g="'+p.g+'"] .art');
+    $('choiceTitle').textContent = mine ? 'Предложение отправлено' : 'Друг предлагает игру';
+    $('choiceName').textContent = NAMES[p.g];
+    $('choiceArt').innerHTML = art.innerHTML; $('choiceArt').style.cssText = art.style.cssText;
+    $('choiceText').textContent = mine ? 'Ждём согласия второго игрока. Игра откроется у обоих после подтверждения.' : 'Перейти в эту игру вместе? При согласии открытая партия будет заменена.';
+    $('choiceAccept').hidden = $('choiceDecline').hidden = mine;
+    $('choiceCancel').hidden = !mine;
+    $('choiceDialog').showModal();
+    (mine ? $('choiceCancel') : $('choiceDecline')).focus();
+    choiceTimer = setTimeout(function(){ cancelChoice('timeout'); },30000);
+  }
+  function endChoice(reason) {
+    if (!choice) return;
+    rsend({t:'offer-end',id:choice.id,reason:reason}); clearChoice(); toast(choiceMessage(reason));
+  }
+  function cancelChoice(reason) {
+    if (!choice) return;
+    if (R.role === 'host') { endChoice(reason || (choice.by === 'host' ? 'cancelled' : 'declined')); return; }
+    rsend(choice.by === 'guest' ? {t:'offer-cancel',id:choice.id} : {t:'answer',id:choice.id,accept:false});
+    clearChoice(); if (reason) toast(choiceMessage(reason));
+  }
+  function acceptChoice() {
+    if (!choice || choice.by === R.role) return;
+    if (!Net2P.online()) { clearChoice(); toast('Нет связи с другом. Выберите игру после подключения.'); return; }
+    if (R.role === 'host') commitChoice();
+    else { rsend({t:'answer',id:choice.id,accept:true}); $('choiceAccept').disabled = true; $('choiceText').textContent = 'Открываем игру у обоих…'; }
+  }
+  function commitChoice() {
+    if (!choice || R.role !== 'host' || !Net2P.online()) return;
+    var p = choice, inst = R.code + '-' + (++R.seq) + '-' + Date.now().toString(36);
+    clearChoice(); rsend({t:'pick',id:p.id,inst:inst,g:p.g}); loadGame(p.g,inst,false);
+  }
+  $('choiceAccept').onclick = acceptChoice;
+  $('choiceDecline').onclick = function(){cancelChoice();};
+  $('choiceCancel').onclick = function(){cancelChoice();};
+  $('choiceDialog').addEventListener('cancel',function(e){e.preventDefault();cancelChoice();});
 
   // ---- the bridge: a stand-in for PeerJS inside the game frames, carried over the room connection ----
   var listening = {}, remoteListen = {}, pending = {}, conns = {}, connSeq = 0;
@@ -387,24 +456,26 @@ var Net2P = (function () {
         renderRoom();
       },
       onJoin: function (o) {
+        clearChoice();
         R.state = 'live'; renderRoom(); dropBridge(false);
         toast(o.returning ? 'Друг вернулся в комнату' : 'Друг в комнате! Выбирайте игру');
         rsend({ t: 'pick', inst: R.inst, g: R.game });          // what's open now (or nothing)
         Object.keys(listening).forEach(function (inst) { rsend({ t: 'b', k: 'listen', inst: inst }); });
       },
-      onPeer: function (on) { renderRoom(); },
-      onLeave: function () { toast('Друг вышел из комнаты'); renderRoom(); },
+      onPeer: function (on) { if (!on) clearChoice(); renderRoom(); },
+      onLeave: function () { clearChoice(); toast('Друг вышел из комнаты'); renderRoom(); },
       onData: onRoomData,
-      onFail: function (m) { R.state = 'error'; R.err = m; renderRoom(); }
+      onFail: function (m) { clearChoice(); R.state = 'error'; R.err = m; renderRoom(); }
     });
   }
   function joinRoom(code) {
     R = Object.assign(R, { state: 'joining', role: 'guest', code: Net2P.cleanCode(code), err: '' }); renderRoom();
     Net2P.join(code, { prefix: PREFIX,
       onOpen: function () { R.state = 'live'; R.retry = 0; renderRoom(); toast('Ты в комнате друга'); },
-      onPeer: function () { renderRoom(); },
+      onPeer: function (on) { if (!on) clearChoice(); renderRoom(); },
       onData: onRoomData,
       onFail: function (m) {
+        clearChoice();
         // the friend may just be reloading the page: retry for a while
         if (R.role === 'guest' && R.retry < 20 && /потеряна|вышел/.test(m)) {
           R.retry++; R.state = 'joining'; R.err = ''; renderRoom();
@@ -415,18 +486,33 @@ var Net2P = (function () {
     });
   }
   function leaveRoom() {
+    clearChoice();
     Net2P.close(); try { sessionStorage.removeItem('room-host-code'); } catch (e) {}
     R = { state: 'idle', role: null, code: null, link: '', err: '', inst: null, game: null, seq: R.seq, retry: 0 };
     dropBridge(true); unloadGame(); history.replaceState(null, '', location.pathname); renderRoom(); showHome();
   }
   function onRoomData(m) {
+    if (!m || typeof m !== 'object') return;
     if (m.t === 'b') { onBridge(m); return; }
-    if (m.t === 'pick') { if (m.g) loadGame(m.g, m.inst, true); else if (R.game) { unloadGame(); showHome(); } }
-    else if (m.t === 'want' && R.role === 'host') pick(m.g);
+    if (m.t === 'pick' && R.role === 'guest') { clearChoice(); if (Object.prototype.hasOwnProperty.call(NAMES,m.g) && typeof m.inst === 'string') loadGame(m.g, m.inst, true); else if (!m.g && R.game) { unloadGame(); showHome(); } }
+    else if (m.t === 'want' && R.role === 'host' && validChoice(m) && Net2P.online()) {
+      if (choice) rsend({t:'offer-end',id:m.id,reason:'busy'});
+      else showChoice({id:m.id,g:m.g,by:'guest'});
+    } else if (m.t === 'offer' && R.role === 'guest' && validChoice(m) && Net2P.online()) {
+      if (choice) rsend({t:'answer',id:m.id,accept:false});
+      else showChoice({id:m.id,g:m.g,by:'host'});
+    } else if (m.t === 'answer' && R.role === 'host' && choice && choice.by === 'host' && m.id === choice.id) {
+      if (m.accept === true) commitChoice(); else endChoice('declined');
+    } else if (m.t === 'offer-cancel' && R.role === 'host' && choice && choice.by === 'guest' && m.id === choice.id) endChoice('cancelled');
+    else if (m.t === 'offer-end' && R.role === 'guest' && choice && m.id === choice.id) { clearChoice(); toast(choiceMessage(m.reason)); }
   }
   function pick(g) {
-    if (R.role === 'host') { var inst = R.code + '-' + (++R.seq) + '-' + Date.now().toString(36); rsend({ t: 'pick', inst: inst, g: g }); loadGame(g, inst, false); }
-    else { rsend({ t: 'want', g: g }); toast('Открываю у обоих…'); }
+    if (!Object.prototype.hasOwnProperty.call(NAMES,g) || R.state !== 'live') return;
+    if (!Net2P.online()) { toast('Нет связи с другом. Предложите игру после подключения.'); return; }
+    if (choice) { toast('Сначала дождитесь ответа на текущий запрос.'); return; }
+    var id = R.role + '-' + Date.now().toString(36) + '-' + (++choiceSeq);
+    showChoice({id:id,g:g,by:R.role});
+    rsend({t:R.role === 'host'?'offer':'want',id:id,g:g});
   }
 
   // ---- game frame ----
@@ -470,7 +556,7 @@ var Net2P = (function () {
     else if (s === 'live') {
       var on = Net2P.online();
       html = '<h2><span class="dot ' + (on ? 'on' : 'off') + '"></span>Комната ' + R.code + ' <span class="pill">' + (on ? 'друг здесь' : 'нет связи с другом') + '</span></h2>' +
-        '<p>' + (R.game ? 'Сейчас: «' + NAMES[R.game] + '». Выбери другую игру — она откроется у обоих.' : 'Выбери игру ниже — она откроется у вас обоих.') + '</p>' +
+        '<p>' + (R.game ? 'Сейчас: «' + NAMES[R.game] + '». Любой из вас может предложить другую игру.' : 'Любой из вас может выбрать игру ниже и отправить предложение.') + ' Игра откроется у обоих, когда второй игрок примет запрос.</p>' +
         '<div class="row">' + (R.game ? '<button class="btn main" id="resumeBtn">Вернуться к игре</button>' : '') +
         (R.role === 'host' ? '<button class="btn" id="copyBtn2">Скопировать ссылку</button>' : '') + '<button class="btn" id="leaveBtn">Выйти из комнаты</button></div>';
     } else if (s === 'error') html = '<h2>Не получилось</h2><p class="err">' + R.err + '</p><div class="row"><button class="btn main" id="retryBtn">Попробовать ещё раз</button><button class="btn" id="leaveBtn">Отмена</button></div>';
