@@ -267,7 +267,7 @@ body.blind.peek .sq .pc { visibility: visible; }
         <li>Можно сдаться. На время — проигрывает тот, у кого кончились часы.</li>
       </ol>
     </div>
-    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 03.11.2026 19:05</span></p>
+    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 03.11.2026 19:31</span></p>
   </div>
 </section>
 
@@ -295,7 +295,7 @@ body.blind.peek .sq .pc { visibility: visible; }
     <aside id="side" aria-label="Анализ">
       <div class="study-tools"><button class="study-edit" id="exportPgnBtn">Экспорт PGN</button>
       <button class="study-edit" id="editPositionBtn" hidden>Позиция / импорт</button></div>
-      <div id="playEval" class="play-eval" hidden aria-label="Шансы по оценке Stockfish"><i id="playEvalFill"></i><span id="playEvalText">Оценка Stockfish…</span></div>
+      <div id="playEval" class="computer-controls" hidden aria-label="Оценка позиции и подсказки"><output id="playEvalText" aria-label="Оценка Stockfish с точки зрения белых">…</output><button id="positionEvalToggle" type="button" aria-pressed="true" aria-label="Показывать оценку позиции" title="Оценка позиции: включить / выключить">К</button><button id="hintArrowsToggle" type="button" aria-pressed="true" aria-label="Показывать стрелку лучшего хода" title="Синяя стрелка лучшего хода: включить / выключить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M4 20 20 4M9 4h11v11"/></svg></button></div>
       <div class="tabs" role="tablist">
         <button role="tab" id="tab-eng" data-tab="eng" aria-selected="false">Движок</button>
         <button role="tab" id="tab-db" data-tab="db" aria-selected="false">Дебюты</button>
@@ -4082,7 +4082,7 @@ function chessBot(chess) {
   $('logoPiece').innerHTML = pieceSVG('w', 'n');
 
   // ---------- settings ----------
-  var S = { mode: 'bot', side: 'w', blind: false, coords: true, sound: true, tab: 'nota', engine: true, evalOn: true, level: 8 };
+  var S = { mode: 'bot', side: 'w', blind: false, coords: true, sound: true, tab: 'nota', engine: true, evalOn: true, positionEval: true, hintArrows: true, level: 8 };
   // уровни как на Lichess: 1–3 — ограниченная глубина и «мастерство», 4–7 — по рейтингу (UCI_Elo), 8 — полная сила
   var LEVELS = [
     { n: 1, cap: 'новичок', skill: 0, depth: 1, ms: 60, about: 'зевает фигуры, видит на ход вперёд' },
@@ -4208,7 +4208,7 @@ function chessBot(chess) {
   function net() { return Net2P.active(); }
   function mySide() { return G.kind.w === 'me' && G.kind.b !== 'me' ? 'w' : G.kind.b === 'me' && G.kind.w !== 'me' ? 'b' : ''; }
   function newGame(kind, opts) {
-    token++; opts = opts || {};
+    token++; MANUAL=null; opts = opts || {};
     G = { evalOn: !!S.evalOn, kind: kind, level: S.level || 8, c: new Chess(opts.fen || START), root: node(null, null, opts.fen || START), sel: null, busy: false, over: false, result: null, endShown: false, analysis: !!opts.analysis, drawOffer: null, drawAsked: -1 };
     G.tip = G.cur = G.root;
     G.flip = mySide() === 'b';
@@ -4259,16 +4259,16 @@ function chessBot(chess) {
     }
     var wrap = $('wrap'); Array.prototype.slice.call(wrap.querySelectorAll('.coord')).forEach(function (x) { x.remove(); });
     for (var k = 0; k < 8; k++) {   // буквы снизу, цифры слева
-      var a = document.createElement('div'); a.className = 'coord'; a.textContent = FILES[G.flip ? 7 - k : k];
-      a.style.left = 'calc(var(--cd) + var(--B) / 8 * ' + (k + .5) + ')'; a.style.bottom = 'calc(var(--cd) * .18)'; a.style.transform = 'translateX(-50%)'; wrap.appendChild(a);
-      var n = document.createElement('div'); n.className = 'coord'; n.textContent = G.flip ? k + 1 : 8 - k;
-      n.style.top = 'calc(var(--B) / 8 * ' + (k + .5) + ')'; n.style.left = 'calc(var(--cd) * .3)'; n.style.transform = 'translateY(-50%)'; wrap.appendChild(n);
+      var a = document.createElement('div'); a.className = 'coord file'; a.textContent = FILES[G.flip ? 7 - k : k];
+      a.style.left = 'calc(var(--cd) + var(--B) / 8 * ' + (k + .5) + ')'; a.style.top = 'calc(var(--B) + 8px)'; a.style.transform = 'translateX(-50%)'; wrap.appendChild(a);
+      var n = document.createElement('div'); n.className = 'coord rank'; n.textContent = G.flip ? k + 1 : 8 - k;
+      n.style.top = 'calc(var(--B) / 8 * ' + (k + .5) + ')'; n.style.left = '0'; n.style.transform = 'translateY(-50%)'; wrap.appendChild(n);
     }
   }
   function hubH() { return window.hubH ? window.hubH() : 0; }
   function layout() {
     if (!G) return;
-    var cd = S.coords ? 18 : 0, vw = window.innerWidth, vh = window.innerHeight, wide = vw >= 860;
+    var cd = S.coords ? Math.max(26,Math.min(34,Math.ceil(Math.min(window.innerWidth,window.innerHeight)*.045))) : 0, vw = window.innerWidth, vh = window.innerHeight, wide = vw >= 860;
     var head = $('topRow').offsetHeight + $('status').offsetHeight, bar = $('barRow').offsetHeight || 42, clock = GC.enabled() ? 60 : 0, B, SW, SH;
     if (wide) {
       SW = Math.min(380, Math.max(300, vw * .3));
@@ -4287,6 +4287,7 @@ function chessBot(chess) {
     $('main').style.alignItems = wide ? 'flex-start' : 'center';
     document.documentElement.style.setProperty('--SW', (wide ? SW : W) + 'px');
     document.documentElement.style.setProperty('--SH', (wide ? head + 8 + W + 8 + bar : SH) + 'px');
+    drawArrows();
   }
   window.addEventListener('resize', function () { layout(); });
 
@@ -4367,14 +4368,15 @@ function chessBot(chess) {
     var ok = engineOK();
     $('editPositionBtn').hidden = !G.analysis;
     $('tab-eng').hidden = !ok;
-    $('playEval').hidden = !ok || !S.engine || (!G.analysis && (!G.evalOn || G.over));
+    $('playEval').hidden = !ok;
+    paintComputerControls();
     if (!ok && S.tab !== 'nota') S.tab = 'nota';
     ['eng', 'db', 'nota'].forEach(function (t) {
       var b = $('tab-' + t); b.setAttribute('aria-selected', String(S.tab === t)); $('pane-' + t).hidden = S.tab !== t;
       if (t !== 'nota') { b.disabled = !ok; b.title = ok ? '' : 'В онлайн-партии — после её конца'; }
     });
     renderNav(); renderNota();
-    if (S.tab === 'eng' || ((G.analysis || (G.evalOn && !G.over)) && engineOK())) analyse(); else stopAnalysis();
+    if (engineOK() && (S.tab === 'eng' || S.positionEval || S.hintArrows)) analyse(); else stopAnalysis();
     if (S.tab === 'db') explore();
     drawArrows();
   }
@@ -4449,15 +4451,15 @@ function chessBot(chess) {
   function stopAnalysis() { if (AN.busy) { AN.want = null; anEng.send('stop'); } }
   function paintEngine() {
     if (!G) return;
+    paintComputerControls();
     $('engSwitch').setAttribute('aria-checked', String(!!S.engine));
-    if (!S.engine || !engineOK()) { $('engEval').textContent = '—'; $('engInfo').textContent = engineOK() ? 'Движок выключен' : 'Во время онлайн-партии движок недоступен'; $('engLines').innerHTML = ''; $('engBar').style.width = '50%'; return; }
+    if (!S.engine || !engineOK()) { $('engEval').textContent = '—'; $('engInfo').textContent = engineOK() ? 'Движок выключен' : 'Во время онлайн-партии движок недоступен'; $('engLines').innerHTML = ''; $('engBar').style.width = '50%'; drawArrows(); return; }
     if (anEng.broken) { $('engInfo').textContent = 'Движок не запустился в этом браузере'; return; }
     var c = new Chess(G.cur.fen), oc = c.isGameOver() ? outcomeOf(chessOf(G.cur)) || (c.isCheckmate() ? { w: c.turn() === 'w' ? 'b' : 'w' } : { w: 'd' }) : null;
     if (oc) { $('engEval').textContent = oc.w === 'd' ? '½' : oc.w === 'w' ? '1–0' : '0–1'; $('engInfo').textContent = resText(outcomeOf(chessOf(G.cur)) || oc) || 'Партия окончена'; $('engLines').innerHTML = ''; $('engBar').style.width = oc.w === 'w' ? '100%' : oc.w === 'b' ? '0%' : '50%'; return; }
     var best = AN.fen === G.cur.fen ? AN.lines[0] : null;
     $('engEval').textContent = evalText(best);
-    $('playEvalFill').style.width = evalPct(best) + '%';
-    $('playEvalText').textContent = best ? 'Белые ' + Math.round(evalPct(best)) + '% · Чёрные ' + Math.round(100-evalPct(best)) + '%' : 'Оценка Stockfish…';
+
     $('engBar').style.width = evalPct(best) + '%';
     $('engInfo').textContent = 'Stockfish 19 · глубина ' + (AN.fen === G.cur.fen ? AN.depth : 0) + (AN.busy ? ' · считает…' : '');
     var html = '';
@@ -4476,20 +4478,37 @@ function chessBot(chess) {
     var u = r.pv[0]; tryMove({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] });
   });
   $('engSwitch').onclick = function () { S.engine = !S.engine; saveS(); if (!S.engine) stopAnalysis(); renderSide(); };
-  // стрелка лучшего хода на доске
-  function drawArrows() {
-    var svg = $('arrows'), out = '';
-    if (G && S.tab === 'eng' && S.engine && engineOK() && AN.fen === G.cur.fen && AN.lines[0] && !(S.blind && !G.analysis)) {
-      var u = AN.lines[0].pv[0], B = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--B')) || 400, s = B / 8;
-      var xy = function (sq) { var f = sq.charCodeAt(0) - 97, r = +sq[1] - 1; if (G.flip) { f = 7 - f; r = 7 - r; } return [f * s + s / 2, (7 - r) * s + s / 2]; };
-      var a = xy(u.slice(0, 2)), b = xy(u.slice(2, 4)), dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
-      var hb = [b[0] - ux * s * .32, b[1] - uy * s * .32], w = s * .13;
-      out = '<line x1="' + a[0] + '" y1="' + a[1] + '" x2="' + hb[0] + '" y2="' + hb[1] + '" stroke="rgba(21,120,27,.75)" stroke-width="' + w + '" stroke-linecap="round"/>' +
-        '<polygon points="' + b[0] + ',' + b[1] + ' ' + (hb[0] - uy * w * 1.6) + ',' + (hb[1] + ux * w * 1.6) + ' ' + (hb[0] + uy * w * 1.6) + ',' + (hb[1] - ux * w * 1.6) + '" fill="rgba(21,120,27,.8)"/>';
-      svg.setAttribute('viewBox', '0 0 ' + B + ' ' + B);
-    }
-    svg.innerHTML = out;
+  function paintComputerControls(){
+    if(!G)return;
+    var value=$('playEvalText'),best=AN&&AN.fen===G.cur.fen?AN.lines[0]:null,c=new Chess(G.cur.fen);
+    value.hidden=!S.positionEval;
+    value.textContent=!S.engine?'—':c.isCheckmate()?(c.turn()==='b'?'#0':'#−0'):c.isDraw()?'0.00':best?evalText(best):'…';
+    value.title='Оценка Stockfish: плюс — преимущество белых, минус — чёрных';
+    $('positionEvalToggle').setAttribute('aria-pressed',String(!!S.positionEval));
+    $('hintArrowsToggle').setAttribute('aria-pressed',String(!!S.hintArrows));
   }
+  $('positionEvalToggle').onclick=function(){S.positionEval=!S.positionEval;if(S.positionEval)S.engine=true;saveS();renderSide();};
+  $('hintArrowsToggle').onclick=function(){S.hintArrows=!S.hintArrows;if(S.hintArrows)S.engine=true;saveS();renderSide();};
+  var MANUAL=null;
+  // Синие — подсказка движка, зелёные — собственные пометки, привязанные к позиции.
+  function drawArrows(){
+    if(!G)return;
+    var svg=$('arrows'),B=$('board').getBoundingClientRect().width||400,cell=B/8,out='';
+    function xy(sq){var f=sq.charCodeAt(0)-97,r=+sq[1]-1;if(G.flip){f=7-f;r=7-r;}return[(f+.5)*cell,(7-r+.5)*cell];}
+    function arrow(from,to,color,cls){var a=xy(from),b=xy(to);if(from===to)return '<g class="'+cls+'"><circle cx="'+a[0]+'" cy="'+a[1]+'" r="'+cell*.38+'" fill="none" stroke="'+color+'" stroke-width="'+cell*.09+'"/></g>';var dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy),ux=dx/len,uy=dy/len,w=cell*.13,h=[b[0]-ux*cell*.32,b[1]-uy*cell*.32];return '<g class="'+cls+'"><line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+h[0]+'" y2="'+h[1]+'" stroke="'+color+'" stroke-width="'+w+'" stroke-linecap="round"/><polygon points="'+b[0]+','+b[1]+' '+(h[0]-uy*w*1.6)+','+(h[1]+ux*w*1.6)+' '+(h[0]+uy*w*1.6)+','+(h[1]-ux*w*1.6)+'" fill="'+color+'"/></g>';}
+    if(S.hintArrows&&S.engine&&engineOK()&&AN&&AN.fen===G.cur.fen&&AN.lines[0]&&!(S.blind&&!G.analysis)){var u=AN.lines[0].pv[0];if(u)out+=arrow(u.slice(0,2),u.slice(2,4),'rgba(55,135,255,.85)','engine-arrow');}
+    var drawings=G.drawings&&G.drawings[G.cur.fen]||[];drawings.forEach(function(a){out+=arrow(a[0],a[1],'rgba(21,120,27,.8)','manual-arrow');});
+    if(MANUAL&&MANUAL.fen===G.cur.fen&&MANUAL.to)out+=arrow(MANUAL.from,MANUAL.to,'rgba(21,120,27,.8)','manual-preview');
+    svg.setAttribute('viewBox','0 0 '+B+' '+B);svg.innerHTML=out;
+  }
+  $('board').title='Правая кнопка: нарисовать стрелку. Повторите стрелку, чтобы убрать её. Esc — очистить пометки.';
+  $('board').addEventListener('pointerdown',function(e){
+    if(!G||e.pointerType!=='mouse'||e.button!==2)return;var el=e.target.closest('.sq');if(!el)return;e.preventDefault();G.sel=null;G.pre=null;render();MANUAL={from:el.dataset.square,to:el.dataset.square,id:e.pointerId,fen:G.cur.fen};drawArrows();
+  });
+  document.addEventListener('pointermove',function(e){if(!MANUAL||e.pointerId!==MANUAL.id)return;var el=sqAt(e.clientX,e.clientY);MANUAL.to=el?el.dataset.square:null;drawArrows();});
+  document.addEventListener('pointerup',function(e){if(!MANUAL||e.pointerId!==MANUAL.id)return;var d=MANUAL;MANUAL=null;var el=sqAt(e.clientX,e.clientY);if(G&&G.cur.fen===d.fen&&el){G.drawings=G.drawings||{};var arrows=G.drawings[d.fen]||[],to=el.dataset.square,at=arrows.findIndex(function(a){return a[0]===d.from&&a[1]===to;});if(at>=0)arrows.splice(at,1);else arrows.push([d.from,to]);G.drawings[d.fen]=arrows;}drawArrows();});
+  document.addEventListener('pointercancel',function(e){if(MANUAL&&MANUAL.id===e.pointerId){MANUAL=null;drawArrows();}});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&G&&!$('game').hidden&&!document.querySelector('dialog[open]')&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){G.drawings=G.drawings||{};G.drawings[G.cur.fen]=[];MANUAL=null;drawArrows();}});
 
   // Сохранение не меняет партию или позицию на доске.
   function exportRoot(pathOnly){if(!pathOnly)return G.root;var root={fen:G.root.fen,ch:[]},parent=root;pathTo(G.cur).forEach(function(n){var next={fen:n.fen,san:n.san,parent:parent,ch:[]};parent.ch.push(next);parent=next;});return root;}
@@ -4959,7 +4978,7 @@ function chessBot(chess) {
     G && G.kind.w === 'me' && G.kind.b === 'me' ? newGame({ w: 'me', b: 'me' }) : startLocal();
   }
   $('endMenu').onclick = toMenu; $('homeBtn').onclick = toMenu;
-  function toMenu() { Net2P.close(); token++; stopAnalysis(); G = null; GC.sync(); $('game').hidden = true; ['endOv', 'lobbyOv', 'askOv', 'confirmOv', 'promoOv'].forEach(function (id) { $(id).hidden = true; }); $('menu').hidden = false; renderMenu(); }
+  function toMenu() { MANUAL=null; Net2P.close(); token++; stopAnalysis(); G = null; GC.sync(); $('game').hidden = true; ['endOv', 'lobbyOv', 'askOv', 'confirmOv', 'promoOv'].forEach(function (id) { $(id).hidden = true; }); $('menu').hidden = false; renderMenu(); }
   $('playBtn').onclick = function () { knock(440, .12); startLocal(); };
   $('anaBtn').onclick = function () { knock(440, .12); newGame({ w: 'me', b: 'me' }, { analysis: true }); };
   $('soundBtn').onclick = function () { S.sound = !S.sound; saveS(); renderMenu(); };
@@ -5117,5 +5136,7 @@ function chessBot(chess) {
 <style>#exportDialog{width:min(600px,calc(100% - 24px));max-height:calc(100dvh - 24px);overflow:auto;padding:20px;background:var(--bg-2);color:var(--ink);border:1px solid var(--line);border-radius:16px}#exportDialog::backdrop{background:#080d1dcc;backdrop-filter:blur(4px)}#exportDialog h2{font:800 22px var(--display)}#exportDialog label{display:block;font:700 13px var(--body);margin:12px 0}#exportDialog select,#exportDialog textarea{display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:13px/1.5 monospace}#exportDialog button{border:1px solid var(--line);padding:10px;border-radius:8px;background:var(--btn);color:var(--ink);font:700 13px var(--body);cursor:pointer}#exportDownload{background:var(--gold)!important;color:#231800!important}.study-edit{margin:4px 8px}.study-actions{align-items:center}</style>
 
 <style>.study-tools{display:flex;gap:6px;padding:6px 8px;flex:none}.study-tools .study-edit{margin:0;flex:1;min-width:0}</style>
+
+<style>.computer-controls{display:flex;flex:none;align-items:center;justify-content:flex-end;gap:6px;margin:6px 8px;min-height:34px;padding:4px 6px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}.computer-controls[hidden]{display:none}.computer-controls output{flex:1;font:800 20px/1.2 var(--display);font-variant-numeric:tabular-nums;color:var(--ink);padding-left:4px}.computer-controls button{display:grid;place-items:center;min-width:32px;height:30px;border:1px solid var(--line);border-radius:6px;background:var(--btn);color:var(--ink-dim);font:800 14px var(--body);cursor:pointer}.computer-controls button[aria-pressed=true]{color:var(--gold);border-color:var(--gold)}.computer-controls svg{width:18px;height:18px}#hintArrowsToggle[aria-pressed=true]{color:#70aaff;border-color:#70aaff}.coord{font-size:clamp(11px,calc(var(--B)*.028),16px);line-height:1.25}.coord.file{width:calc(var(--B)/8);text-align:center}.coord.rank{width:calc(var(--cd) - 8px);text-align:center}</style>
 
 </body></html>
