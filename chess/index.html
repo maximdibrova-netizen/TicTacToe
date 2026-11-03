@@ -124,13 +124,20 @@ h1 { margin: 0; font: 800 clamp(30px, 8vw, 40px)/1 var(--display); }
 .pl.r .cap { justify-content: flex-end; }
 .status { width: var(--W); max-width: 100%; font: 800 15px/1.25 var(--display); text-align: center; min-height: 19px; text-wrap: balance; }
 .wrap { position: relative; padding: 0 0 var(--cd) var(--cd); }
-#board { position: relative; width: var(--B); height: var(--B); display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); border-radius: 4px; overflow: hidden; box-shadow: 0 14px 40px rgba(0,0,0,.5), 0 0 0 4px var(--frame); touch-action: manipulation; }
+#board { position: relative; width: var(--B); height: var(--B); display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); border-radius: 4px; overflow: hidden; box-shadow: 0 14px 40px rgba(0,0,0,.5), 0 0 0 4px var(--frame); touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .sq { position: relative; border: 0; padding: 0; background: var(--light); display: grid; place-items: center; cursor: pointer; }
 .sq.d { background: var(--dark); }
 .sq.last { background: #cdd26a; } .sq.d.last { background: #aaa23a; }
 .sq.sel { background: #829769; } .sq.d.sel { background: #646f40; }
 .sq.check { background: radial-gradient(circle, #ff3b3b 0%, #e01f1f 30%, rgba(169,0,0,0) 72%), var(--light); }
 .sq.d.check { background: radial-gradient(circle, #ff3b3b 0%, #e01f1f 30%, rgba(169,0,0,0) 72%), var(--dark); }
+.sq.pre { background: #a7b6c9; } .sq.d.pre { background: #7b8ea8; }
+.sq.drag-src .pc { opacity: .3; }
+.sq.over { box-shadow: inset 0 0 0 calc(var(--B) * .006 + 1.5px) rgba(255,255,255,.75); }
+.sq.tgt.over::after { display: none; }
+#ghost { position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none; will-change: transform; filter: drop-shadow(0 6px 8px rgba(0,0,0,.35)); }
+#ghost svg { width: 100%; height: 100%; display: block; }
+body.blind:not(.peek) #ghost { visibility: hidden; }
 .sq.tgt::after { content: ""; position: absolute; width: 30%; height: 30%; border-radius: 50%; background: rgba(20, 30, 20, .32); }
 .sq.tgt.cap::after { width: 92%; height: 92%; background: transparent; box-shadow: inset 0 0 0 calc(var(--B) * .009) rgba(20, 30, 20, .35); }
 .sq .pc { width: 100%; height: 100%; pointer-events: none; }
@@ -259,7 +266,7 @@ body.blind.peek .sq .pc { visibility: visible; }
         <li>Можно сдаться. На время — проигрывает тот, у кого кончились часы.</li>
       </ol>
     </div>
-    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 03.11.2026 01:09</span></p>
+    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 03.11.2026 01:18</span></p>
   </div>
 </section>
 
@@ -4200,7 +4207,7 @@ function chessBot(chess) {
   function rebuild(list) {
     var keep = G.root, c = new Chess(); G.c = c; G.root = node(null, null, START); var t = G.root;
     for (var k = 0; k < list.length; k++) { var mv; try { mv = c.move(list[k]); } catch (e) { break; } var n = node(t, mv, c.fen()); t.ch.push(n); t = n; }
-    G.tip = G.cur = t; G.sel = null;
+    G.tip = G.cur = t; G.sel = null; G.pre = null;
     var oc = outcomeOf(c); G.over = !!oc || G.analysis; G.result = oc;
   }
   function moves() { return pathTo(G.tip).map(function (n) { return n.san; }); }
@@ -4263,8 +4270,10 @@ function chessBot(chess) {
   function render() {
     if (!G) return;
     var c = curChess(), live = !viewing() && !G.over;
-    var can = canTap(), sel = G.sel;
-    var legal = sel && can ? c.moves({ square: sel, verbose: true }) : [];
+    var can = canTap(), sel = G.sel, pm = premoveMode();
+    var legal = sel && pm ? preDests(sel).map(function (t) { var q = c.get(t); return { to: t, captured: !!q && q.color !== c.get(sel).color }; })
+      : sel && can ? c.moves({ square: sel, verbose: true }) : [];
+    var pre = G.pre && !viewing() ? G.pre : null;
     var tg = {}; legal.forEach(function (m) { tg[m.to] = m.captured ? 'cap' : 'go'; });
     var last = G.cur.lan ? { from: G.cur.lan.slice(0, 2), to: G.cur.lan.slice(2, 4) } : null;
     var checkSq = null;
@@ -4274,6 +4283,7 @@ function chessBot(chess) {
       var el = sqEls[sq], p2 = c.get(sq), key = p2 ? p2.color + p2.type : '';
       if (el._k !== key) { el.firstChild.innerHTML = p2 ? pieceSVG(p2.color, p2.type) : ''; el._k = key; }
       el.classList.toggle('sel', sq === sel);
+      el.classList.toggle('pre', !!pre && (pre.from === sq || pre.to === sq));
       el.classList.toggle('tgt', !!tg[sq] && !blind);
       el.classList.toggle('cap', tg[sq] === 'cap');
       el.classList.toggle('last', !!last && (last.from === sq || last.to === sq));
@@ -4347,7 +4357,7 @@ function chessBot(chess) {
     $('nvNext').disabled = !G.cur.ch.length; $('nvLast').disabled = G.cur === G.tip && !G.cur.ch.length;
     $('nvLive').hidden = !(viewing() && !G.over && !G.analysis);
   }
-  function go(n) { if (!n || !G) return; G.cur = n; G.sel = null; render(); if (!viewing()) turnLoop(); }
+  function go(n) { if (!n || !G) return; G.cur = n; G.sel = null; G.pre = null; render(); if (!viewing()) turnLoop(); }
   $('nvFirst').onclick = function () { go(G.root); };
   $('nvPrev').onclick = function () { go(G.cur.parent); };
   $('nvNext').onclick = function () { go(G.cur.ch[0]); };
@@ -4527,17 +4537,105 @@ function chessBot(chess) {
     toast(d[0] + ' — ' + d[2] + ', ' + d[4]);
   }
 
-  // ---------- input ----------
-  function onSq(e) {
-    if (!G || !canTap()) return;
-    var c = curChess(), sq = e.currentTarget.dataset.square, sel = G.sel, p = c.get(sq);
-    if (sel) {
-      var ms = c.moves({ square: sel, verbose: true }).filter(function (m) { return m.to === sq; });
-      if (ms.length) { G.sel = null; choose(ms); return; }
+  // ---------- input: нажатия, перетаскивание, премувы ----------
+  // премув: ход заранее, пока думает соперник (Stockfish или друг); сработает сразу, если будет возможен
+  function premoveMode() { var me = G && mySide(); return !!me && !G.over && !G.analysis && !viewing() && G.kind[me] === 'me' && G.c.turn() !== me; }
+  function preDests(from) {
+    var p = G.c.get(from), out = []; if (!p) return out;
+    var f = FILES.indexOf(from[0]), r = +from[1] - 1;
+    var add = function (df, dr) { var F = f + df, R = r + dr; if (F >= 0 && F < 8 && R >= 0 && R < 8) out.push(FILES[F] + (R + 1)); return F >= 0 && F < 8 && R >= 0 && R < 8; };
+    if (p.type === 'n') [[1, 2], [2, 1], [-1, 2], [-2, 1], [1, -2], [2, -1], [-1, -2], [-2, -1]].forEach(function (d) { add(d[0], d[1]); });
+    else if (p.type === 'p') { var d = p.color === 'w' ? 1 : -1; add(0, d); if (r === (p.color === 'w' ? 1 : 6)) add(0, 2 * d); add(-1, d); add(1, d); }
+    else if (p.type === 'k') {
+      for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) if (dx || dy) add(dx, dy);
+      var cr = G.c.getCastlingRights(p.color);
+      if (f === 4 && r === (p.color === 'w' ? 0 : 7)) { if (cr.k) add(2, 0); if (cr.q) add(-2, 0); }
+    } else {
+      var dirs = { r: [[1, 0], [-1, 0], [0, 1], [0, -1]], b: [[1, 1], [1, -1], [-1, 1], [-1, -1]] }; dirs.q = dirs.r.concat(dirs.b);
+      dirs[p.type].forEach(function (d) { for (var k = 1; k < 8 && add(d[0] * k, d[1] * k); k++); });
     }
-    if (p && p.color === c.turn() && (canVary() || G.kind[p.color] === 'me')) { G.sel = sel === sq ? null : sq; render(); return; }
+    return out;
+  }
+  function pickable(sq) {
+    var c = curChess(), p = c.get(sq); if (!p) return false;
+    if (canTap() && p.color === c.turn() && (canVary() || G.kind[p.color] === 'me')) return true;
+    return premoveMode() && p.color === mySide();
+  }
+  function isDest(from, to) {
+    if (premoveMode()) return preDests(from).indexOf(to) >= 0;
+    return canTap() && curChess().moves({ square: from, verbose: true }).some(function (m) { return m.to === to; });
+  }
+  function moveTo(from, to) {   // сделать ход (или поставить премув); false — так нельзя
+    if (premoveMode()) {
+      if (preDests(from).indexOf(to) < 0) return false;
+      G.pre = { from: from, to: to }; G.sel = null; render(); return true;
+    }
+    if (!canTap()) return false;
+    var ms = curChess().moves({ square: from, verbose: true }).filter(function (m) { return m.to === to; });
+    if (!ms.length) return false;
+    G.sel = null; choose(ms); return true;
+  }
+  function tapSq(sq) {
+    if (!G) return;
+    var c = curChess(), sel = G.sel, p = c.get(sq), pm = premoveMode();
+    if (sel && sel !== sq && moveTo(sel, sq)) return;
+    if (pickable(sq)) { G.sel = sel === sq ? null : sq; render(); return; }
+    if (pm) { if (G.pre || sel) { G.pre = null; G.sel = null; render(); } return; }   // нажатие мимо отменяет премув
+    if (!canTap()) return;
     if (S.blind && sel) toast('Так сходить нельзя'); else if (S.blind && !p) toast('Здесь нет твоей фигуры');
     G.sel = null; render();
+  }
+  function onSq(e) { if (e.detail === 0 && Date.now() - DRAG.upAt > 400) tapSq(e.currentTarget.dataset.square); }   // клавиатура
+  // перетаскивание (мышь, палец, перо)
+  var DRAG = { d: null, upAt: 0, ghost: null, over: null, dropAt: 0 };
+  function sqAt(x, y) { var el = document.elementFromPoint(x, y); el = el && el.closest ? el.closest('.sq') : null; return el && $('board').contains(el) ? el : null; }
+  function setOver(el) { if (DRAG.over === el) return; if (DRAG.over) DRAG.over.classList.remove('over'); DRAG.over = el; if (el) el.classList.add('over'); }
+  function endGhost() { if (DRAG.ghost) { DRAG.ghost.remove(); DRAG.ghost = null; } setOver(null); Array.prototype.forEach.call(document.querySelectorAll('.drag-src'), function (x) { x.classList.remove('drag-src'); }); }
+  $('board').addEventListener('pointerdown', function (e) {
+    if (!G || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    var el = e.target.closest('.sq'); if (!el) return;
+    e.preventDefault(); endGhost();
+    var sq = el.dataset.square;
+    if (pickable(sq) && !(G.sel && G.sel !== sq && isDest(G.sel, sq))) {
+      DRAG.d = { from: sq, was: G.sel === sq, x: e.clientX, y: e.clientY, moved: false, el: el, id: e.pointerId };
+      if (G.sel !== sq) { G.sel = sq; render(); }
+    } else DRAG.d = { tap: sq, id: e.pointerId };
+  });
+  document.addEventListener('pointermove', function (e) {
+    var d = DRAG.d; if (!d || d.tap || e.pointerId !== d.id) return;
+    if (!d.moved) {
+      if (Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) < 5) return;
+      d.moved = true; d.size = d.el.getBoundingClientRect().width;
+      var g = document.createElement('div'); g.id = 'ghost'; g.style.width = g.style.height = d.size + 'px';
+      g.innerHTML = d.el.firstChild.innerHTML; document.body.appendChild(g); DRAG.ghost = g; d.el.classList.add('drag-src');
+    }
+    e.preventDefault();
+    DRAG.ghost.style.transform = 'translate(' + (e.clientX - d.size / 2) + 'px,' + (e.clientY - d.size / 2) + 'px)';
+    setOver(sqAt(e.clientX, e.clientY));
+  }, { passive: false });
+  function dragEnd(e, cancel) {
+    var d = DRAG.d; if (!d || e.pointerId !== d.id) return;
+    DRAG.d = null; DRAG.upAt = Date.now();
+    var el = cancel ? null : sqAt(e.clientX, e.clientY), to = el && el.dataset.square;
+    endGhost(); if (!G) return;
+    if (d.tap) { if (to === d.tap) tapSq(to); return; }
+    if (!d.moved) { if (d.was && to === d.from) { G.sel = null; render(); } return; }   // просто нажали на фигуру
+    if (!to || to === d.from) { render(); return; }
+    DRAG.dropAt = Date.now();
+    if (!moveTo(d.from, to)) { G.sel = null; render(); if (S.blind) toast('Так сходить нельзя'); }
+  }
+  document.addEventListener('pointerup', function (e) { dragEnd(e, false); });
+  document.addEventListener('pointercancel', function (e) { dragEnd(e, true); });
+  $('board').addEventListener('contextmenu', function (e) { e.preventDefault(); if (G && (G.pre || G.sel)) { G.pre = null; G.sel = null; render(); } });   // правая кнопка — отменить премув
+  // выполнить премув, когда настал наш ход
+  function runPremove() {
+    if (!G || !G.pre) return;
+    var pm = G.pre; G.pre = null;
+    if (!canTapLive()) { render(); return; }
+    var ms = G.c.moves({ square: pm.from, verbose: true }).filter(function (m) { return m.to === pm.to && (!m.promotion || m.promotion === 'q'); });
+    if (!ms.length) { render(); return; }
+    var fen = G.c.fen();
+    setTimeout(function () { if (G && canTapLive() && G.c.fen() === fen) submit(ms[0].san); }, 40);
   }
   function choose(ms) {
     if (ms.length > 1 && ms[0].promotion) {
@@ -4564,7 +4662,7 @@ function chessBot(chess) {
     render(); animateTo(n);
   }
   function animateTo(n) {
-    if (!n.lan) return;
+    if (!n.lan || Date.now() - DRAG.dropAt < 250) return;
     var to = sqEls[n.lan.slice(2, 4)], from = sqEls[n.lan.slice(0, 2)]; if (!to || !from) return;
     var a = from.getBoundingClientRect(), b = to.getBoundingClientRect(), pc = to.firstChild;
     to.classList.add('moving'); pc.style.transition = 'none'; pc.style.transform = 'translate(' + (a.left - b.left) + 'px,' + (a.top - b.top) + 'px)';
@@ -4593,8 +4691,9 @@ function chessBot(chess) {
     if (G.drawOffer) G.drawOffer = null;
     var oc = outcomeOf(G.c); if (oc) { G.over = true; G.result = oc; }
     sfx(m.san); render(); if (follow) animateTo(n);
-    if (G.over) { setTimeout(showEnd, 500); if (net() && Net2P.role() === 'host') GC.publish(); return; }
+    if (G.over) { G.pre = null; setTimeout(showEnd, 500); if (net() && Net2P.role() === 'host') GC.publish(); return; }
     turnLoop();
+    if (G.pre && G.c.turn() === mySide()) runPremove();
   }
 
   // ---------- Stockfish plays ----------
