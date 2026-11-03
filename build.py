@@ -25,6 +25,7 @@ def build(name):
     page = read(name, 'ui.html').replace('/*CORE*/', read(name, 'core.js')).replace('/*CLOCK*/', clock).replace('/*NET*/', net).replace('/*REVIEW*/', review).replace('/*VER*/', ver)
     pf = os.path.join(src, name, 'pieces.js')
     if os.path.exists(pf): page = page.replace('/*PIECES*/', read(name, 'pieces.js'))
+    if name == 'chess': page = page.replace('/*PGN_EXPORT*/', read('chess', 'pgn.js'))
     d = os.path.join(here, name); os.makedirs(d, exist_ok=True)
     # папки с файлами для игры (движок, база) копируются рядом со страницей: src/chess/sf → chess/sf
     for sub in sorted(os.listdir(os.path.join(src, name))):

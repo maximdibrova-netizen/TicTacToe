@@ -1,0 +1,11 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),vm=require('vm'),path=require('path');const root=path.resolve(__dirname,'..'),ctx={};vm.createContext(ctx);vm.runInContext(fs.readFileSync(path.join(root,'src/tochki/core.js'),'utf8'),ctx);const exporter=path.join(root,'src/chess/pgn.js');if(fs.existsSync(exporter))vm.runInContext(fs.readFileSync(exporter,'utf8'),ctx);
+test('exports PGN and calculates all players together',()=>{assert.equal(typeof ctx.exportChessPGN,'function');assert.equal(typeof ctx.analyzeAll,'function');});
+if(typeof ctx.analyzeAll==='function'){
+test('shared chances sum to 100, including 3/4 seats and eliminated players',()=>{for(const mask of [10,11,15]){const B=ctx.buildBoard(Array(6).fill('######')),cnt=new Int8Array(B.n),own=new Int8Array(B.n).fill(-1);for(let i=0;i<4;i++)if(mask&(1<<i)){cnt[B.starts[i]]=3;own[B.starts[i]]=i;}const r=ctx.analyzeAll(B,cnt,own,mask,1,3,mask,50);assert.equal(Array.from(r.displayChances).reduce((a,b)=>a+b,0),100);assert.equal(r.pct,r.chances[3]);for(let i=0;i<4;i++)if(!(mask&(1<<i)))assert.equal(r.chances[i],0);}
+const r=ctx.analyzeAll({},[],[],8,3,3,15,50);assert.deepEqual(Array.from(r.displayChances),[0,0,0,100]);});
+}
+if(typeof ctx.exportChessPGN==='function'){
+vm.runInContext(fs.readFileSync(path.join(root,'src/chess/core.js'),'utf8'),ctx);
+test('PGN contains alternatives, escaping, custom FEN and a consistent result',()=>{const fen='7k/8/8/8/8/8/8/R3K3 b - - 0 12',c=new ctx.Chess(fen),tree={fen,ch:[]};function child(parent,san){const cc=new ctx.Chess(parent.fen),m=cc.move(san),n={fen:cc.fen(),san:m.san,parent,ch:[]};parent.ch.push(n);return n;}
+const k=child(tree,'Kg7');child(k,'Ra2');child(tree,'Kh7');const pgn=ctx.exportChessPGN(tree,{headers:{White:'A "quoted" name'},result:'*'});assert.match(pgn,/\[SetUp "1"\]/);assert.ok(pgn.includes('[FEN "'+fen+'"]'));assert.match(pgn,/12\.\.\. Kg7/);assert.match(pgn,/\(12\.\.\. Kh7\)/);assert.ok(pgn.includes('A \\\"quoted\\\" name'));const compatible=ctx.exportChessPGN(tree,{headers:{White:'Alice'},result:'*'});const out=new ctx.Chess();out.loadPgn(compatible);assert.deepEqual(Array.from(out.history()),['Kg7','Ra2']);assert.equal(out.getHeaders().White,'Alice');});
+}

@@ -440,7 +440,7 @@ body.no-eval #boardWrap { top: calc(56px + env(safe-area-inset-top, 0px)); botto
       <button class="sq-btn" id="rulesBtn" aria-label="Правила">?</button>
     </div>
     <p class="hint" id="playHint" hidden>Нужно минимум два игрока.</p>
-    <p class="hint" id="verLine" style="font-size:11.5px"><a href="../" style="color:var(--ink-dim)">← все игры</a> · <span style="opacity:.6">версия от 03.11.2026 18:48</span></p>
+    <p class="hint" id="verLine" style="font-size:11.5px"><a href="../" style="color:var(--ink-dim)">← все игры</a> · <span style="opacity:.6">версия от 03.11.2026 19:05</span></p>
     <div class="card" id="onlineCard" hidden>
       <h2>Онлайн с друзьями</h2>
       <div class="seg" style="--cols:2">
@@ -1079,13 +1079,30 @@ function analyze(B, cnt, own, mask, turn, me, startMask, timeMs) {
   return { v: best, pct: pct, depth: depth };
 }
 
+// Единая оценка всех участников. Для 3–4 игроков оценки поиска — эвристика,
+// поэтому переводим их в относительные доли, а не складываем независимые проценты.
+// При двух симметричных оценках сохраняется прежний логистический масштаб.
+function analyzeAll(B,cnt,own,mask,turn,me,startMask,timeMs) {
+  var active=[],results=[],chances=[0,0,0,0],display=[0,0,0,0],scores=[],budget=timeMs||450;
+  for(var p=0;p<4;p++)if(mask&(1<<p))active.push(p);
+  if(active.length===1){chances[active[0]]=display[active[0]]=100;return {v:me===active[0]?WIN:-WIN,pct:chances[me],chances:chances,displayChances:display,depth:0};}
+  if(!active.length)return {v:-WIN,pct:0,chances:chances,displayChances:display,depth:0};
+  active.forEach(function(p){results[p]=analyze(B,cnt,own,mask,turn,p,startMask,Math.max(15,Math.floor(budget/active.length)));scores[p]=Math.max(-700,Math.min(700,results[p].v/(2*EVAL_K)));});
+  var max=Math.max.apply(null,active.map(function(p){return scores[p];})),sum=0;
+  active.forEach(function(p){chances[p]=Math.exp(scores[p]-max);sum+=chances[p];});
+  active.forEach(function(p){chances[p]=100*chances[p]/sum;display[p]=Math.floor(chances[p]);});
+  var rest=100-display.reduce(function(a,b){return a+b;},0),order=active.slice().sort(function(a,b){return (chances[b]-display[b])-(chances[a]-display[a])||a-b;});
+  for(var i=0;i<rest;i++)display[order[i%order.length]]++;
+  var mine=results[me]||{v:-WIN,depth:0};return {v:mine.v,pct:chances[me]||0,chances:chances,displayChances:display,depth:mine.depth};
+}
+
 </script>
 <script id="workerGlue" type="text/plain">
 onmessage = function (e) {
   var d = e.data;
   var B = buildBoard(d.rows);
   if (d.kind === 'eval') {
-    postMessage({ id: d.id, move: analyze(B, Int8Array.from(d.cnt), Int8Array.from(d.own), d.mask, d.turn, d.me, d.start, d.time) });
+    postMessage({ id: d.id, move: analyzeAll(B, Int8Array.from(d.cnt), Int8Array.from(d.own), d.mask, d.turn, d.me, d.start, d.time) });
     return;
   }
   var m = think(B, Int8Array.from(d.cnt), Int8Array.from(d.own), d.mask, d.me, d.level, d.start);
@@ -1369,7 +1386,7 @@ onmessage = function (e) {
     }
     setTimeout(function () {
       var B = buildBoard(payload.rows);
-      cb(analyze(B, Int8Array.from(payload.cnt), Int8Array.from(payload.own), payload.mask, payload.turn, payload.me, payload.start, Math.min(payload.time, 200)));
+      cb(analyzeAll(B, Int8Array.from(payload.cnt), Int8Array.from(payload.own), payload.mask, payload.turn, payload.me, payload.start, Math.min(payload.time, 200)));
     }, 60);
   }
   function askBot(payload, cb) {
@@ -1450,7 +1467,7 @@ onmessage = function (e) {
     var vw = window.innerWidth, vh = window.innerHeight - (GC && GC.enabled()?68:0);
     var R = Math.max(64, Math.min(104, Math.min(vw, vh) * .13)) + 22;
     var ev = !document.body.classList.contains('no-eval');
-    var availW = vw - 32, availH = vh - (ev ? 68 + 160 : 56 + 118) - 12 - (window.IN_ROOM ? 0 : 48);
+    var availW = vw - 32, availH = vh - (ev ? 68 + 160 : 56 + 118) - 12 - (window.IN_ROOM ? 0 : 48) - (ev ? 40 : 0);
     if (vw > vh) availW = vw - 2 * R - 24; // landscape: keep the corners clear
     var W = G.B.W, H = G.B.H, cx = S.coords ? .55 : 0;   // room for the labels
     pitch = Math.max(16, Math.floor(Math.min(availW / (W + cx), availH / (H + cx), 96)));
@@ -1933,17 +1950,12 @@ onmessage = function (e) {
     var last = G.hist.length - 1, k = G.view >= 0 ? G.view : last, r = G.var ? curEval() : G.evals[k], j = k;
     if (G.var && !r) { r = prevEvalOf() || G.evals[G.var.base]; j = -1; }
     while (!r && j > 0) r = G.evals[--j];
-    var bar = $('evalBar'), txt = $('ebText');
-    var others = [0, 1, 2, 3].filter(function (q) { return q !== G.me && G.kinds[q] !== 'off'; });
-    bar.style.setProperty('--eb-me', 'var(--p' + G.me + ')');
-    bar.style.setProperty('--eb-them', others.length === 1 ? 'var(--p' + others[0] + ')' : '#5b6f72');
-    var who = G.kinds[G.me] === 'human' ? 'Ты' : COLORS[G.me];
-    if (!r) { $('ebFill').style.width = '50%'; txt.textContent = who + ' …'; txt.classList.add('pending'); }
-    else {
-      $('ebFill').style.width = r.pct + '%';
-      txt.textContent = r.v >= WIN - 1000 ? who + ': выигрыш' : r.v <= -WIN + 1000 ? who + ': проигрыш' : who + ' ' + Math.round(r.pct) + '%';
-      txt.classList.toggle('pending', G.var ? !curEval() : j !== k);
-    }
+    var bar=$('evalBar'),txt=$('ebText'),active=[0,1,2,3].filter(function(p){return G.kinds[p]!=='off';});
+    var pending=!r||(G.var?!curEval():j!==k),values=r&&r.displayChances;
+    var track=bar.querySelector('.eb-track');track.classList.add('multi-track');
+    track.innerHTML=active.map(function(p){return '<i data-chance-segment="'+p+'" style="width:'+(values?values[p]:100/active.length)+'%;background:var(--p'+p+')"></i>';}).join('');
+    txt.innerHTML=active.map(function(p){return '<span class="chance-label" data-chance-player="'+p+'"><i style="background:var(--p'+p+')"></i>'+COLORS[p]+' <b>'+(values?values[p]+'%':'…')+'</b></span>';}).join('');
+    txt.classList.toggle('pending',pending);bar.title='Относительная оценка движка; не гарантия результата'+(pending?' · обновляется':'');
     drawGraph();
   }
   function drawGraph() {
@@ -2498,5 +2510,9 @@ onmessage = function (e) {
 
 <style>.gc-bar{position:absolute;top:4px;left:50%;transform:translateX(-50%);width:min(65%,480px)}.gc-face{padding:3px}.gc-face span{font-size:10px}</style>
 <style>body.gc-timed .topbar{top:60px}body.gc-timed #boardWrap,body.gc-timed.no-eval #boardWrap{top:128px}.gc-bar{width:min(calc(100% - 170px),480px)}</style>
+
+<style>.evalbar{flex-direction:column;gap:5px;width:min(100%,460px)}.multi-track{width:100%;min-height:10px;display:flex;background:transparent}.multi-track::after{display:none}.eb-track.multi-track i{position:static;inset:auto;display:block;flex:none;height:10px;border-radius:0;transition:width .35s}.eb-text{min-width:0;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;white-space:normal;font-size:11px;line-height:1.3}.chance-label{display:inline-flex;align-items:center;gap:4px}.chance-label>i{width:8px;height:8px;border-radius:3px;flex:none}.chance-label b{font-variant-numeric:tabular-nums}.topbar{min-height:70px}</style>
+
+<style>body:not(.no-eval) .topbar{min-height:100px}html:not(.in-room) body.in-game:not(.no-eval) #boardWrap{top:156px}html:not(.in-room) body.in-game.gc-timed:not(.no-eval) #boardWrap{top:218px}</style>
 
 </body></html>

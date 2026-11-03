@@ -349,3 +349,20 @@ function analyze(B, cnt, own, mask, turn, me, startMask, timeMs) {
   else pct = Math.max(3, Math.min(97, 100 / (1 + Math.exp(-best / EVAL_K))));
   return { v: best, pct: pct, depth: depth };
 }
+
+// Единая оценка всех участников. Для 3–4 игроков оценки поиска — эвристика,
+// поэтому переводим их в относительные доли, а не складываем независимые проценты.
+// При двух симметричных оценках сохраняется прежний логистический масштаб.
+function analyzeAll(B,cnt,own,mask,turn,me,startMask,timeMs) {
+  var active=[],results=[],chances=[0,0,0,0],display=[0,0,0,0],scores=[],budget=timeMs||450;
+  for(var p=0;p<4;p++)if(mask&(1<<p))active.push(p);
+  if(active.length===1){chances[active[0]]=display[active[0]]=100;return {v:me===active[0]?WIN:-WIN,pct:chances[me],chances:chances,displayChances:display,depth:0};}
+  if(!active.length)return {v:-WIN,pct:0,chances:chances,displayChances:display,depth:0};
+  active.forEach(function(p){results[p]=analyze(B,cnt,own,mask,turn,p,startMask,Math.max(15,Math.floor(budget/active.length)));scores[p]=Math.max(-700,Math.min(700,results[p].v/(2*EVAL_K)));});
+  var max=Math.max.apply(null,active.map(function(p){return scores[p];})),sum=0;
+  active.forEach(function(p){chances[p]=Math.exp(scores[p]-max);sum+=chances[p];});
+  active.forEach(function(p){chances[p]=100*chances[p]/sum;display[p]=Math.floor(chances[p]);});
+  var rest=100-display.reduce(function(a,b){return a+b;},0),order=active.slice().sort(function(a,b){return (chances[b]-display[b])-(chances[a]-display[a])||a-b;});
+  for(var i=0;i<rest;i++)display[order[i%order.length]]++;
+  var mine=results[me]||{v:-WIN,depth:0};return {v:mine.v,pct:chances[me]||0,chances:chances,displayChances:display,depth:mine.depth};
+}
