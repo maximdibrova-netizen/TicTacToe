@@ -91,6 +91,9 @@ h1 { margin: 0; font: 800 clamp(30px, 8vw, 40px)/1 var(--display); }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
 .play { border: 0; border-radius: 16px; padding: 14px; background: var(--gold); color: #2a1d00; font: 800 20px/1 var(--display); box-shadow: 0 5px 0 #b8892c; }
 .play:active { transform: translateY(3px); box-shadow: 0 2px 0 #b8892c; }
+.seg.lv button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; }
+.seg.lv b { font: 800 17px/1 var(--display); }
+.seg.lv small { font: 700 10.5px/1 var(--body); opacity: .75; white-space: nowrap; }
 .ghost { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: transparent; font: 800 15px/1 var(--body); color: var(--ink); }
 .ghost:hover { background: var(--bg-2); }
 .rules { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font: 600 13.5px/1.4 var(--body); color: var(--ink-dim); }
@@ -229,6 +232,10 @@ body.blind.peek .sq .pc { visibility: visible; }
     <div class="card"><h2>Режим</h2>
       <div class="seg" id="modeSeg"><button data-v="bot" id="m-bot">Со Stockfish</button><button data-v="duo" id="m-duo">Вдвоём</button><button data-v="net" id="m-net">Онлайн</button></div>
     </div>
+    <div class="card" id="levelCard"><h2>Сила Stockfish</h2>
+      <div class="seg lv" id="levelSeg" style="--cols:4"></div>
+      <p class="hint" id="levelHint"></p>
+    </div>
     <div class="card" id="sideCard"><h2>Я играю</h2>
       <div class="seg" id="sideSeg"><button data-v="w" id="s-w">Белыми</button><button data-v="b" id="s-b">Чёрными</button><button data-v="r" id="s-r">Случайно</button></div>
     </div>
@@ -252,7 +259,7 @@ body.blind.peek .sq .pc { visibility: visible; }
         <li>Можно сдаться. На время — проигрывает тот, у кого кончились часы.</li>
       </ol>
     </div>
-    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 03.11.2026 00:47</span></p>
+    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 03.11.2026 01:09</span></p>
   </div>
 </section>
 
@@ -4044,18 +4051,31 @@ function chessBot(chess) {
   var ICON_SND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>';
   var ICON_MUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></svg>';
   function pieceSVG(color, type) { return PIECES[color + type.toUpperCase()]; }
-  function ruSan(san) { return String(san).replace(/^([KQRBN])/, function (m) { return RU[m.toLowerCase()]; }).replace(/=([QRBN])/, function (m, p) { return '=' + RU[p.toLowerCase()]; }); }
+  function ruSan(san) { return String(san); }   // запись ходов — английская, как на Lichess и в базах (K, Q, R, B, N)
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   $('logoPiece').innerHTML = pieceSVG('w', 'n');
 
   // ---------- settings ----------
-  var S = { mode: 'bot', side: 'w', blind: false, coords: true, sound: true, tab: 'nota', engine: true };
+  var S = { mode: 'bot', side: 'w', blind: false, coords: true, sound: true, tab: 'nota', engine: true, level: 8 };
+  // уровни как на Lichess: 1–3 — ограниченная глубина и «мастерство», 4–7 — по рейтингу (UCI_Elo), 8 — полная сила
+  var LEVELS = [
+    { n: 1, cap: 'новичок', skill: 0, depth: 1, ms: 60, about: 'зевает фигуры, видит на ход вперёд' },
+    { n: 2, cap: 'начинающий', skill: 2, depth: 3, ms: 120, about: 'играет просто, часто ошибается' },
+    { n: 3, cap: '≈1200', skill: 5, depth: 5, ms: 200, about: 'любитель: замечает простую тактику' },
+    { n: 4, cap: '≈1500', elo: 1500, ms: 500, about: 'уверенный любитель' },
+    { n: 5, cap: '≈1800', elo: 1800, ms: 700, about: 'сильный клубный игрок' },
+    { n: 6, cap: '≈2100', elo: 2100, ms: 900, about: 'кандидат в мастера' },
+    { n: 7, cap: '≈2500', elo: 2500, ms: 1200, about: 'гроссмейстер' },
+    { n: 8, cap: 'максимум', about: 'полная сила Stockfish 19 — сильнее любого человека' }
+  ];
   try { var sv = JSON.parse(localStorage.getItem('chess-set') || 'null'); if (sv) Object.assign(S, sv); } catch (e) {}
   if (!ONLINE && S.mode === 'net') S.mode = 'bot';
   function saveS() { try { localStorage.setItem('chess-set', JSON.stringify(S)); } catch (e) {} }
   function bindSeg(id, key, conv) { Array.prototype.forEach.call(document.querySelectorAll('#' + id + ' button'), function (b) { b.onclick = function () { S[key] = conv(b.dataset.v); saveS(); renderMenu(); if (G) render(); }; }); }
   Array.prototype.forEach.call(document.querySelectorAll('#modeSeg button'), function (b) { if (b.dataset.v === 'net' && !ONLINE) b.hidden = true; });
   if (!ONLINE) $('modeSeg').style.setProperty('--cols', 2);
+  LEVELS.forEach(function (L) { var b = document.createElement('button'); b.dataset.v = L.n; b.id = 'lv-' + L.n; b.innerHTML = '<b>' + L.n + '</b><small>' + L.cap + '</small>'; $('levelSeg').appendChild(b); });
+  bindSeg('levelSeg', 'level', Number);
   bindSeg('modeSeg', 'mode', String); bindSeg('sideSeg', 'side', String); bindSeg('blindSeg', 'blind', function (v) { return v === '1'; });
   Array.prototype.forEach.call(document.querySelectorAll('#coordSeg button'), function (b) { b.onclick = function () { setCoords(b.dataset.v === '1', false); }; });
   function renderMenu() {
@@ -4065,6 +4085,9 @@ function chessBot(chess) {
     pr('#blindSeg button', function (v) { return (v === '1') === !!S.blind; });
     pr('#coordSeg button', function (v) { return (v === '1') === !!S.coords; });
     $('sideCard').hidden = S.mode === 'duo'; $('netCard').hidden = S.mode !== 'net'; $('playBtn').hidden = S.mode === 'net';
+    $('levelCard').hidden = S.mode !== 'bot';
+    pr('#levelSeg button', function (v) { return +v === S.level; });
+    var LV = LEVELS[(S.level || 8) - 1]; $('levelHint').textContent = 'Уровень ' + LV.n + ': ' + LV.about + '. Анализ всегда на полной силе.';
     $('blindHint').hidden = !S.blind;
     $('soundBtn').innerHTML = S.sound ? ICON_SND : ICON_MUTE;
     $('coordBtn').classList.toggle('on', !!S.coords);
@@ -4158,7 +4181,7 @@ function chessBot(chess) {
   function mySide() { return G.kind.w === 'me' && G.kind.b !== 'me' ? 'w' : G.kind.b === 'me' && G.kind.w !== 'me' ? 'b' : ''; }
   function newGame(kind, opts) {
     token++; opts = opts || {};
-    G = { kind: kind, c: new Chess(), root: node(null, null, START), sel: null, busy: false, over: false, result: null, endShown: false, analysis: !!opts.analysis, drawOffer: null, drawAsked: -1 };
+    G = { kind: kind, level: S.level || 8, c: new Chess(), root: node(null, null, START), sel: null, busy: false, over: false, result: null, endShown: false, analysis: !!opts.analysis, drawOffer: null, drawAsked: -1 };
     G.tip = G.cur = G.root;
     G.flip = mySide() === 'b';
     if (G.analysis) G.over = true;
@@ -4286,7 +4309,7 @@ function chessBot(chess) {
   function who(side) {
     if (G.analysis) return NAME[side];
     var k = G.kind[side];
-    if (k === 'bot') return 'Stockfish 19';
+    if (k === 'bot') return 'Stockfish · ' + (G.level === 8 ? 'максимум' : 'уровень ' + G.level);
     if (k === 'net') return 'Друг' + (net() && !Net2P.online() ? ' (нет связи)' : '');
     return mySide() ? 'Ты' : NAME[side];
   }
@@ -4460,7 +4483,7 @@ function chessBot(chess) {
         if (!rows.length) html += '<span class="muted">В базе нет партий мастеров с этой позицией.</span>';
         rows.forEach(function (r, i) {
           var tot = r[1], pw = Math.round(r[2] / tot * 100), pd = Math.round(r[3] / tot * 100), pb = 100 - pw - pd;
-          html += '<div class="ex-row" data-i="' + i + '"><span>' + esc(ruSan(r[0])) + '</span><span class="n">' + tot.toLocaleString('ru') + '</span><div class="wdl">' +
+          html += '<div class="ex-row" data-i="' + i + '"><span>' + esc(r[0]) + '</span><span class="n">' + tot.toLocaleString('ru') + '</span><div class="wdl">' +
             '<i class="w" style="width:' + pw + '%">' + (pw >= 12 ? pw + '%' : '') + '</i><i class="d" style="width:' + pd + '%">' + (pd >= 12 ? pd + '%' : '') + '</i><i class="b" style="width:' + pb + '%">' + (pb >= 12 ? pb + '%' : '') + '</i></div></div>';
         });
         if (games.length) html += '<div class="ex-h">Партии мастеров</div><div id="gmList"><span class="muted">Загружаю…</span></div>';
@@ -4596,10 +4619,22 @@ function chessBot(chess) {
         decide(mv.san);
       }, Math.max(0, 350 - (Date.now() - t0)));
     };
+    var LV = LEVELS[G.level - 1], ck = GC.info();
+    setStrength(LV);
     botEng.send('position startpos' + (lan ? ' moves ' + lan : ''));
-    var ck = GC.info();
-    if (ck) botEng.send('go wtime ' + Math.round(ck.left[0]) + ' btime ' + Math.round(ck.left[1]) + ' winc ' + ck.inc[0] + ' binc ' + ck.inc[1]);
-    else botEng.send('go movetime 1500');
+    if (LV.n === 8) {
+      if (ck) botEng.send('go wtime ' + Math.round(ck.left[0]) + ' btime ' + Math.round(ck.left[1]) + ' winc ' + ck.inc[0] + ' binc ' + ck.inc[1]);
+      else botEng.send('go movetime 1500');
+    } else {
+      var ms = LV.ms; if (ck) { var mine = ck.left[G.c.turn() === 'w' ? 0 : 1]; ms = Math.max(30, Math.min(ms, mine / 30)); }
+      botEng.send('go ' + (LV.depth ? 'depth ' + LV.depth + ' ' : '') + 'movetime ' + Math.round(ms));
+    }
+  }
+
+  // сила бота: ограничение по рейтингу или «мастерство» + глубина; 8 — без ограничений
+  function setStrength(LV) {
+    if (LV && LV.elo) { botEng.send('setoption name Skill Level value 20'); botEng.send('setoption name UCI_LimitStrength value true'); botEng.send('setoption name UCI_Elo value ' + LV.elo); }
+    else { botEng.send('setoption name UCI_LimitStrength value false'); botEng.send('setoption name Skill Level value ' + (LV && LV.skill != null ? LV.skill : 20)); }
   }
 
   // ---------- undo ----------
@@ -4652,7 +4687,7 @@ function chessBot(chess) {
     // Stockfish соглашается, если у него нет перевеса
     G.drawOffer = 'me'; render(); toast('Stockfish думает над ничьей…');
     var my = token, n = G.c.history().length, botSide = me === 'w' ? 'b' : 'w';
-    BOT.evalCb = true; BOT.evalTurn = G.c.turn(); BOT.last = null;
+    BOT.evalCb = true; BOT.evalTurn = G.c.turn(); BOT.last = null; setStrength(null);   // оценка для ничьей — на полной силе
     BOT.cb = function () {
       BOT.evalCb = false;
       if (my !== token || !G || G.over || G.c.history().length !== n) return;
