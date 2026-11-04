@@ -2,7 +2,7 @@
 // Uses the existing room's Peer shim when embedded in the two-person hub.
 var LavaLink = (function () {
   'use strict';
-  var session=null, loading=null, PREFIX='games-lava-v2-', ABC='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var session=null, loading=null, PREFIX='games-lava-v3-', ABC='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   function code(){var s='';for(var i=0;i<5;i++)s+=ABC[Math.floor(Math.random()*ABC.length)];return s;}
   function clean(s){return String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);}
   function options(){var h=new URLSearchParams(location.search).get('peer');if(!h)return {debug:1};var p=h.split(':');return {host:p[0],port:+p[1]||9000,path:'/',secure:false,debug:1};}

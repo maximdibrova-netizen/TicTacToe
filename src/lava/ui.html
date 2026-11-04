@@ -1,41 +1,64 @@
 <title>Лава</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800;900&family=Nunito:wght@600;700;800&display=swap">
 <style>/*LAVA_CSS*/</style>
-<div id="artDefinitions"></div>
-<svg class="backdrop" aria-hidden="true"><rect width="100%" height="100%" fill="url(#lava-micro-grid)"/></svg>
-<div class="backdrop-shade" aria-hidden="true"></div>
-<div id="corners"></div>
 
 <section id="menu">
   <div class="menu-col">
-    <div class="logo"><span id="logoGem" aria-hidden="true" style="width:55px;height:55px"></span><h1>Лава<small>Прыжки на выживание · 2–4 игрока</small></h1></div>
-    <div class="card"><h2>Быстрый старт</h2><div class="seg" id="presets"><button data-preset="local">Вдвоём</button><button data-preset="bots2">2 бота</button><button data-preset="bots3">3 бота</button><button data-preset="net" id="m-net">Онлайн</button></div></div>
-    <div class="card"><h2>Игроки и стороны</h2><div class="seat-grid" id="seatGrid"></div><p class="seat-note">Выбери, кто играет за каждый угол. Можно также нажать на цветной угол экрана.</p></div>
-    <div class="card"><h2>Карта</h2><div class="seg maps" id="maps"></div><p class="map-description" id="mapDescription"></p></div>
-    <div class="card"><div class="setup-bottom"><label for="firstSelect">Первый ход</label><select id="firstSelect" aria-label="Кто ходит первым"></select></div></div>
-    <div class="play-row"><button class="big-play" id="playBtn"></button><button class="sq-btn" id="rulesBtn" aria-label="Правила">?</button></div>
-    <p class="setup-hint" id="playHint" hidden></p>
-    <button class="secondary" id="resumeBtn" hidden>Продолжить партию</button>
-    <div class="card" id="onlineCard"><h2>Онлайн с друзьями</h2><div class="seg" style="--cols:2"><button id="onCreate">Создать игру</button><button id="onJoin">Войти по коду</button></div><div class="join-row" id="joinRow" hidden><input id="joinCode" aria-label="Код игры" placeholder="КОД" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false"><button id="joinGo">Войти</button></div><p class="seat-note" id="onlineHint">«Игрок» — на твоём устройстве, «Друг» — по ссылке. Друзья могут выбрать свободный угол до старта.</p></div>
+    <header class="logo"><span id="logoGem"></span><div><h1>Лава</h1><p>Прыгай по плиткам, сталкивай соперников в лаву и останься последним</p></div></header>
+
+    <div class="card" id="quickCard"><h2>Быстрый старт</h2>
+      <div class="seg" id="presets" style="--cols:4">
+        <button data-preset="bot1">1 на 1<small>с ботом</small></button>
+        <button data-preset="bots3">Против 3<small>ботов</small></button>
+        <button data-preset="local">Вдвоём<small>на одном</small></button>
+        <button data-preset="net" id="m-net">Онлайн<small>с другом</small></button>
+      </div>
+    </div>
+
+    <div class="card"><h2>Игроки</h2>
+      <div class="seats" id="seatGrid"></div>
+      <p class="hint" id="seatHint">Углы как на поле. «Друг» — играет по ссылке со своего телефона.</p>
+    </div>
+
+    <div class="card"><h2>Поле</h2>
+      <div class="maps" id="maps"></div>
+      <p class="hint" id="mapNote"></p>
+    </div>
+
+    <div class="card"><h2>Первый ход</h2><div class="seg first" id="firstSeg"></div></div>
+
+    <button class="play" id="playBtn"></button>
+    <button class="ghost" id="resumeBtn" hidden>Продолжить партию</button>
+
+    <div class="card" id="onlineCard"><h2>Онлайн по коду</h2>
+      <div class="seg" style="--cols:2"><button id="onCreate">Создать игру</button><button id="onJoin">Войти по коду</button></div>
+      <div class="join-row" id="joinRow" hidden><input id="joinCode" aria-label="Код игры" placeholder="КОД" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false"><button id="joinGo">Войти</button></div>
+      <p class="hint" id="onlineHint">Отметь себя «Игрок», а места друзей — «Друг». До 3 друзей, свободные места можно отдать ботам.</p>
+    </div>
+
+    <details class="card rules"><summary><h2>Как играть</h2></summary><div class="rules-body" id="rulesMenu"></div></details>
     <p class="version">Версия от /*VER*/</p>
   </div>
 </section>
 
 <section id="game" hidden>
-  <div class="game-top" aria-live="polite"><h2 id="turnName"></h2><p id="status"></p></div>
-  <div id="boardWrap"><div class="board-frame"><div id="board" aria-label="Игровое поле"></div><div class="legend" id="legend"></div></div></div>
-  <div id="netWarning" hidden><span id="netWarningText"></span><button class="secondary" id="reconnectBtn" hidden>Переподключиться</button></div>
-  <div class="game-bottom"><div class="move-info" aria-live="polite"><span id="turnNumber"></span><span id="mapName"></span></div><div class="game-tools"><button class="sq-btn" id="homeBtn" aria-label="В меню" title="В меню"></button><button class="sq-btn" id="againBtn" aria-label="Новая партия" title="Новая партия"></button><button class="jump-btn" id="jumpBtn"></button><button class="sq-btn" id="soundBtn" aria-label="Включить звук" aria-pressed="false"></button><button class="sq-btn" id="gameRulesBtn" aria-label="Правила">?</button></div></div>
+  <div class="g-top" aria-live="polite"><div id="turnName"></div><div id="status"></div></div>
+  <div id="arena">
+    <div class="seat" data-c="0" id="seat0"></div><div class="seat" data-c="1" id="seat1"></div>
+    <div id="boardBox"><div id="board" aria-label="Игровое поле"><div class="tiles" id="tiles"></div><div class="marks" id="marks"></div><div class="fx" id="fx"></div><div class="pieces" id="pieces"></div></div></div>
+    <div class="seat" data-c="3" id="seat3"></div><div class="seat" data-c="2" id="seat2"></div>
+  </div>
+  <div id="netWarning" hidden><span id="netWarningText"></span><button class="ghost sm" id="reconnectBtn" hidden>Переподключиться</button></div>
+  <div class="g-bar"><button class="tb" id="homeBtn" aria-label="В меню" title="В меню"></button><button class="tb" id="againBtn" aria-label="Новая партия" title="Новая партия"></button><button class="tb wide" id="stayBtn" title="Прыжок на месте"></button><button class="tb" id="soundBtn" aria-label="Звук" title="Звук"></button><button class="tb" id="gameRulesBtn" aria-label="Правила" title="Правила"></button></div>
 </section>
 
-<dialog id="rulesDialog" aria-labelledby="rulesTitle"><h2 id="rulesTitle">Как играть</h2><ol class="rules-list"><li>Прыгай на соседнюю свободную плитку вверх, вниз, вправо или влево. <b>Обратно, откуда пришёл, нельзя.</b></li><li><b>Прыжок на месте</b> снимает запрет обратного хода и тоже повреждает плитку.</li><li>Плитка ломается при <b>отталкивании</b>. Светлая выдерживает два прыжка, обычная — один. Прыгнешь на месте на последнем слое — провалишься.</li><li>Нет безопасного прыжка в начале твоего хода — выбываешь. Побеждает последний оставшийся.</li></ol><p>Тап по плитке · стрелки / WASD · пробел — на месте</p><div class="btns"><button id="rulesClose">Понятно</button></div></dialog>
-<dialog id="lobby" aria-labelledby="lbTitle"><h2 id="lbTitle">Ждём друзей</h2><p id="lbText"></p><div class="lobby-code" id="lbCode"></div><div id="lbLinkRow"><input id="lbLink" readonly aria-label="Ссылка на игру"><button id="copyBtn">Скопировать ссылку</button></div><p id="lobbyMap"></p><div class="lobby-players" id="lobbyPlayers"></div><div class="btns"><button id="lbStart">Начать</button><button id="lbRetry" hidden>Повторить</button><button class="alt" id="lbCancel">Отмена</button></div></dialog>
-<dialog id="result" aria-labelledby="resultTitle"><div class="win-chip" id="winnerGem"></div><h2 id="resultTitle"></h2><p id="resultText"></p><div class="btns"><button id="resultAgain">Ещё раз</button><button id="viewBtn">Посмотреть поле</button><button class="alt" id="endMenu">В меню</button></div></dialog>
-<dialog id="leaveDialog" aria-labelledby="leaveTitle"><h2 id="leaveTitle">Выйти из игры?</h2><p>Если выйдет хозяин, онлайн-партия закончится для всех. Друг может вернуться по прежней ссылке, пока хозяин держит игру открытой.</p><div class="btns"><button id="leaveConfirm">Выйти</button><button class="alt" id="leaveCancel">Остаться</button></div></dialog>
-<dialog id="restartDialog" aria-labelledby="restartTitle"><h2 id="restartTitle">Начать заново?</h2><p>Текущая локальная партия будет заменена. Карта и выбранные стороны останутся теми же.</p><div class="btns"><button id="restartConfirm">Заново</button><button class="alt" id="restartCancel">Продолжить</button></div></dialog>
+<dialog id="rulesDialog" aria-labelledby="rulesTitle"><h2 id="rulesTitle">Как играть</h2><div class="rules-body" id="rulesDlg"></div><div class="btns"><button id="rulesClose">Понятно</button></div></dialog>
+<dialog id="lobby" aria-labelledby="lbTitle"><h2 id="lbTitle">Ждём друзей</h2><p id="lbText"></p><div class="lobby-code" id="lbCode"></div><div id="lbLinkRow"><input id="lbLink" readonly aria-label="Ссылка на игру"><button id="copyBtn">Скопировать</button></div><div class="lobby-players" id="lobbyPlayers"></div><p class="hint" id="lobbyMap"></p><div class="btns"><button id="lbStart">Начать</button><button id="lbRetry" hidden>Повторить</button><button class="alt" id="lbCancel">Отмена</button></div></dialog>
+<dialog id="result" aria-labelledby="resultTitle"><div class="win-gem" id="winnerGem"></div><h2 id="resultTitle"></h2><p id="resultText"></p><div class="btns"><button id="resultAgain">Ещё раз</button><button class="alt" id="viewBtn">Посмотреть поле</button><button class="alt" id="endMenu">В меню</button></div></dialog>
+<dialog id="leaveDialog" aria-labelledby="leaveTitle"><h2 id="leaveTitle">Выйти из игры?</h2><p>Если выйдет хозяин, онлайн-партия закончится для всех.</p><div class="btns"><button id="leaveConfirm">Выйти</button><button class="alt" id="leaveCancel">Остаться</button></div></dialog>
+<dialog id="restartDialog" aria-labelledby="restartTitle"><h2 id="restartTitle">Начать заново?</h2><p>Текущая партия закончится. Игроки и поле останутся те же.</p><div class="btns"><button id="restartConfirm">Заново</button><button class="alt" id="restartCancel">Продолжить</button></div></dialog>
 <div class="toast" id="toast" hidden role="status"></div>
 <script>/*CORE*/</script>
 <script>/*LAVA_NET*/</script>

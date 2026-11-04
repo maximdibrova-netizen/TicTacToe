@@ -62,392 +62,425 @@ a.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 </script>
 </head><body>
 <title>Лава</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;700;800&display=swap">
-<style>:root {
-  color-scheme: dark;
-  --bg: #161318; --bg-2: #241c22; --ink: #fff4e6; --ink-dim: #c6b7ba;
-  --panel: #7b68ee; --panel-ink: #23125c; --panel-dark: #5140b1;
-  --gold: #f2cf3b; --go: #2e9b52;
-  --display: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
-  --body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
-  --corner: clamp(76px, 14vmin, 126px); --B: 540px; --N: 6;
-}
-* { box-sizing: border-box; }
-html, body { height: 100%; }
-body {
-  margin: 0; overflow: hidden; color: var(--ink); background: var(--bg);
-  font-family: var(--body); -webkit-tap-highlight-color: transparent;
-}
-button, input, select { font: inherit; }
-button { color: inherit; cursor: pointer; touch-action: manipulation; }
-button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
-button:disabled { cursor: default; opacity: .4; }
-button, select { min-height: 42px; }
-.art-defs { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
-.backdrop { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -2; }
-.backdrop-shade { position: fixed; inset: 0; z-index: -1; background: radial-gradient(ellipse at 50% 40%, #3d242044, #100e16bb); }
-body:not(.in-game) .backdrop-shade { background: radial-gradient(ellipse at 50% 35%, #34263ce6, #161320ed); }
-[hidden] { display: none !important; }
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800;900&family=Nunito:wght@600;700;800&display=swap">
+<style>:root{--bg:#110d0c;--card:#1d1614;--card2:#2a201c;--line:rgba(255,150,80,.16);--ink:#f7eee7;--mute:#b4a399;--hot:#ff8a2e;--hot2:#e2451a;--display:"Rubik",system-ui,sans-serif;--body:"Nunito",system-ui,sans-serif;--hub-bg:rgba(20,14,12,.92);--B:480px;--gem:60px}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;color:var(--ink);font:700 15px/1.35 var(--body);background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36'%3E%3Crect x='3' y='3' width='30' height='30' rx='7' fill='%23181211' stroke='%23231a17' stroke-width='1.5'/%3E%3C/svg%3E");background-attachment:fixed;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid #ffc46b;outline-offset:2px}
+.ic{width:22px;height:22px;display:block}
 
-/* Same compact, stacked setup and purple controls as BGC Точки. */
-#menu { position: fixed; inset: 0; overflow-y: auto; padding: 76px 18px 30px !important; }
-.menu-col { width: min(100%, 500px); margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
-.logo { display: flex; gap: 12px; justify-content: center; align-items: center; padding: 0 0 4px; }
-.logo > svg { width: 58px; height: 58px; flex: none; }
-.logo h1 { margin: 0; font: 800 43px/.95 var(--display); }
-.logo small { display: block; font: 700 12px/1.3 var(--body); color: var(--ink-dim); margin-top: 7px; letter-spacing: 0; }
-.card { background: var(--panel); color: var(--panel-ink); border-radius: 18px; padding: 12px; box-shadow: 0 5px 0 var(--panel-dark); display: flex; flex-direction: column; gap: 9px; }
-.card h2 { margin: 0; font: 800 12px/1 var(--body); text-transform: uppercase; letter-spacing: .08em; }
-.seg { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); gap: 6px; }
-.seg button { border: 0; border-radius: 11px; background: #6652d0; color: var(--panel-ink); font: 800 15px/1.15 var(--display); padding: 9px 6px; min-width: 0; }
-.seg button:hover { background: #8f7efb; }
-.seg button[aria-pressed=true] { background: var(--panel-ink); color: #fff; }
-.setup-hint { margin: 0; color: var(--ink-dim); text-align: center; font: 700 12.5px/1.4 var(--body); }
-.seat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
-.seat-choice { display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid #20105245; border-radius: 12px; background: #30205e26; min-width: 0; }
-.seat-choice > svg { width: 39px; height: 39px; flex: none; }
-.seat-choice div { min-width: 0; flex: 1; }
-.seat-choice label { display: block; font: 800 11px/1.15 var(--body); margin-bottom: 5px; }
-.seat-choice select { display: block; width: 100%; border: 0; border-radius: 8px; padding: 5px 4px; min-height: 32px; font-weight: 800; color: #fff; background: var(--panel-ink); }
-.seat-choice.off { opacity: .6; }
-.seat-note { font-size: 11.5px; line-height: 1.4; font-weight: 700; margin: 0; text-align: center; }
-.maps { --cols: 6; }
-.maps button { display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 12px; padding: 8px 2px; }
-.map-mini { display: grid; width: 40px; height: 40px; gap: 1.2px; grid-template-columns: repeat(var(--n), 1fr); }
-.map-mini i { background: currentColor; border-radius: 1px; opacity: .6; }
-.map-mini i.strong { opacity: 1; }
-.map-mini i.hole { background: transparent; }
-.map-description { margin: 0; text-align: center; font: 700 12px/1.35 var(--body); }
-.setup-bottom { display: flex; gap: 10px; align-items: center; }
-.setup-bottom label { font: 800 12px/1.3 var(--body); }
-.setup-bottom select { flex: 1; min-width: 0; border: 0; border-radius: 9px; color: #fff; background: var(--panel-ink); padding: 8px 10px; font-weight: 800; }
-.play-row { display: flex; justify-content: center; gap: 9px; padding-top: 5px; }
-.big-play { display: flex; align-items: center; justify-content: center; gap: 10px; min-width: 190px; border: 0; padding: 12px 28px; border-radius: 16px; color: #fff; background: var(--go); box-shadow: 0 5px 0 #1b6434; font: 800 25px/1 var(--display); }
-.big-play svg { width: 26px; height: 26px; }
-.sq-btn { border: 0; border-radius: 13px; width: 46px; height: 44px; padding: 9px; display: inline-grid; place-items: center; background: var(--panel); color: var(--panel-ink); box-shadow: 0 4px 0 var(--panel-dark); font: 800 24px/1 var(--display); }
-.sq-btn svg { width: 24px; height: 24px; }
-.big-play:active, .sq-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--panel-dark); }
-.secondary { border: 0; border-radius: 11px; padding: 10px 16px; background: #30254b; color: #eee7ff; font-weight: 800; }
-#resumeBtn { align-self: center; }
-#playHint { color: #ffe19a; }
-.join-row { display: flex; gap: 6px; }
-.join-row input { width: 100%; min-width: 0; border: 0; border-radius: 10px; background: #fff; color: #23125c; padding: 10px; letter-spacing: .2em; text-transform: uppercase; font-weight: 800; }
-.join-row button { border: 0; border-radius: 10px; padding: 10px 14px; background: var(--panel-ink); color: #fff; font-weight: 800; }
-.version { text-align: center; font-size: 11px; color: var(--ink-dim); margin: 2px 0 0; opacity: .6; }
+/* ---------- меню ---------- */
+#menu{min-height:100%;display:flex;justify-content:center;padding:12px 14px 28px}
+.menu-col{width:100%;max-width:540px;display:flex;flex-direction:column;gap:12px}
+.logo{display:flex;align-items:center;gap:14px;padding:6px 4px 4px}
+#logoGem{width:62px;height:62px;flex:none;filter:drop-shadow(0 0 16px rgba(240,50,60,.45))}
+#logoGem .gem{width:100%;height:100%}
+.logo h1{margin:0;font:900 44px/1 var(--display);letter-spacing:.02em;text-transform:uppercase;background:linear-gradient(180deg,#ffe0a0 0%,#ff9a3c 45%,#e2451a 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 10px rgba(255,90,20,.35))}
+.logo p{margin:5px 0 0;color:var(--mute);font-size:13.5px;max-width:360px}
+.card{background:linear-gradient(180deg,rgba(42,32,28,.96),rgba(29,22,20,.96));border:1px solid var(--line);border-radius:18px;padding:13px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.card h2{margin:0 0 10px;font:800 12px/1 var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--hot)}
+.hint{margin:9px 2px 0;color:var(--mute);font-size:12.5px;font-weight:700}
+.seg{display:grid;grid-template-columns:repeat(var(--cols,3),1fr);gap:7px}
+.seg button,.ghost,.dlg-btn{border:0;border-radius:12px;background:var(--card2);padding:10px 6px;font-weight:800;font-size:14px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);transition:background .15s,transform .1s}
+.seg button small{display:block;font-size:11px;font-weight:700;opacity:.7;margin-top:2px}
+.seg button:hover{background:#352824}
+.seg button:active{transform:scale(.97)}
+.seg button[aria-pressed=true]{background:linear-gradient(180deg,#ff9a3c,#e2451a);color:#fff;box-shadow:0 4px 14px rgba(230,80,20,.35)}
+.seg button:disabled{opacity:.35;cursor:default}
+.seats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seatc{border-radius:14px;padding:9px;background:rgba(0,0,0,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);display:flex;flex-direction:column;gap:8px;transition:opacity .15s}
+.seatc.off{opacity:.6}
+.seatc .who{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13.5px}
+.seatc .who .gem{width:30px;height:30px;flex:none}
+.seatc.off .who .gem{filter:grayscale(1) brightness(.6)}
+.seatc .seg{--cols:2;gap:5px}
+.seatc .seg button{padding:7px 2px;font-size:12.5px;border-radius:9px}
+.seatc .seg button[aria-pressed=true]{background:var(--cc);box-shadow:0 3px 10px var(--cg)}
+.seatc.off .seg button[aria-pressed=true]{background:#4a3a34;box-shadow:none;color:#d8c8bd}
+.maps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.maps button{border:0;border-radius:12px;background:var(--card2);padding:7px 5px 6px;display:flex;flex-direction:column;align-items:center;gap:5px;font-weight:800;font-size:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+.maps button svg{width:100%;max-width:64px;aspect-ratio:1;display:block;border-radius:5px;background:#0d0908}
+.maps button[aria-pressed=true]{box-shadow:inset 0 0 0 2px var(--hot),0 4px 14px rgba(230,80,20,.3);background:#33231d}
+.maps .rnd{width:100%;max-width:64px;aspect-ratio:1;border-radius:5px;background:#0d0908;display:grid;place-items:center;font:900 26px/1 var(--display);color:var(--hot)}
+.first{--cols:5}
+.first button{display:grid;place-items:center;min-height:44px}
+.first button .gem{width:26px;height:26px}
+.play{border:0;border-radius:16px;padding:15px;font:900 21px/1 var(--display);letter-spacing:.03em;color:#fff;background:linear-gradient(180deg,#ffa54a,#e5461a);box-shadow:0 8px 24px rgba(230,80,20,.4),inset 0 1px 0 rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .1s,filter .15s}
+.play .ic{width:24px;height:24px}
+.play:active{transform:scale(.98)}
+.play:disabled{filter:grayscale(.8) brightness(.7);cursor:default}
+.ghost{padding:12px;background:var(--card2)}
+.ghost.sm{padding:7px 12px;font-size:13px}
+.join-row{display:flex;gap:7px;margin-top:9px}
+.join-row input,#lbLink{flex:1;min-width:0;border:0;border-radius:11px;background:#120d0c;color:var(--ink);font:800 18px/1 var(--display);letter-spacing:.18em;padding:10px 12px;box-shadow:inset 0 0 0 1px var(--line)}
+.join-row button,#copyBtn{border:0;border-radius:11px;background:linear-gradient(180deg,#ff9a3c,#e2451a);color:#fff;font-weight:800;padding:0 16px}
+.rules summary{list-style:none;cursor:pointer}
+.rules summary::-webkit-details-marker{display:none}
+.rules summary h2{margin:0;display:flex;justify-content:space-between}
+.rules summary h2::after{content:"+";font-size:16px}
+.rules[open] summary h2::after{content:"−"}
+.rules[open] summary{margin-bottom:10px}
+.rules-body ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:7px;font-size:14px}
+.rules-body b{color:#ffc58a}
+.rules-body .legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--mute)}
+.rules-body .legend span{display:flex;align-items:center;gap:6px}
+.rules-body .legend i{width:16px;height:16px;border-radius:4px;display:inline-block}
+.version{text-align:center;color:#6f6058;font-size:11.5px;margin:4px 0 0}
 
-/* Corners keep the same fixed seat/color everywhere: setup, lobby and board. */
-.corner { position: fixed; z-index: 8; width: var(--corner); height: var(--corner); border: 0; padding: 0; background: var(--pc); display: grid; place-items: center; }
-.corner[data-corner='0'] { top: 0; left: 0; border-bottom-right-radius: 100%; }
-.corner[data-corner='1'] { top: 0; right: 0; border-bottom-left-radius: 100%; }
-.corner[data-corner='2'] { bottom: 0; right: 0; border-top-left-radius: 100%; }
-.corner[data-corner='3'] { bottom: 0; left: 0; border-top-right-radius: 100%; }
-.corner .corner-content { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 62%; }
-.corner[data-corner='0'] .corner-content { left: 4%; top: 12%; }
-.corner[data-corner='1'] .corner-content { right: 4%; top: 12%; }
-.corner[data-corner='2'] .corner-content { right: 4%; bottom: 12%; }
-.corner[data-corner='3'] .corner-content { left: 4%; bottom: 12%; }
-.corner .role-icon { width: 33%; height: auto; min-width: 24px; aspect-ratio: 1; }
-.corner .role-icon svg { display: block; width: 100%; height: 100%; }
-.corner .corner-kind { color: #fff; font: 800 clamp(10px, 1.8vmin, 15px)/1 var(--display); text-transform: uppercase; text-shadow: 0 1px 3px #0006; }
-.corner .corner-chip { display: none; }
-.corner.off { background: color-mix(in srgb, var(--pc) 18%, #171320); color: #a398b2; }
-.corner.off .corner-kind { color: #a398b2; }
-body:not(.in-game) .hub-back { left: 50%; transform: translateX(-50%); }
-body.in-game .corner { width: var(--corner); height: calc(var(--corner) + 24px); background: none; border-radius: 0; cursor: default; }
-body.in-game .corner[data-corner='0'] { top: 44px; left: 16px; }
-body.in-game .corner[data-corner='1'] { top: 44px; right: 16px; }
-body.in-game .corner[data-corner='2'] { bottom: 22px; right: 16px; }
-body.in-game .corner[data-corner='3'] { bottom: 22px; left: 16px; }
-body.in-game .corner .corner-content { position: static; width: 100%; height: 100%; gap: 0; }
-body.in-game .corner .corner-chip { display: block; width: 90%; aspect-ratio: 1; filter: drop-shadow(0 0 12px color-mix(in srgb, var(--pc) 28%, transparent)); }
-body.in-game .corner .role-icon { display: none; }
-body.in-game .corner .corner-kind { font-size: 12px; margin-top: 4px; }
-body.in-game .corner.out { opacity: .22; }
-body.in-game .corner.off { opacity: .12; }
-.gem { display: block; width: 100%; height: 100%; overflow: visible; }
-.turn-ring { display: none; transform-origin: 50px 50px; }
-.turn .turn-ring { display: block; animation: spin 2.4s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+/* ---------- игра ---------- */
+#game{height:100%;display:flex;flex-direction:column;align-items:center;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px)}
+.g-top{text-align:center;padding:2px 12px 0;min-height:52px;display:flex;flex-direction:column;justify-content:center}
+#turnName{font:900 22px/1.1 var(--display);letter-spacing:.02em;transition:color .2s;text-shadow:0 2px 14px rgba(0,0,0,.6)}
+#status{color:var(--mute);font-size:13px;margin-top:3px;min-height:18px}
+#arena{flex:1;width:100%;display:grid;align-content:center;justify-content:center;gap:6px 0;grid-template-columns:repeat(2,calc(var(--B)/2 + 8px));grid-template-rows:auto auto auto;grid-template-areas:"a b" "c c" "d e";min-height:0}
+#seat0{grid-area:a;justify-self:start}#seat1{grid-area:b;justify-self:end}#seat3{grid-area:d;justify-self:start}#seat2{grid-area:e;justify-self:end}
+#boardBox{grid-area:c;justify-self:center;align-self:center}
+#arena.wide{grid-template-columns:auto var(--B) auto;grid-template-rows:1fr 1fr;grid-template-areas:"a c b" "d c e";gap:0 28px}
+#arena.wide #seat0,#arena.wide #seat1{align-self:start}
+#arena.wide #seat3,#arena.wide #seat2{align-self:end}
+.seat{display:flex;align-items:center;gap:9px;padding:4px 6px;min-width:0;transition:opacity .3s,filter .3s}
+#seat1,#seat2{flex-direction:row-reverse;text-align:right}
+#arena.wide .seat{flex-direction:column;text-align:center;gap:6px}
+.seat[hidden]{display:flex!important;visibility:hidden}
+.seat .sg{position:relative;width:var(--gem);height:var(--gem);flex:none}
+.seat .sg .gem{width:100%;height:100%;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}
+.seat .sg .ring{position:absolute;inset:-9px;opacity:0;transition:opacity .2s}
+.seat.on .sg .ring{opacity:1}
+.seat.on .sg .gem{filter:drop-shadow(0 0 14px var(--cg)) drop-shadow(0 4px 10px rgba(0,0,0,.5))}
+.seat .nm{font:800 14px/1.1 var(--display)}
+.seat .st{font-size:11.5px;color:var(--mute);margin-top:2px}
+.seat.dead{opacity:.38;filter:grayscale(1)}
+.ring{animation:spin 1.6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-/* One-screen arcade table, deliberately no sidebar or dashboard cards. */
-#game { position: fixed; inset: 0; padding: 0 !important; }
-.game-top { position: absolute; top: 49px; left: 0; right: 0; text-align: center; padding: 0 calc(var(--corner) + 24px); display: flex; align-items: center; flex-direction: column; gap: 5px; }
-#turnName { margin: 0; font: 800 clamp(17px, 3.4vmin, 25px)/1.1 var(--display); text-shadow: 0 2px 6px #000; }
-#status { min-height: 18px; font: 700 12px/1.4 var(--body); color: var(--ink-dim); margin: 0; }
-#boardWrap { position: absolute; inset: 112px 18px 113px; display: grid; place-items: center; pointer-events: none; }
-.board-frame { position: relative; width: var(--B); height: var(--B); padding: 5px; border: 1px solid #68503c; background: #2a211c; box-shadow: 0 10px 50px #0009, inset 0 0 0 2px #151315; border-radius: 6px; pointer-events: auto; }
-#board { width: 100%; height: 100%; position: relative; isolation: isolate; }
-.tile { position: absolute; left: calc(var(--x) * 100% / var(--N)); top: calc(var(--y) * 100% / var(--N)); width: calc(100% / var(--N)); height: calc(100% / var(--N)); min-height: 0; padding: 1px; border: 0; background: transparent; opacity: 1 !important; cursor: default; overflow: visible; }
-.tile-art { width: 100%; height: 100%; display: block; overflow: visible; }
-.tile.hole .tile-art { animation: ember 3.8s ease-in-out infinite alternate; animation-delay: var(--delay); }
-@keyframes ember { from { filter: brightness(.95); } to { filter: brightness(1.22); } }
-.tile.can { cursor: pointer; z-index: 2; }
-.tile.can::after { content: ''; position: absolute; inset: 8%; border: 2px solid var(--active-color); border-radius: 10%; box-shadow: inset 0 0 9px color-mix(in srgb, var(--active-color) 25%, transparent); opacity: .85; pointer-events: none; }
-.tile.can:hover::after { border-color: #fff; box-shadow: 0 0 12px var(--active-color); }
-.tile:focus-visible { outline-offset: -6px; z-index: 5; }
-.tile .target { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--active-dark); font: 800 max(17px, calc(var(--B) / var(--N) * .3))/1 var(--body); pointer-events: none; text-shadow: 0 1px 0 #fff9; }
-.token { position: absolute; width: calc(100% / var(--N) * .72); height: calc(100% / var(--N) * .72); left: calc((var(--x) + .5) * 100% / var(--N)); top: calc((var(--y) + .5) * 100% / var(--N)); transform: translate(-50%,-50%); transition: left .3s cubic-bezier(.25,.7,.35,1), top .3s cubic-bezier(.25,.7,.35,1); pointer-events: none; z-index: 6; filter: drop-shadow(0 4px 3px #0006); }
-.token.no-motion { transition: none; }
-.token .piece { display: block; width: 100%; height: 100%; }
-.token .gem-arrow { opacity: .95; }
-.token .gem-arrow.blocked { display: none; }
-.token:not(.turn) .gem-arrow { display: none; }
-.frag { position: absolute; z-index: 4; width: calc(var(--B) / var(--N) * .2); aspect-ratio: 1; background: linear-gradient(135deg,#fff0d9,#b99a74); clip-path: polygon(10% 0,100% 15%,75% 90%,0 75%); pointer-events: none; }
-.legend { display: flex; align-items: center; justify-content: center; gap: 13px; font-size: 11px; color: #d2c2b1; position: absolute; top: calc(100% + 10px); width: 100%; left: 0; }
-.legend span { display: inline-flex; align-items: center; gap: 5px; }
-.legend svg { width: 18px; height: 18px; }
-.game-bottom { position: absolute; bottom: 18px; left: calc(var(--corner) + 26px); right: calc(var(--corner) + 26px); display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.game-tools { display: flex; justify-content: center; gap: 8px; }
-.jump-btn { display: flex; align-items: center; gap: 7px; border: 0; border-radius: 13px; background: var(--gold); box-shadow: 0 4px 0 #b98e14; color: #39220e; padding: 9px 17px; font: 800 17px/1 var(--display); white-space: nowrap; }
-.jump-btn svg { width: 23px; height: 23px; }
-.jump-btn small { display: block; font: 800 10px/1.2 var(--body); margin-top: 2px; }
-.jump-btn.danger { background: #bd4a42; color: #fff; box-shadow: 0 4px 0 #6e2924; }
-.move-info { display: flex; gap: 9px; align-items: center; justify-content: center; font: 700 11px/1.3 var(--body); color: var(--ink-dim); text-align: center; }
-#netWarning { position: absolute; top: 88px; left: 50%; transform: translateX(-50%); z-index: 9; border-radius: 12px; border: 1px solid #89603e; background: #3e2d22; padding: 9px 14px; font-size: 12px; max-width: min(90%, 500px); text-align: center; }
-#netWarning button { min-height: 28px; margin-left: 8px; padding: 4px 8px; }
+#boardBox{padding:calc(var(--B)*.018);border-radius:calc(var(--B)*.035);background:#0f0b0a;box-shadow:0 0 0 1px #2c221f,0 0 0 calc(var(--B)*.012) #191312,0 0 0 calc(var(--B)*.014) #3a2d28,0 22px 60px rgba(0,0,0,.6),0 0 80px rgba(255,90,20,.08)}
+#board{position:relative;width:var(--B);height:var(--B);touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+#board .lava{position:absolute;inset:0;width:100%;height:100%;display:block;border-radius:calc(var(--B)*.02)}
+#board .tiles,#board .marks,#board .fx,#board .pieces{position:absolute;inset:0}
+#board .fx{pointer-events:none;z-index:4}
+#board .pieces{z-index:3;pointer-events:none}
+#board .marks{z-index:5}
+.tile{position:absolute;width:calc(var(--B)/6*.86);height:calc(var(--B)/6*.86);border-radius:calc(var(--B)/6*.13);transition:background .45s,box-shadow .45s,opacity .45s}
+.tile.t3{background:linear-gradient(155deg,#fdfaf6 0%,#f1ebe4 55%,#e2d9cf 100%);box-shadow:inset 0 0 0 calc(var(--B)*.004) rgba(255,255,255,.9),inset 0 calc(var(--B)*-.008) calc(var(--B)*.016) rgba(110,90,80,.28),inset 0 0 calc(var(--B)*.012) rgba(255,255,255,.6)}
+.tile.t2{background:linear-gradient(155deg,rgba(234,224,214,.9),rgba(210,196,185,.86));box-shadow:inset 0 0 0 calc(var(--B)*.004) rgba(255,255,255,.4),inset 0 calc(var(--B)*-.007) calc(var(--B)*.016) rgba(90,60,40,.28)}
+.tile.t1{background:linear-gradient(155deg,rgba(214,198,186,.42),rgba(160,142,130,.34));box-shadow:inset 0 0 0 calc(var(--B)*.004) rgba(255,235,220,.22),inset 0 0 calc(var(--B)*.02) rgba(0,0,0,.25)}
+.tile.t0{background:transparent;box-shadow:inset 0 0 calc(var(--B)*.025) calc(var(--B)*.008) rgba(0,0,0,.75)}
+.mark{position:absolute;width:calc(var(--B)/6);height:calc(var(--B)/6);border:0;padding:0;background:transparent;display:grid;place-items:center;cursor:default}
+.mark.go,.mark.stay{cursor:pointer}
+.mark.go::after{content:"";width:22%;height:22%;border-radius:50%;background:var(--mc);opacity:.75;box-shadow:0 0 calc(var(--B)*.02) var(--mc);transition:transform .12s}
+.mark.go.push::after,.mark.go.bounce::after{width:78%;height:78%;background:transparent;opacity:1;border-radius:22%;box-shadow:inset 0 0 0 calc(var(--B)*.007) var(--mc),0 0 calc(var(--B)*.02) var(--mc)}
+.mark.go.bad::after{background:#1a0805;box-shadow:inset 0 0 0 calc(var(--B)*.006) #ff4a1a,0 0 calc(var(--B)*.02) #ff4a1a}
+.mark.go.kill::after{box-shadow:inset 0 0 0 calc(var(--B)*.008) #ffd34d,0 0 calc(var(--B)*.03) #ff8a2e}
+.mark.go:hover::after{transform:scale(1.25)}
+.mark.stay::after{content:"";width:92%;height:92%;border-radius:24%;box-shadow:inset 0 0 0 calc(var(--B)*.005) rgba(255,255,255,.0);transition:box-shadow .15s}
+.mark.stay.armed::after{box-shadow:inset 0 0 0 calc(var(--B)*.007) #fff,0 0 calc(var(--B)*.03) rgba(255,255,255,.6)}
+.mark.stay.armed.bad::after{box-shadow:inset 0 0 0 calc(var(--B)*.007) #ff4a1a,0 0 calc(var(--B)*.03) #ff4a1a}
+.mark.hover::after{transform:scale(1.35)}
+.pc{position:absolute;left:0;top:0;width:calc(var(--B)/6);height:calc(var(--B)/6);will-change:transform}
+.pc .gem{position:absolute;left:21%;top:21%;width:58%;height:58%;filter:drop-shadow(0 calc(var(--B)*.006) calc(var(--B)*.008) rgba(0,0,0,.55))}
+.pc .ar{position:absolute;width:0;height:0;border:calc(var(--B)*.011) solid transparent;opacity:0;transition:opacity .2s}
+.pc .ar.on{opacity:.95}
+.pc .a0{left:50%;top:10%;transform:translateX(-50%);border-bottom-color:var(--pc);border-top-width:0}
+.pc .a2{left:50%;bottom:10%;transform:translateX(-50%);border-top-color:var(--pc);border-bottom-width:0}
+.pc .a1{right:10%;top:50%;transform:translateY(-50%);border-left-color:var(--pc);border-right-width:0}
+.pc .a3{left:10%;top:50%;transform:translateY(-50%);border-right-color:var(--pc);border-left-width:0}
+.pc .ring{position:absolute;inset:8%;opacity:0;transition:opacity .2s}
+.pc.on .ring{opacity:1}
+.pc.drag{opacity:.35}
+.pc.gone{display:none}
+#ghost{position:fixed;left:0;top:0;z-index:70;pointer-events:none;width:calc(var(--B)/6*.7);height:calc(var(--B)/6*.7);filter:drop-shadow(0 10px 14px rgba(0,0,0,.6))}
+#ghost .gem{width:100%;height:100%}
+.bit{position:absolute;left:0;top:0;pointer-events:none;will-change:transform,opacity}
 
-/* Reuse the purple dialog / green play-button language of the other arcade game. */
-dialog { border: 0; border-radius: 22px; width: min(440px, calc(100% - 28px)); max-height: calc(100dvh - 30px); overflow-y: auto; padding: 22px; color: var(--panel-ink); background: var(--panel); box-shadow: 0 7px 0 var(--panel-dark), 0 20px 90px #0008; text-align: center; }
-dialog::backdrop { background: #080811cf; backdrop-filter: blur(5px); }
-dialog h2 { margin: 0 0 10px; font: 800 30px/1.1 var(--display); }
-dialog p { margin: 8px 0 14px; font: 700 14px/1.4 var(--body); }
-dialog .btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
-dialog button { border: 0; border-radius: 11px; padding: 10px 16px; background: var(--panel-ink); color: #fff; font: 800 16px/1.2 var(--display); }
-dialog button.alt { color: var(--panel-ink); background: #30205e22; }
-dialog .win-chip { width: 78px; height: 78px; margin: 0 auto 15px; }
-.rules-list { margin: 0; padding-left: 22px; text-align: left; font: 700 14px/1.45 var(--body); display: flex; flex-direction: column; gap: 9px; }
-.lobby-code { font: 800 36px/1.1 var(--display); letter-spacing: .15em; margin: 12px 0; }
-#lbLink { width: 100%; min-width: 0; border: 0; border-radius: 9px; background: #25115a; color: #fff; padding: 10px; font-size: 12px; }
-#copyBtn { margin-top: 7px; }
-.lobby-players { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 16px 0; }
-.lobby-player { border: 2px solid transparent; display: flex; gap: 8px; align-items: center; padding: 10px; border-radius: 12px; text-align: left; background: #30205e22; color: var(--panel-ink); min-width: 0; }
-.lobby-player.mine { border-color: #fff; }
-.lobby-player button { padding: 5px 9px; font-size: 12px; min-height: 28px; margin-top: 4px; }
-.lobby-player > svg { width: 39px; height: 39px; flex: none; }
-.lobby-player small { font: 800 11px/1.2 var(--body); display: block; }
-.lobby-player b { font: 800 14px/1.2 var(--display); }
-.toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 28px); width: max-content; padding: 10px 16px; background: #f7e4c6; color: #352519; border-radius: 12px; font: 800 13px/1.4 var(--body); z-index: 40; box-shadow: 0 6px 24px #0006; text-align: center; }
+.g-bar{display:flex;gap:8px;justify-content:center;padding:8px 10px 0;flex-wrap:nowrap}
+.tb{border:0;height:46px;min-width:46px;border-radius:14px;background:linear-gradient(180deg,#3a2c27,#271d1a);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 12px rgba(0,0,0,.4);display:grid;place-items:center;transition:transform .1s,background .15s}
+.tb:active{transform:scale(.95)}
+.tb.wide{display:flex;align-items:center;gap:7px;padding:0 16px;font:800 14px/1 var(--display)}
+.tb.wide.armed{background:linear-gradient(180deg,#ffa54a,#e5461a);color:#fff}
+.tb:disabled{opacity:.4;cursor:default}
+#netWarning{margin:6px 12px 0;background:#3a1c12;border:1px solid #7a3218;border-radius:12px;padding:8px 12px;font-size:13px;display:flex;gap:10px;align-items:center}
 
-@media (max-width: 650px) {
-  :root { --corner: 72px; }
-  #menu { padding-top: 74px !important; }
-  .menu-col { gap: 14px; position: relative; z-index: 9; }
-  .logo h1 { font-size: 35px; }
-  .logo > svg { width: 48px; height: 48px; }
-  .corner .corner-kind { font-size: 10px; }
-  .corner .role-icon { min-width: 21px; }
-  .maps { --cols: 3; }
-  .maps button { flex-direction: column; justify-content: center; gap: 5px; padding: 7px 3px; font-size: 12px; }
-  .map-mini { width: 30px; height: 30px; flex: none; }
-  .seat-grid { gap: 7px; }
-  .seat-choice { padding: 7px 5px; gap: 5px; }
-  .seat-choice > svg { width: 30px; height: 30px; }
-  .seat-choice label { font-size: 10px; }
-  .seat-choice select { font-size: 12px; }
-  .seg button { font-size: 14px; }
-  body.in-game .corner[data-corner='0'] { top: 51px; left: 9px; }
-  body.in-game .corner[data-corner='1'] { top: 51px; right: 9px; }
-  body.in-game .corner[data-corner='2'] { bottom: 88px; right: 9px; }
-  body.in-game .corner[data-corner='3'] { bottom: 88px; left: 9px; }
-  body.in-game .corner .corner-kind { font-size: 10px; }
-  .game-top { top: 70px; padding-inline: 91px; gap: 4px; }
-  #turnName { font-size: 17px; }
-  #status { font-size: 10px; min-height: 28px; }
-  #boardWrap { inset: 148px 10px 190px; }
-  .board-frame { padding: 3px; }
-  .legend { gap: 9px; font-size: 10px; top: calc(100% + 8px); }
-  .legend svg { width: 15px; height: 15px; }
-  .game-bottom { bottom: 21px; left: 10px; right: 10px; gap: 10px; }
-  .game-tools { display: grid; grid-template-columns: 41px 41px minmax(0,1fr) 41px 41px; width: min(100%,380px); gap: 6px; }
-  .game-tools .sq-btn { width: 41px; height: 42px; }
-  .jump-btn { justify-content: center; padding: 5px; font-size: 15px; min-width: 0; }
-  .jump-btn svg { width: 21px; height: 21px; }
-  .move-info { max-width: 200px; font-size: 10px; min-height: 25px; }
-  #netWarning { top: 125px; width: calc(100% - 20px); font-size: 11px; }
-}
-@media (max-width: 360px) {
-  .jump-btn { font-size: 14px; }
-  .jump-btn svg { display: none; }
-  .legend { gap: 7px; font-size: 9px; }
-  .legend svg { width: 13px; height: 13px; }
-  body.in-game .corner[data-corner='2'],body.in-game .corner[data-corner='3'] { bottom: 77px; }
-}
-@media (max-height: 540px) and (min-width: 651px) {
-  :root { --corner: 65px; }
-  .game-top { top: 8px; gap: 2px; }
-  #turnName { font-size: 18px; }
-  #boardWrap { top: 55px; bottom: 80px; }
-  body.in-game .corner[data-corner='0'],body.in-game .corner[data-corner='1'] { top: 44px; }
-  .game-bottom { bottom: 8px; gap: 5px; }
-  .legend { display: none; }
-  #status { font-size: 11px; }
-  .move-info { font-size: 10px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
-}
+/* ---------- окна ---------- */
+dialog{border:0;border-radius:20px;padding:20px;max-width:min(420px,calc(100vw - 28px));width:100%;background:linear-gradient(180deg,#2c211d,#1c1513);color:var(--ink);box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px var(--line)}
+dialog::backdrop{background:rgba(5,3,2,.7);backdrop-filter:blur(3px)}
+dialog h2{margin:0 0 8px;font:900 22px/1.15 var(--display)}
+dialog p{margin:0 0 10px;color:#d8c8bd}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btns button{flex:1;border:0;border-radius:12px;padding:12px 10px;font-weight:800;background:linear-gradient(180deg,#ff9a3c,#e2451a);color:#fff;white-space:nowrap}
+.btns button.alt{background:var(--card2);color:var(--ink)}
+.win-gem{width:96px;height:96px;margin:4px auto 10px;filter:drop-shadow(0 0 24px rgba(255,170,60,.45))}
+.win-gem .gem{width:100%;height:100%}
+#result{text-align:center}
+.lobby-code{font:900 38px/1 var(--display);letter-spacing:.2em;text-align:center;color:#ffc27a;margin:6px 0 12px}
+#lbLinkRow{display:flex;gap:7px;margin-bottom:12px}
+#lbLink{font:700 12px/1 var(--body);letter-spacing:0}
+.lobby-players{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.lp{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.25);border-radius:12px;padding:8px;font-size:13px}
+.lp .gem{width:30px;height:30px;flex:none}
+.lp.mine{box-shadow:inset 0 0 0 2px var(--hot)}
+.lp button{margin-left:auto;border:0;border-radius:8px;background:var(--hot2);color:#fff;font-weight:800;font-size:12px;padding:5px 8px}
+.lp small{display:block;color:var(--mute);font-size:11px}
+.toast{position:fixed;left:50%;top:calc(var(--hub-h) + env(safe-area-inset-top,0px) + 8px);transform:translateX(-50%);z-index:80;background:rgba(30,20,17,.96);border:1px solid var(--line);border-radius:12px;padding:10px 16px;font-size:14px;max-width:calc(100vw - 30px);text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+@media (max-width:420px){.logo h1{font-size:38px}.maps{grid-template-columns:repeat(4,1fr);gap:6px}.maps button{font-size:11px;padding:6px 3px}.seat .nm{font-size:13px}.tb.wide{padding:0 12px}}
+@media (prefers-reduced-motion:reduce){.ring{animation:none}}
 </style>
-<div id="artDefinitions"></div>
-<svg class="backdrop" aria-hidden="true"><rect width="100%" height="100%" fill="url(#lava-micro-grid)"/></svg>
-<div class="backdrop-shade" aria-hidden="true"></div>
-<div id="corners"></div>
 
 <section id="menu">
   <div class="menu-col">
-    <div class="logo"><span id="logoGem" aria-hidden="true" style="width:55px;height:55px"></span><h1>Лава<small>Прыжки на выживание · 2–4 игрока</small></h1></div>
-    <div class="card"><h2>Быстрый старт</h2><div class="seg" id="presets"><button data-preset="local">Вдвоём</button><button data-preset="bots2">2 бота</button><button data-preset="bots3">3 бота</button><button data-preset="net" id="m-net">Онлайн</button></div></div>
-    <div class="card"><h2>Игроки и стороны</h2><div class="seat-grid" id="seatGrid"></div><p class="seat-note">Выбери, кто играет за каждый угол. Можно также нажать на цветной угол экрана.</p></div>
-    <div class="card"><h2>Карта</h2><div class="seg maps" id="maps"></div><p class="map-description" id="mapDescription"></p></div>
-    <div class="card"><div class="setup-bottom"><label for="firstSelect">Первый ход</label><select id="firstSelect" aria-label="Кто ходит первым"></select></div></div>
-    <div class="play-row"><button class="big-play" id="playBtn"></button><button class="sq-btn" id="rulesBtn" aria-label="Правила">?</button></div>
-    <p class="setup-hint" id="playHint" hidden></p>
-    <button class="secondary" id="resumeBtn" hidden>Продолжить партию</button>
-    <div class="card" id="onlineCard"><h2>Онлайн с друзьями</h2><div class="seg" style="--cols:2"><button id="onCreate">Создать игру</button><button id="onJoin">Войти по коду</button></div><div class="join-row" id="joinRow" hidden><input id="joinCode" aria-label="Код игры" placeholder="КОД" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false"><button id="joinGo">Войти</button></div><p class="seat-note" id="onlineHint">«Игрок» — на твоём устройстве, «Друг» — по ссылке. Друзья могут выбрать свободный угол до старта.</p></div>
-    <p class="version">Версия от 04.11.2026 20:51</p>
+    <header class="logo"><span id="logoGem"></span><div><h1>Лава</h1><p>Прыгай по плиткам, сталкивай соперников в лаву и останься последним</p></div></header>
+
+    <div class="card" id="quickCard"><h2>Быстрый старт</h2>
+      <div class="seg" id="presets" style="--cols:4">
+        <button data-preset="bot1">1 на 1<small>с ботом</small></button>
+        <button data-preset="bots3">Против 3<small>ботов</small></button>
+        <button data-preset="local">Вдвоём<small>на одном</small></button>
+        <button data-preset="net" id="m-net">Онлайн<small>с другом</small></button>
+      </div>
+    </div>
+
+    <div class="card"><h2>Игроки</h2>
+      <div class="seats" id="seatGrid"></div>
+      <p class="hint" id="seatHint">Углы как на поле. «Друг» — играет по ссылке со своего телефона.</p>
+    </div>
+
+    <div class="card"><h2>Поле</h2>
+      <div class="maps" id="maps"></div>
+      <p class="hint" id="mapNote"></p>
+    </div>
+
+    <div class="card"><h2>Первый ход</h2><div class="seg first" id="firstSeg"></div></div>
+
+    <button class="play" id="playBtn"></button>
+    <button class="ghost" id="resumeBtn" hidden>Продолжить партию</button>
+
+    <div class="card" id="onlineCard"><h2>Онлайн по коду</h2>
+      <div class="seg" style="--cols:2"><button id="onCreate">Создать игру</button><button id="onJoin">Войти по коду</button></div>
+      <div class="join-row" id="joinRow" hidden><input id="joinCode" aria-label="Код игры" placeholder="КОД" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false"><button id="joinGo">Войти</button></div>
+      <p class="hint" id="onlineHint">Отметь себя «Игрок», а места друзей — «Друг». До 3 друзей, свободные места можно отдать ботам.</p>
+    </div>
+
+    <details class="card rules"><summary><h2>Как играть</h2></summary><div class="rules-body" id="rulesMenu"></div></details>
+    <p class="version">Версия от 04.11.2026 21:29</p>
   </div>
 </section>
 
 <section id="game" hidden>
-  <div class="game-top" aria-live="polite"><h2 id="turnName"></h2><p id="status"></p></div>
-  <div id="boardWrap"><div class="board-frame"><div id="board" aria-label="Игровое поле"></div><div class="legend" id="legend"></div></div></div>
-  <div id="netWarning" hidden><span id="netWarningText"></span><button class="secondary" id="reconnectBtn" hidden>Переподключиться</button></div>
-  <div class="game-bottom"><div class="move-info" aria-live="polite"><span id="turnNumber"></span><span id="mapName"></span></div><div class="game-tools"><button class="sq-btn" id="homeBtn" aria-label="В меню" title="В меню"></button><button class="sq-btn" id="againBtn" aria-label="Новая партия" title="Новая партия"></button><button class="jump-btn" id="jumpBtn"></button><button class="sq-btn" id="soundBtn" aria-label="Включить звук" aria-pressed="false"></button><button class="sq-btn" id="gameRulesBtn" aria-label="Правила">?</button></div></div>
+  <div class="g-top" aria-live="polite"><div id="turnName"></div><div id="status"></div></div>
+  <div id="arena">
+    <div class="seat" data-c="0" id="seat0"></div><div class="seat" data-c="1" id="seat1"></div>
+    <div id="boardBox"><div id="board" aria-label="Игровое поле"><div class="tiles" id="tiles"></div><div class="marks" id="marks"></div><div class="fx" id="fx"></div><div class="pieces" id="pieces"></div></div></div>
+    <div class="seat" data-c="3" id="seat3"></div><div class="seat" data-c="2" id="seat2"></div>
+  </div>
+  <div id="netWarning" hidden><span id="netWarningText"></span><button class="ghost sm" id="reconnectBtn" hidden>Переподключиться</button></div>
+  <div class="g-bar"><button class="tb" id="homeBtn" aria-label="В меню" title="В меню"></button><button class="tb" id="againBtn" aria-label="Новая партия" title="Новая партия"></button><button class="tb wide" id="stayBtn" title="Прыжок на месте"></button><button class="tb" id="soundBtn" aria-label="Звук" title="Звук"></button><button class="tb" id="gameRulesBtn" aria-label="Правила" title="Правила"></button></div>
 </section>
 
-<dialog id="rulesDialog" aria-labelledby="rulesTitle"><h2 id="rulesTitle">Как играть</h2><ol class="rules-list"><li>Прыгай на соседнюю свободную плитку вверх, вниз, вправо или влево. <b>Обратно, откуда пришёл, нельзя.</b></li><li><b>Прыжок на месте</b> снимает запрет обратного хода и тоже повреждает плитку.</li><li>Плитка ломается при <b>отталкивании</b>. Светлая выдерживает два прыжка, обычная — один. Прыгнешь на месте на последнем слое — провалишься.</li><li>Нет безопасного прыжка в начале твоего хода — выбываешь. Побеждает последний оставшийся.</li></ol><p>Тап по плитке · стрелки / WASD · пробел — на месте</p><div class="btns"><button id="rulesClose">Понятно</button></div></dialog>
-<dialog id="lobby" aria-labelledby="lbTitle"><h2 id="lbTitle">Ждём друзей</h2><p id="lbText"></p><div class="lobby-code" id="lbCode"></div><div id="lbLinkRow"><input id="lbLink" readonly aria-label="Ссылка на игру"><button id="copyBtn">Скопировать ссылку</button></div><p id="lobbyMap"></p><div class="lobby-players" id="lobbyPlayers"></div><div class="btns"><button id="lbStart">Начать</button><button id="lbRetry" hidden>Повторить</button><button class="alt" id="lbCancel">Отмена</button></div></dialog>
-<dialog id="result" aria-labelledby="resultTitle"><div class="win-chip" id="winnerGem"></div><h2 id="resultTitle"></h2><p id="resultText"></p><div class="btns"><button id="resultAgain">Ещё раз</button><button id="viewBtn">Посмотреть поле</button><button class="alt" id="endMenu">В меню</button></div></dialog>
-<dialog id="leaveDialog" aria-labelledby="leaveTitle"><h2 id="leaveTitle">Выйти из игры?</h2><p>Если выйдет хозяин, онлайн-партия закончится для всех. Друг может вернуться по прежней ссылке, пока хозяин держит игру открытой.</p><div class="btns"><button id="leaveConfirm">Выйти</button><button class="alt" id="leaveCancel">Остаться</button></div></dialog>
-<dialog id="restartDialog" aria-labelledby="restartTitle"><h2 id="restartTitle">Начать заново?</h2><p>Текущая локальная партия будет заменена. Карта и выбранные стороны останутся теми же.</p><div class="btns"><button id="restartConfirm">Заново</button><button class="alt" id="restartCancel">Продолжить</button></div></dialog>
+<dialog id="rulesDialog" aria-labelledby="rulesTitle"><h2 id="rulesTitle">Как играть</h2><div class="rules-body" id="rulesDlg"></div><div class="btns"><button id="rulesClose">Понятно</button></div></dialog>
+<dialog id="lobby" aria-labelledby="lbTitle"><h2 id="lbTitle">Ждём друзей</h2><p id="lbText"></p><div class="lobby-code" id="lbCode"></div><div id="lbLinkRow"><input id="lbLink" readonly aria-label="Ссылка на игру"><button id="copyBtn">Скопировать</button></div><div class="lobby-players" id="lobbyPlayers"></div><p class="hint" id="lobbyMap"></p><div class="btns"><button id="lbStart">Начать</button><button id="lbRetry" hidden>Повторить</button><button class="alt" id="lbCancel">Отмена</button></div></dialog>
+<dialog id="result" aria-labelledby="resultTitle"><div class="win-gem" id="winnerGem"></div><h2 id="resultTitle"></h2><p id="resultText"></p><div class="btns"><button id="resultAgain">Ещё раз</button><button class="alt" id="viewBtn">Посмотреть поле</button><button class="alt" id="endMenu">В меню</button></div></dialog>
+<dialog id="leaveDialog" aria-labelledby="leaveTitle"><h2 id="leaveTitle">Выйти из игры?</h2><p>Если выйдет хозяин, онлайн-партия закончится для всех.</p><div class="btns"><button id="leaveConfirm">Выйти</button><button class="alt" id="leaveCancel">Остаться</button></div></dialog>
+<dialog id="restartDialog" aria-labelledby="restartTitle"><h2 id="restartTitle">Начать заново?</h2><p>Текущая партия закончится. Игроки и поле останутся те же.</p><div class="btns"><button id="restartConfirm">Заново</button><button class="alt" id="restartCancel">Продолжить</button></div></dialog>
 <div class="toast" id="toast" hidden role="status"></div>
-<script>// Лава: deterministic rules, shared by the UI, bots and the host referee.
+<script>// Лава: правила, карты и бот. Общие для интерфейса, ботов и хозяина онлайн-партии.
+//
+// Поле 6 × 6, все клетки — плитки. Плитка держит 3 (белая), 2 (бежевая) или 1 (тёмная) прыжок; 0 — лава.
+// Ход: прыжок по прямой (вверх/вправо/вниз/влево) на любое расстояние — над фишками и дырами,
+// но приземлиться можно только на плитку. Плитка, с которой оттолкнулся, теряет слой.
+// Назад — туда, откуда прилетел (или откуда тебя толкнули), — нельзя; прыжок на месте снимает запрет и тоже ломает плитку.
+// Прыгнул на фишку — она (и все, кто стоит за ней вплотную) сдвигается на клетку дальше; в лаву — сгорает.
+// Если за толкаемыми стена — толчок не проходит, и прыгнувший отскакивает на клетку перед ними.
+// Сгорел — выбыл. Побеждает последний.
+//
+// Ход кодируется числом: 0 — на месте, иначе направление * 10 + расстояние (1 = вверх на 1, 23 = вниз на 3).
 var Lava = (function () {
   'use strict';
   var SIZE = 6;
-  var DIRS = [{dr:-1,dc:0,label:'↑'},{dr:0,dc:1,label:'→'},{dr:1,dc:0,label:'↓'},{dr:0,dc:-1,label:'←'}];
-  // Corner order matches «Точки»: upper left, upper right, lower right, lower left.
+  var DIRS = [{ dr: -1, dc: 0, label: '↑' }, { dr: 0, dc: 1, label: '→' }, { dr: 1, dc: 0, label: '↓' }, { dr: 0, dc: -1, label: '←' }];
+  // углы по часовой: 0 слева сверху, 1 справа сверху, 2 справа снизу, 3 слева снизу; ходят по часовой
+  var START = [7, 10, 28, 25];
+  function q(rows) { return rows.join('').split('').map(Number); }
   var MAPS = [
-    {id:'classic',name:'Классика',size:6,note:'Поле из примера · 6 × 6',rows:['121121','211112','112211','112211','211112','121121']},
-    {id:'ring',name:'Кольцо',size:6,note:'Обходи лаву в центре · 6 × 6',rows:['122221','211112','210012','210012','211112','122221']},
-    {id:'cross',name:'Крест',size:6,note:'Четыре крыла и прочный центр · 6 × 6',rows:['001100','012210','122221','122221','012210','001100']},
-    {id:'bridges',name:'Мосты',size:8,note:'Узкие переходы между четырьмя зонами · 8 × 8',rows:['11100111','12100121','11211211','00222200','00222200','11211211','12100121','11100111']},
-    {id:'fortress',name:'Крепость',size:8,note:'Прочный центр, хрупкие подходы · 8 × 8',rows:['11111111','12111121','11122111','11222211','11222211','11122111','12111121','11111111']},
-    {id:'arena',name:'Арена',size:8,note:'Большое поле для длинной партии · 8 × 8',rows:['12122121','21111112','11211211','21122112','21122112','11211211','21111112','12122121']}
+    { id: 'classic', name: 'Классика', note: 'Как в оригинале', tiles: q(['132231', '321123', '213312', '213312', '321123', '132231']) },
+    { id: 'ring', name: 'Кольцо', note: 'Прочное кольцо вокруг хрупкого центра', tiles: q(['122221', '223322', '231132', '231132', '223322', '122221']) },
+    { id: 'cross', name: 'Крест', note: 'Белые мосты по краям', tiles: q(['113311', '122221', '321123', '321123', '122221', '113311']) },
+    { id: 'corners', name: 'Углы', note: 'Крепости в углах, середина тонкая', tiles: q(['331133', '322223', '121121', '121121', '322223', '331133']) },
+    { id: 'diag', name: 'Диагонали', note: 'Острова на диагоналях', tiles: q(['312213', '121121', '213312', '213312', '121121', '312213']) },
+    { id: 'core', name: 'Ядро', note: 'Мало белых — короткие партии', tiles: q(['112211', '121121', '213312', '213312', '121121', '112211']) },
+    { id: 'random', name: 'Случайная', note: 'Новая симметричная карта каждую партию', tiles: null }
   ];
-  function map(id) { return MAPS.find(function(m){return m.id===id;}) || null; }
-  function startCells(size) {return [size+1,size*2-2,size*(size-1)-2,size*(size-2)+1];}
-  function corner(s, seat) {
-    var p=s.players[seat];
-    return Number.isInteger(p.corner)?p.corner:(s.players.length===2?[0,2]:s.players.length===3?[0,1,2]:[0,1,3,2])[seat];
-  }
-  function setup(input) {
-    if(Number.isInteger(input)){
-      if(input<2||input>4)throw new Error('Нужно 2–4 игрока');
-      return {mapId:'classic',corners:input===2?[0,2]:input===3?[0,1,2]:[0,1,3,2],first:0};
+  function map(id) { for (var i = 0; i < MAPS.length; i++) if (MAPS[i].id === id) return MAPS[i]; return null; }
+  function randomTiles() {
+    var t = new Array(36), quad = [];
+    for (var k = 0; k < 9; k++) { var r = Math.random(); quad.push(r < .27 ? 3 : r < .62 ? 2 : 1); }
+    quad[4] = 2;   // клетка старта (1,1)
+    for (var row = 0; row < 3; row++) for (var col = 0; col < 3; col++) {
+      var v = quad[row * 3 + col];
+      t[row * 6 + col] = t[row * 6 + 5 - col] = t[(5 - row) * 6 + col] = t[(5 - row) * 6 + 5 - col] = v;
     }
-    if(!input||typeof input!=='object'||!map(input.mapId||'classic'))throw new Error('Неизвестная карта');
-    var corners=input.corners;
-    if(!Array.isArray(corners)||corners.length<2||corners.length>4||new Set(corners).size!==corners.length||!corners.every(function(c){return Number.isInteger(c)&&c>=0&&c<4;}))throw new Error('Выбери 2–4 разных угла');
-    var first=input.first===undefined?0:input.first;
-    if(!Number.isInteger(first)||first<0||first>=corners.length)throw new Error('Неверный первый игрок');
-    return {mapId:input.mapId||'classic',corners:corners.slice(),first:first};
+    return t;
+  }
+  function defaultCorners(n) { return n === 2 ? [0, 2] : n === 3 ? [0, 1, 2] : [0, 1, 2, 3]; }
+  function setup(input) {
+    if (typeof input === 'number') {
+      if (input < 2 || input > 4 || input % 1) throw new Error('Нужно 2–4 игрока');
+      return { mapId: 'classic', corners: defaultCorners(input), first: 0 };
+    }
+    if (!input || typeof input !== 'object' || !map(input.mapId || 'classic')) throw new Error('Неизвестная карта');
+    var corners = input.corners;
+    if (!Array.isArray(corners) || corners.length < 2 || corners.length > 4 || corners.some(function (c, i) { return typeof c !== 'number' || c % 1 || c < 0 || c > 3 || corners.indexOf(c) !== i; })) throw new Error('Выбери 2–4 разных угла');
+    var sorted = corners.slice().sort(function (a, b) { return a - b; });
+    if (sorted.join() !== corners.join()) throw new Error('Углы идут по часовой');
+    var first = input.first === undefined ? 0 : input.first;
+    if (typeof first !== 'number' || first % 1 || first < 0 || first >= corners.length) throw new Error('Неверный первый игрок');
+    return { mapId: input.mapId || 'classic', corners: corners.slice(), first: first };
   }
   function create(input) {
-    var cfg=setup(input),m=map(cfg.mapId),starts=startCells(m.size);
-    return {v:2,size:m.size,mapId:m.id,tiles:m.rows.join('').split('').map(Number),players:cfg.corners.map(function(c){return {pos:starts[c],corner:c,back:-1,alive:true};}),turn:cfg.first,ply:0,over:false,winner:null,last:null};
+    var cfg = setup(input), m = map(cfg.mapId), tiles = m.tiles ? m.tiles.slice() : randomTiles();
+    cfg.corners.forEach(function (c) { if (tiles[START[c]] < 2) tiles[START[c]] = 2; });
+    return { v: 3, size: SIZE, mapId: m.id, tiles: tiles,
+      players: cfg.corners.map(function (c) { return { pos: START[c], corner: c, back: -1, alive: true }; }),
+      turn: cfg.first, ply: 0, over: false, winner: null, last: null };
   }
-  function target(pos, dir, size) {
-    size=size||SIZE;
-    if (dir === 4) return pos;
-    if (!Number.isInteger(dir) || dir < 0 || dir > 3) return -1;
-    var r = Math.floor(pos / size) + DIRS[dir].dr, c = pos % size + DIRS[dir].dc;
-    return r >= 0 && r < size && c >= 0 && c < size ? r * size + c : -1;
+  function corner(s, seat) { return s.players[seat].corner; }
+  function rc(i) { return [Math.floor(i / SIZE), i % SIZE]; }
+  function step(pos, d, k) {
+    var p = rc(pos), r = p[0] + DIRS[d].dr * k, c = p[1] + DIRS[d].dc * k;
+    return r >= 0 && r < SIZE && c >= 0 && c < SIZE ? r * SIZE + c : -1;
   }
-  function occupied(s, pos, except) {
-    return s.players.some(function(p,i){return i !== except && p.alive && p.pos === pos;});
+  function who(s, pos) { for (var i = 0; i < s.players.length; i++) if (s.players[i].alive && s.players[i].pos === pos) return i; return -1; }
+  function clone(s) {
+    return { v: 3, size: s.size, mapId: s.mapId, tiles: s.tiles.slice(),
+      players: s.players.map(function (p) { return { pos: p.pos, corner: p.corner, back: p.back, alive: p.alive }; }),
+      turn: s.turn, ply: s.ply, over: s.over, winner: s.winner, last: null };
   }
-  function moves(s, seat, safeOnly) {
-    if (s.over || !s.players[seat] || !s.players[seat].alive) return [];
-    var p=s.players[seat], result=[];
-    for (var d=0;d<4;d++) {
-      var to=target(p.pos,d,s.size);
-      if (d !== p.back && to >= 0 && s.tiles[to] > 0 && !occupied(s,to,seat)) result.push(d);
+  function decode(m) { return m === 0 ? { d: -1, n: 0 } : { d: Math.floor(m / 10), n: m % 10 }; }
+  function code(d, n) { return n === 0 ? 0 : d * 10 + n; }
+  // применить ход игрока seat (без проверки очереди); null — так нельзя
+  function play(s, seat, m) {
+    if (typeof m !== 'number' || m % 1 || m < 0) return null;
+    var mv = decode(m), p = s.players[seat];
+    if (!p || !p.alive) return null;
+    var n = clone(s), me = n.players[seat], from = me.pos;
+    var ev = { seat: seat, m: m, d: mv.d, from: from, land: from, to: from, kind: 'stay', pushed: [], fell: false, left: 0, killed: [] };
+    if (mv.n === 0) {
+      n.tiles[from]--; me.back = -1;
+      if (n.tiles[from] <= 0) { me.alive = false; ev.fell = true; }
+    } else {
+      if (mv.d < 0 || mv.d > 3 || mv.n > SIZE - 1 || mv.d === p.back) return null;
+      var land = step(from, mv.d, mv.n);
+      if (land < 0 || s.tiles[land] <= 0) return null;
+      ev.land = land;
+      var chain = [], c = land, o;
+      while (c >= 0 && (o = who(s, c)) >= 0 && o !== seat) { chain.push(o); c = step(c, mv.d, 1); }
+      n.tiles[from]--; me.back = (mv.d + 2) % 4;
+      if (!chain.length) { me.pos = land; ev.kind = mv.n === 1 ? 'step' : 'jump'; }
+      else if (c < 0) {                       // за толкаемыми стена — отскок
+        var b = step(land, (mv.d + 2) % 4, 1);
+        if (b !== from && who(s, b) >= 0) return null;
+        me.pos = b; ev.kind = 'bounce';
+        if (n.tiles[b] <= 0) { me.alive = false; ev.fell = true; }
+      } else {
+        for (var k = chain.length - 1; k >= 0; k--) {
+          var q2 = n.players[chain[k]], was = q2.pos; q2.pos = step(was, mv.d, 1); q2.back = (mv.d + 2) % 4;   // назад, к толкнувшему, — нельзя
+          var burn = n.tiles[q2.pos] <= 0;
+          if (burn) { q2.alive = false; ev.killed.push(chain[k]); }
+          ev.pushed.unshift({ seat: chain[k], from: was, to: q2.pos, fell: burn });
+        }
+        me.pos = land; ev.kind = 'push';
+      }
     }
-    if (s.tiles[p.pos] > (safeOnly ? 1 : 0)) result.push(4);
-    return result;
-  }
-  function finish(s) {
-    var alive=s.players.map(function(p,i){return p.alive ? i : -1;}).filter(function(i){return i >= 0;});
-    if (alive.length > 1) return false;
-    s.over=true; s.winner=alive.length ? alive[0] : null; s.turn=-1; return true;
-  }
-  function apply(s, dir) {
-    if (s.over || moves(s,s.turn,false).indexOf(dir) < 0) return null;
-    var n=JSON.parse(JSON.stringify(s)), seat=n.turn, p=n.players[seat], from=p.pos;
-    n.tiles[from]--; p.pos=target(from,dir,n.size); p.back=dir === 4 ? -1 : (dir+2)%4;
-    n.ply++; n.last={seat:seat,dir:dir,from:from,to:p.pos,eliminated:[]};
-    if (n.tiles[p.pos] === 0) { p.alive=false; n.last.eliminated.push(seat); }
-    if (finish(n)) return n;
-    // Only eliminate a trapped player when their turn arrives: an occupied exit
-    // may become free before then. A two-layer tile permits a safe in-place jump.
-    for (var step=1;step<=n.players.length;step++) {
-      var next=(seat+step)%n.players.length;
-      if (!n.players[next].alive) continue;
-      if (moves(n,next,true).length) { n.turn=next; return n; }
-      n.players[next].alive=false; n.last.eliminated.push(next);
-      if (finish(n)) return n;
-    }
+    ev.to = me.pos; ev.left = n.tiles[from];
+    n.ply++; n.last = ev;
+    var alive = [];
+    n.players.forEach(function (x, i) { if (x.alive) alive.push(i); });
+    if (alive.length <= 1) { n.over = true; n.winner = alive.length ? alive[0] : null; n.turn = -1; return n; }
+    for (var t = 1; t <= n.players.length; t++) { var nx = (seat + t) % n.players.length; if (n.players[nx].alive) { n.turn = nx; break; } }
     return n;
   }
-  function territory(s, seat) {
-    var seen=new Set(), todo=[s.players[seat].pos];
-    while(todo.length) {
-      var i=todo.pop(); if(seen.has(i))continue; seen.add(i);
-      for(var d=0;d<4;d++){var to=target(i,d,s.size);if(to>=0 && s.tiles[to]>0 && !seen.has(to) && !occupied(s,to,seat))todo.push(to);}
-    }
-    return seen.size;
+  function codes(s, seat) {
+    var p = s.players[seat], out = [0];
+    if (!p || !p.alive) return [];
+    for (var d = 0; d < 4; d++) if (d !== p.back) for (var k = 1; k < SIZE; k++) { var to = step(p.pos, d, k); if (to < 0) break; if (s.tiles[to] > 0) out.push(code(d, k)); }
+    return out;
   }
-  function bot(s) {
-    var seat=s.turn, best=null, score=-Infinity;
-    moves(s,seat,true).forEach(function(d){
-      var n=apply(s,d), p=n.players[seat], v;
-      if(!p.alive) v=-10000;
-      else if(n.over) v=n.winner===seat ? 10000 : -10000;
-      else {
-        v=territory(n,seat)*2 + moves(n,seat,true).length*7 + n.tiles[p.pos]*2;
-        n.players.forEach(function(other,i){if(i!==seat && other.alive)v-=moves(n,i,true).length*2;});
-        if(d===4)v-=1;
-      }
-      if(v>score){score=v;best=d;}
+  // все ходы с последствиями: {m, d, n, to (куда встанешь), land (куда прыгаешь), kind, fatal, kills}
+  function moves(s, seat) {
+    if (s.over || !s.players[seat] || !s.players[seat].alive) return [];
+    var res = [];
+    codes(s, seat).forEach(function (m) {
+      var n = play(s, seat, m); if (!n) return;
+      var e = n.last;
+      res.push({ m: m, d: e.d, n: m % 10, to: e.to, land: e.land, kind: e.kind, fatal: e.fell, kills: e.killed.slice() });
+    });
+    return res;
+  }
+  function apply(s, m) {
+    if (!s || s.over) return null;
+    return play(s, s.turn, m);
+  }
+  // ---------- бот ----------
+  function safeCount(s, seat) {
+    var c = 0; codes(s, seat).forEach(function (m) { var n = play(s, seat, m); if (n && !n.last.fell) c++; }); return c;
+  }
+  function canKill(s, opp, me) {
+    var cs = codes(s, opp);
+    for (var i = 0; i < cs.length; i++) { var n = play(s, opp, cs[i]); if (n && !n.players[me].alive) return true; }
+    return false;
+  }
+  function score(s, n, me, rnd) {
+    var p = n.players[me];
+    if (!p.alive) return -100000;
+    if (n.over) return n.winner === me ? 100000 : -100000;
+    var v = n.last.killed.length * 4000 + n.tiles[p.pos] * 14 + safeCount(n, me) * 9 + rnd() * 6;
+    n.players.forEach(function (o, i) {
+      if (i === me || !o.alive) return;
+      if (canKill(n, i, me)) v -= 2600;
+      v -= safeCount(n, i) * 3;
+      if (n.tiles[o.pos] === 1) v += 6;
+    });
+    if (n.last.kind === 'stay') v -= 4;
+    return v;
+  }
+  function bot(s, rnd) {
+    rnd = rnd || Math.random;
+    var me = s.turn, best = null, bestV = -Infinity;
+    codes(s, me).forEach(function (m) {
+      var n = play(s, me, m); if (!n) return;
+      var v = score(s, n, me, rnd);
+      if (v > bestV) { bestV = v; best = m; }
     });
     return best;
   }
   function valid(s) {
-    if(!s || (s.v!==1&&s.v!==2))return false;
-    var size=s.v===1?6:s.size,total=size*size;
-    if((size!==6&&size!==8)||s.v===2&&(!map(s.mapId)||map(s.mapId).size!==size)||!Array.isArray(s.tiles) || s.tiles.length!==total || !s.tiles.every(function(n){return Number.isInteger(n)&&n>=0&&n<=2;}) || !Array.isArray(s.players) || s.players.length<2 || s.players.length>4 || !Number.isInteger(s.ply) || s.ply<0 || s.ply>total*2 || typeof s.over!=='boolean')return false;
-    var positions=new Set(),corners=new Set();
-    for(var p of s.players){
-      if(!p || !Number.isInteger(p.pos)||p.pos<0||p.pos>=total || !Number.isInteger(p.back)||p.back < -1||p.back>3 || typeof p.alive!=='boolean')return false;
-      if(s.v===2){if(!Number.isInteger(p.corner)||p.corner<0||p.corner>3||corners.has(p.corner))return false;corners.add(p.corner);}
-      if(p.alive){if(!s.tiles[p.pos]||positions.has(p.pos))return false;positions.add(p.pos);}
+    if (!s || typeof s !== 'object' || s.v !== 3 || s.size !== SIZE || !map(s.mapId)) return false;
+    if (!Array.isArray(s.tiles) || s.tiles.length !== 36 || !s.tiles.every(function (t) { return t === 0 || t === 1 || t === 2 || t === 3; })) return false;
+    if (!Array.isArray(s.players) || s.players.length < 2 || s.players.length > 4) return false;
+    if (typeof s.ply !== 'number' || s.ply % 1 || s.ply < 0 || s.ply > 400 || typeof s.over !== 'boolean') return false;
+    var pos = {}, cs = {}, alive = 0, prev = -1;
+    for (var i = 0; i < s.players.length; i++) {
+      var p = s.players[i];
+      if (!p || typeof p.pos !== 'number' || p.pos % 1 || p.pos < 0 || p.pos > 35 || [-1, 0, 1, 2, 3].indexOf(p.back) < 0 || typeof p.alive !== 'boolean') return false;
+      if ([0, 1, 2, 3].indexOf(p.corner) < 0 || cs[p.corner] || p.corner <= prev) return false;
+      cs[p.corner] = 1; prev = p.corner;
+      if (p.alive) { if (!s.tiles[p.pos] || pos[p.pos]) return false; pos[p.pos] = 1; alive++; }
     }
-    if(s.last!==null){var l=s.last;if(!l||!Number.isInteger(l.seat)||l.seat<0||l.seat>=s.players.length||!Number.isInteger(l.dir)||l.dir<0||l.dir>4||!Number.isInteger(l.from)||l.from<0||l.from>=total||!Number.isInteger(l.to)||l.to<0||l.to>=total||!Array.isArray(l.eliminated)||!l.eliminated.every(function(i){return Number.isInteger(i)&&i>=0&&i<s.players.length;}))return false;}
-    if(s.over)return s.turn===-1 && positions.size<=1 && (positions.size===0 ? s.winner===null : Number.isInteger(s.winner)&&!!s.players[s.winner]&&s.players[s.winner].alive);
-    return positions.size>=2 && Number.isInteger(s.turn)&&!!s.players[s.turn]&&s.players[s.turn].alive && s.winner===null;
+    if (s.over) return s.turn === -1 && alive <= 1 && (alive === 0 ? s.winner === null : typeof s.winner === 'number' && !!s.players[s.winner] && s.players[s.winner].alive);
+    return alive >= 2 && typeof s.turn === 'number' && !!s.players[s.turn] && s.players[s.turn].alive && s.winner === null;
   }
-  return {SIZE:SIZE,DIRS:DIRS,MAPS:MAPS,map:map,setup:setup,startCells:startCells,corner:corner,create:create,target:target,moves:moves,apply:apply,bot:bot,valid:valid};
+  return { SIZE: SIZE, DIRS: DIRS, MAPS: MAPS, START: START, map: map, setup: setup, create: create, corner: corner,
+    step: step, rc: rc, who: who, code: code, decode: decode, moves: moves, apply: apply, play: play, bot: bot, valid: valid, startCells: function () { return START.slice(); } };
 })();
-if(typeof module!=='undefined' && module.exports)module.exports=Lava;
+if (typeof module !== 'undefined' && module.exports) module.exports = Lava;
 </script>
 <script>// Small 2–4 player PeerJS lobby. The host owns the board and validates moves.
 // Uses the existing room's Peer shim when embedded in the two-person hub.
 var LavaLink = (function () {
   'use strict';
-  var session=null, loading=null, PREFIX='games-lava-v2-', ABC='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var session=null, loading=null, PREFIX='games-lava-v3-', ABC='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   function code(){var s='';for(var i=0;i<5;i++)s+=ABC[Math.floor(Math.random()*ABC.length)];return s;}
   function clean(s){return String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);}
   function options(){var h=new URLSearchParams(location.search).get('peer');if(!h)return {debug:1};var p=h.split(':');return {host:p[0],port:+p[1]||9000,path:'/',secure:false,debug:1};}
@@ -534,430 +567,660 @@ var LavaLink = (function () {
   return {host:host,chooseSeat:chooseSeat,join:join,start:start,update:update,act:act,close:close,ready:ready,clean:clean,current:function(){return session;}};
 })();
 </script>
-<script>// Vector artwork: bevelled stone, glowing lava and saturated faceted tokens.
-// Shared symbols keep the board light and remain sharp on phones and tablets.
+<script>// Лава: рисунки — самоцветы, лава под плитками, рамка поля, иконки.
 var LavaArt = (function () {
   'use strict';
   var colors = [
-    {name:'Фиолетовый',light:'#f54aff',face:'#d500f0',dark:'#790088'},
-    {name:'Зелёный',light:'#6aff43',face:'#18df1a',dark:'#086c12'},
-    {name:'Синий',light:'#7771ff',face:'#2b2afa',dark:'#10118b'},
-    {name:'Красный',light:'#ff6b52',face:'#f11c27',dark:'#8c0715'}
+    { name: 'Фиолетовый', who: 'фиолетовый', base: '#c41bd6', light: '#f06bff', dark: '#6d0a7a', glow: 'rgba(222,60,240,.55)' },
+    { name: 'Зелёный', who: 'зелёный', base: '#1fb52a', light: '#6bf277', dark: '#0b5e12', glow: 'rgba(60,220,80,.5)' },
+    { name: 'Синий', who: 'синий', base: '#2335dd', light: '#7584ff', dark: '#0d1477', glow: 'rgba(70,90,255,.55)' },
+    { name: 'Красный', who: 'красный', base: '#d81e27', light: '#ff6b70', dark: '#760a0f', glow: 'rgba(240,50,60,.55)' }
   ];
-  var oct='14,3 86,3 97,14 97,86 86,97 14,97 3,86 3,14';
-  var lavaPaths=[
-    'M-8 18C13 12 28 26 30 42S11 71 22 104M30 42C48 34 58 49 67 45S79 13 106 22M67 45C61 67 87 75 106 69',
-    'M-8 75C16 77 19 54 38 56S60 83 66 108M38 56C43 37 21 30 29-9M38 56C64 56 58 27 80 28S104 42 109 17'
-  ];
-  function definitions() {
-    var s='<svg class="art-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>'+
-      '<linearGradient id="stone-rim" x2=".8" y2="1"><stop stop-color="#eee1c9"/><stop offset=".22" stop-color="#b69f84"/><stop offset=".6" stop-color="#6b5745"/><stop offset="1" stop-color="#cbb69c"/></linearGradient>'+
-      '<linearGradient id="stone-face" x2=".85" y2="1"><stop stop-color="#d2bc9d"/><stop offset=".45" stop-color="#ac987d"/><stop offset="1" stop-color="#c6ae8b"/></linearGradient>'+
-      '<linearGradient id="strong-face" x2=".8" y2="1"><stop stop-color="#fffcf2"/><stop offset=".6" stop-color="#f5eddf"/><stop offset="1" stop-color="#e1d0b8"/></linearGradient>'+
-      '<linearGradient id="tile-glass" x2="0" y2="1"><stop stop-color="#fff" stop-opacity=".2"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></linearGradient>'+
-      '<radialGradient id="lava-glow"><stop stop-color="#ffcb4a"/><stop offset=".3" stop-color="#ff7619"/><stop offset="1" stop-color="#ec3a07" stop-opacity="0"/></radialGradient>'+
-      '<pattern id="lava-micro-grid" width="44" height="44" patternUnits="userSpaceOnUse"><rect width="44" height="44" fill="#100f11"/><path d="M8 2H36L42 8V36L36 42H8L2 36V8Z" fill="#191719" stroke="#282426" stroke-width="2"/><path d="M8 5H36L39 8" fill="none" stroke="#322b29" stroke-opacity=".55"/></pattern>'+
-      '<clipPath id="tile-clip"><polygon points="'+oct+'"/></clipPath>';
-    [0,1].forEach(function(variant){
-      s+='<symbol id="lava-floor-'+variant+'" viewBox="0 0 100 100"><polygon points="'+oct+'" fill="#160e0c" stroke="#704024" stroke-width="2"/>'+
-        '<g clip-path="url(#tile-clip)"><path d="'+lavaPaths[variant]+'" fill="none" stroke="#982708" stroke-width="17"/>'+
-        '<path d="'+lavaPaths[variant]+'" fill="none" stroke="#ff6710" stroke-width="8"/>'+
-        '<path d="'+lavaPaths[variant]+'" fill="none" stroke="#ffbd38" stroke-width="2.4"/>'+
-        '<circle cx="'+(variant?38:30)+'" cy="'+(variant?56:42)+'" r="29" fill="url(#lava-glow)"/>'+
-        '<path d="M11 12L27 9 35 21 23 32 9 27ZM67 69L88 65 94 84 75 92 64 84Z" fill="#2c1710" opacity=".6"/></g></symbol>';
-      s+='<symbol id="lava-stone-'+variant+'" viewBox="0 0 100 100"><polygon points="'+oct+'" fill="url(#stone-rim)" stroke="#8b7560" stroke-width="1.5"/>'+
-        '<path d="M17 8H83L92 17V83L83 92H17L8 83V17Z" fill="#665348"/>'+
-        '<path d="M19 12H81L88 19V81L81 88H19L12 81V19Z" fill="url(#stone-face)"/>'+
-        '<g clip-path="url(#tile-clip)" opacity=".6"><path d="'+lavaPaths[variant]+'" fill="none" stroke="#e68b3d" stroke-width="9"/><path d="'+lavaPaths[variant]+'" fill="none" stroke="#ffc472" stroke-width="3"/></g>'+
-        '<path d="M19 12H81L88 19V81L81 88H19L12 81V19Z" fill="url(#tile-glass)" stroke="#f4d9b8" stroke-opacity=".75" stroke-width="1.4"/>'+
-        '<path d="M17 7H83L93 17M7 17V83" fill="none" stroke="#fff0d6" stroke-opacity=".65" stroke-width="1.5"/></symbol>';
-    });
-    s+='<symbol id="lava-strong" viewBox="0 0 100 100"><polygon points="'+oct+'" fill="url(#stone-rim)" stroke="#d4c1a6" stroke-width="1.5"/>'+
-      '<path d="M17 7H83L93 17V83L83 93H17L7 83V17Z" fill="#a48e76"/>'+
-      '<path d="M20 11H80L89 20V80L80 89H20L11 80V20Z" fill="#e6d6be" stroke="#fff8ed" stroke-width="2"/>'+
-      '<path d="M23 16H77L84 23V77L77 84H23L16 77V23Z" fill="url(#strong-face)" stroke="#fffcf4" stroke-width="1.5"/>'+
-      '<path d="M18 7H82L92 17M8 18V82" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="2"/></symbol>';
-    colors.forEach(function(c,i){
-      s+='<linearGradient id="gem-face-'+i+'" x2=".8" y2="1"><stop stop-color="'+c.light+'"/><stop offset=".35" stop-color="'+c.face+'"/><stop offset="1" stop-color="'+c.dark+'"/></linearGradient>'+
-        '<symbol id="lava-gem-'+i+'" viewBox="0 0 100 100">'+
-        '<path d="M28 11H72L89 28V72L72 89H28L11 72V28Z" fill="'+c.dark+'"/>'+
-        '<path d="M28 8H72L92 28V72L72 92H28L8 72V28Z" fill="url(#gem-face-'+i+')" stroke="'+c.face+'" stroke-width="2"/>'+
-        '<path d="M28 8 33 21H67L72 8ZM8 28 21 33V67L8 72Z" fill="'+c.light+'" opacity=".65"/>'+
-        '<path d="M92 28 79 33V67L92 72ZM28 92 33 79H67L72 92Z" fill="'+c.dark+'" opacity=".7"/>'+
-        '<path d="M33 21H67L79 33V67L67 79H33L21 67V33Z" fill="'+c.face+'" fill-opacity=".65" stroke="'+c.light+'" stroke-opacity=".7" stroke-width="2"/>'+
-        '<path d="M30 20V80M70 20V80M20 30H80M20 70H80" fill="none" stroke="'+c.light+'" stroke-width="3.2" stroke-opacity=".56"/>'+
-        '<path d="M29 10H71L90 29M10 29V71" stroke="#fff" stroke-opacity=".3" stroke-width="1.5" fill="none"/></symbol>';
-    });
-    return s+'</defs></svg>';
+  // восьмиугольный самоцвет с площадкой и гранями, как в оригинале
+  function gem(c, opts) {
+    var k = colors[c], id = 'g' + c + (opts && opts.id || '');
+    return '<svg viewBox="0 0 100 100" class="gem" aria-hidden="true"><defs>' +
+      '<linearGradient id="' + id + 't" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + k.light + '"/><stop offset="1" stop-color="' + k.base + '"/></linearGradient>' +
+      '<linearGradient id="' + id + 'm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + k.base + '"/><stop offset="1" stop-color="' + k.dark + '"/></linearGradient></defs>' +
+      '<polygon points="29,3 71,3 97,29 97,71 71,97 29,97 3,71 3,29" fill="' + k.dark + '"/>' +
+      '<polygon points="31,7 69,7 69,31 31,31" fill="url(#' + id + 't)"/>' +
+      '<polygon points="31,7 69,7 70,30 30,30" fill="url(#' + id + 't)"/>' +
+      '<polygon points="93,31 93,69 70,70 70,30" fill="' + k.base + '"/>' +
+      '<polygon points="69,93 31,93 30,70 70,70" fill="url(#' + id + 'm)"/>' +
+      '<polygon points="7,69 7,31 30,30 30,70" fill="' + k.base + '" opacity=".92"/>' +
+      '<polygon points="7,31 31,7 30,30" fill="' + k.light + '" opacity=".85"/>' +
+      '<polygon points="69,7 93,31 70,30" fill="' + k.base + '"/>' +
+      '<polygon points="93,69 69,93 70,70" fill="' + k.dark + '" opacity=".75"/>' +
+      '<polygon points="31,93 7,69 30,70" fill="' + k.base + '" opacity=".85"/>' +
+      '<rect x="30" y="30" width="40" height="40" fill="' + k.base + '"/>' +
+      '<rect x="30" y="30" width="40" height="40" fill="url(#' + id + 'm)" opacity=".55"/>' +
+      '<path d="M33 33h22l-3 4H37v15l-4 3z" fill="#fff" opacity=".28"/>' +
+      '<polygon points="29,3 71,3 97,29 97,71 71,97 29,97 3,71 3,29" fill="none" stroke="' + k.light + '" stroke-opacity=".55" stroke-width="2"/>' +
+      '<path d="M30 30h40v40H30z M31 7l-1 23 M69 7l1 23 M93 31l-23-1 M93 69l-23 1 M69 93l1-23 M31 93l-1-23 M7 69l23 1 M7 31l23-1" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="1.4"/>' +
+      '</svg>';
   }
-  function tile(hp, index) {
-    var name=hp===2?'strong':(hp===1?'stone-':'floor-')+(index%2);
-    return '<svg class="tile-art" viewBox="0 0 100 100" aria-hidden="true"><g transform="rotate('+(index%4*90)+' 50 50)"><use href="#lava-'+name+'"/></g></svg>';
+  // поле: лава под стеклянными плитками, горячая лава в дырах, тёмная рамка с оранжевыми заклёпками
+  function board(seed) {
+    var s = '', cell = 100, g = 7, i, j;
+    s += '<svg viewBox="0 0 600 600" class="lava" aria-hidden="true"><defs>' +
+      '<filter id="lvCool" x="0" y="0" width="600" height="600" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.021" numOctaves="3" seed="' + seed + '" result="t"/>' +
+      '<feColorMatrix in="t" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 0" result="r"/>' +
+      '<feComponentTransfer in="r" result="rock"><feFuncA type="table" tableValues="1 1 1 1 .9 0 .9 1 1 1 1"/></feComponentTransfer>' +
+      '<feGaussianBlur in="rock" stdDeviation="1.1" result="rs"/>' +
+      '<feFlood flood-color="#544944"/><feComposite in2="rs" operator="in" result="rocks"/>' +
+      '<feFlood flood-color="#d8742c" result="vein"/>' +
+      '<feMerge><feMergeNode in="vein"/><feMergeNode in="rocks"/></feMerge></filter>' +
+      '<filter id="lvHot" x="0" y="0" width="600" height="600" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.021" numOctaves="3" seed="' + seed + '" result="t"/>' +
+      '<feColorMatrix in="t" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 0" result="r"/>' +
+      '<feComponentTransfer in="r" result="vein"><feFuncA type="table" tableValues="0 0 0 0 .15 1 .15 0 0 0 0"/></feComponentTransfer>' +
+      '<feGaussianBlur in="vein" stdDeviation="4" result="glow"/>' +
+      '<feFlood flood-color="#120806"/><feComposite in2="SourceGraphic" operator="in" result="base"/>' +
+      '<feFlood flood-color="#ff4a00" flood-opacity=".85"/><feComposite in2="glow" operator="in" result="gl"/>' +
+      '<feFlood flood-color="#ffa13a"/><feComposite in2="vein" operator="in" result="vn"/>' +
+      '<feMerge><feMergeNode in="base"/><feMergeNode in="gl"/><feMergeNode in="vn"/></feMerge></filter>' +
+      '<clipPath id="lvHoles"></clipPath>' +
+      '<radialGradient id="lvStud"><stop offset="0" stop-color="#ffd27a"/><stop offset=".55" stop-color="#ff7a1a"/><stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/></radialGradient>' +
+      '</defs>';
+    s += '<rect width="600" height="600" filter="url(#lvCool)"/>';
+    s += '<g clip-path="url(#lvHoles)"><rect width="600" height="600" fill="#000" filter="url(#lvHot)"/></g>';
+    var frame = 'M0 0H600V600H0Z';
+    for (i = 0; i < 6; i++) for (j = 0; j < 6; j++) {
+      var x = j * cell + g, y = i * cell + g, w = cell - 2 * g, r = 13;
+      frame += 'M' + (x + r) + ' ' + y + 'H' + (x + w - r) + 'Q' + (x + w) + ' ' + y + ' ' + (x + w) + ' ' + (y + r) + 'V' + (y + w - r) + 'Q' + (x + w) + ' ' + (y + w) + ' ' + (x + w - r) + ' ' + (y + w) + 'H' + (x + r) + 'Q' + x + ' ' + (y + w) + ' ' + x + ' ' + (y + w - r) + 'V' + (y + r) + 'Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y + 'Z';
+    }
+    s += '<path d="' + frame + '" fill="#1b1514" fill-rule="evenodd"/>';
+    for (i = 0; i < 6; i++) for (j = 0; j < 6; j++) s += '<rect x="' + (j * cell + g - 1.5) + '" y="' + (i * cell + g - 1.5) + '" width="' + (cell - 2 * g + 3) + '" height="' + (cell - 2 * g + 3) + '" rx="14" fill="none" stroke="#3b302c" stroke-width="3"/>';
+    for (i = 0; i <= 6; i++) for (j = 0; j <= 6; j++) {
+      var cx = j * cell, cy = i * cell;
+      s += '<circle cx="' + cx + '" cy="' + cy + '" r="9" fill="url(#lvStud)" opacity=".75"/><path d="M' + cx + ' ' + (cy - 4.5) + 'l4.5 4.5-4.5 4.5-4.5-4.5z" fill="#ff9a3a"/>';
+    }
+    return s + '</svg>';
   }
-  function gem(corner, directions) {
-    var s='<svg class="gem" viewBox="0 0 100 100" aria-hidden="true"><use href="#lava-gem-'+corner+'"/>';
-    if(directions)for(var d=0;d<4;d++)s+='<path class="gem-arrow dir-'+d+'" transform="rotate('+(d*90)+' 50 50)" d="M50-4 57 4H43Z" fill="'+colors[corner].face+'"/>';
-    return s+'<g class="turn-ring"><path d="M8 31A46 46 0 0 1 66 7M92 69A46 46 0 0 1 34 93" stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none"/></g></svg>';
+  function holes(tiles) {
+    var s = '';
+    tiles.forEach(function (t, k) { if (t <= 0) s += '<rect x="' + ((k % 6) * 100 + 7) + '" y="' + (Math.floor(k / 6) * 100 + 7) + '" width="86" height="86" rx="13"/>'; });
+    return s;
   }
-  var paths={
-    human:'<circle cx="12" cy="6" r="4"/><path d="M4 23v-4a8 8 0 0 1 16 0v4Z"/>',
-    bot:'<rect x="4" y="6" width="16" height="13" rx="4"/><path d="M10 1h4v5h-4ZM1 10h2v6H1Zm20 0h2v6h-2ZM8 21h8v2H8Z"/><path d="M8 10v3m8-3v3m-7 3h6" stroke="var(--panel)" stroke-width="2" fill="none"/>',
-    net:'<circle cx="9" cy="7" r="3"/><path d="M3 20v-3a6 6 0 0 1 12 0v3ZM15 4a3 3 0 0 1 0 6 3 3 0 0 0 0-6Zm2 8a6 6 0 0 1 5 6v2h-5Z"/>',
-    off:'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="m5 19 14-14" stroke="currentColor" stroke-width="2.5"/>',
-    play:'<path d="M7 3v18l15-9Z"/>',
-    home:'<path d="m3 10 9-8 9 8v12h-7v-8h-4v8H3Z"/>',
-    restart:'<path d="M5 7a8 8 0 1 1-1 9M5 2v6h6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>',
-    sound:'<path d="M2 9h4l6-6v18l-6-6H2Z"/><path d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" fill="none" stroke="currentColor" stroke-width="2"/>',
-    mute:'<path d="M2 9h4l6-6v18l-6-6H2Z"/><path d="m16 8 6 8m0-8-6 8" stroke="currentColor" stroke-width="2"/>',
-    jump:'<path d="M5 19h14M12 16V3m-5 5 5-5 5 5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>'
+  // мини-карта для меню
+  function mini(tiles) {
+    var s = '<svg viewBox="0 0 60 60" aria-hidden="true">', fill = ['#1a0d08', '#6e5c52', '#b9a99c', '#f3ece5'];
+    tiles.forEach(function (t, k) { s += '<rect x="' + ((k % 6) * 10 + 1) + '" y="' + (Math.floor(k / 6) * 10 + 1) + '" width="8" height="8" rx="1.6" fill="' + fill[t] + '"/>'; });
+    return s + '</svg>';
+  }
+  var I = {
+    home: '<path d="M4 11 12 4l8 7M6.5 9.5V20h11V9.5"/><path d="M10 20v-5h4v5"/>',
+    restart: '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4 4v4.5h4.5"/>',
+    help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 0 1 5 1c0 1.8-2.5 2.1-2.5 3.8"/><circle cx="12" cy="17.3" r=".6" fill="currentColor"/>',
+    soundOn: '<path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
+    soundOff: '<path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z"/><path d="m16 9.5 5 5m0-5-5 5"/>',
+    play: '<path d="M8 5.5v13l10-6.5z" fill="currentColor"/>',
+    stay: '<path d="M12 20V9"/><path d="m7.5 13 4.5-4.5 4.5 4.5"/><path d="M5 4h14"/>',
+    flag: '<path d="M6 21V4h11l-2 4 2 4H6"/>'
   };
-  function icon(name){return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">'+(paths[name]||paths.off)+'</svg>';}
-  return {colors:colors,definitions:definitions,tile:tile,gem:gem,icon:icon};
+  function icon(n) { return '<svg viewBox="0 0 24 24" class="ic" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + I[n] + '</svg>'; }
+  return { colors: colors, gem: gem, board: board, holes: holes, mini: mini, icon: icon };
 })();
 </script>
 <script>(function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var A = LavaArt, C = A.colors;
-  var CORNER_NAMES = ['↖ Слева сверху', '↗ Справа сверху', '↘ Справа снизу', '↙ Слева снизу'];
-  var ROLE_NAMES = {human:'Игрок',bot:'Бот',net:'Друг',off:'Пусто'};
-  var ROLE_ORDER = ['human','bot','net','off'];
-  var PREFS = 'lava-settings-v2', SAVED = 'lava-local-v1';
-  var presets = {
-    local: ['off','human','off','human'],
-    bots2: ['bot','bot','off','human'],
-    bots3: ['bot','bot','bot','human'],
-    net: ['off','net','off','human']
-  };
-  var S = {roles:presets.bots3.slice(),mapId:'classic',first:'3',sound:false};
+  var A = LavaArt, C = A.colors, L = Lava;
+  var ROLE_NAMES = { human: 'Игрок', bot: 'Бот', net: 'Друг', off: 'Нет' };
+  var ROLES = ['human', 'bot', 'net', 'off'];
+  var PREFS = 'lava-settings-v3', SAVED = 'lava-local-v3';
+  var PRESETS = { bot1: ['off', 'bot', 'off', 'human'], bots3: ['bot', 'bot', 'bot', 'human'], local: ['off', 'human', 'off', 'human'], net: ['off', 'net', 'off', 'human'] };
+  var S = { roles: PRESETS.bot1.slice(), mapId: 'classic', first: 'random', sound: true };
   try {
-    var prefs = JSON.parse(localStorage.getItem(PREFS));
-    if (prefs && Array.isArray(prefs.roles) && prefs.roles.length === 4 && prefs.roles.every(function(r){return ROLE_ORDER.includes(r);}) && Lava.map(prefs.mapId)) {
-      S = {roles:prefs.roles,mapId:prefs.mapId,first:String(prefs.first),sound:!!prefs.sound};
-    }
+    var pr = JSON.parse(localStorage.getItem(PREFS));
+    if (pr && Array.isArray(pr.roles) && pr.roles.length === 4 && pr.roles.every(function (r) { return ROLES.indexOf(r) >= 0; }) && L.map(pr.mapId)) S = { roles: pr.roles, mapId: pr.mapId, first: pr.first === undefined ? 'random' : pr.first, sound: pr.sound !== false };
   } catch (e) {}
-  if (window.IN_ROOM) { S.roles = presets.net.slice(); S.first = '3'; }
-  var state = null, roles = [], gameSetup = null, cells = [], tokens = [], corners = [];
-  var busy = false, pending = false, botTimer = 0, animTimer = 0, toastTimer = 0;
-  var epoch = 0, netRound = 0, shownResult = '', audio = null;
+  if (window.IN_ROOM) S.roles = PRESETS.net.slice();
+  var state = null, roles = [], gameSetup = null, epoch = 0, netRound = 0, shownResult = '';
+  var busy = false, pending = false, botTimer = 0, pendTimer = 0, toastTimer = 0, resultTimer = 0;
+  var armed = -1, B = 480, pieces = [], tileEls = [], markEls = [], holesKey = '', audio = null;
+  function savePrefs() { try { localStorage.setItem(PREFS, JSON.stringify(S)); } catch (e) {} }
+  function toast(msg) { $('toast').textContent = msg; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { $('toast').hidden = true; }, 3200); }
 
-  $('artDefinitions').innerHTML = A.definitions();
-  $('logoGem').innerHTML = A.gem(3,false);
-  $('homeBtn').innerHTML = A.icon('home');
-  $('againBtn').innerHTML = A.icon('restart');
-  $('legend').innerHTML = '<span>'+A.tile(1,0)+'1 прыжок</span><span>'+A.tile(2,0)+'2 прыжка</span><span>'+A.tile(0,0)+'лава</span>';
+  // ---------- правила (в меню и в окне) ----------
+  var RULES = '<ol>' +
+    '<li>Ходите по очереди, по часовой стрелке. В свой ход <b>прыгай по прямой</b> — вверх, вниз, влево или вправо — на любое расстояние. Пролетать можно над фишками и лавой, приземляться — только на плитку.</li>' +
+    '<li>Плитка, <b>с которой прыгнул</b>, теряет слой: белая выдерживает 3 прыжка, бежевая — 2, тёмная — 1. Потом на её месте лава.</li>' +
+    '<li><b>Назад нельзя</b> — в ту сторону, откуда только что прилетел (или откуда тебя толкнули). Стрелки на фишке показывают, куда можно. <b>Прыжок на месте</b> снимает запрет, но тоже ломает твою плитку: на тёмной — сгоришь.</li>' +
+    '<li>Прыгнул на соперника — <b>толкаешь</b> его (и всех, кто стоит за ним вплотную) на клетку дальше. Попал в лаву — сгорел. Если за ним стена, толчок не проходит: ты отскакиваешь на клетку перед ним.</li>' +
+    '<li>Сгорел — выбыл. <b>Побеждает последний</b>, кто остался на плитках.</li></ol>' +
+    '<div class="legend"><span><i style="background:#f3ece5"></i>3 прыжка</span><span><i style="background:#b9a99c"></i>2</span><span><i style="background:#6e5c52"></i>1</span><span><i style="background:radial-gradient(#ffb648,#ff4d00 60%,#120806)"></i>лава</span></div>' +
+    '<p class="hint">Нажми на подсвеченную клетку или перетащи фишку. Прыжок на месте — дважды нажать на свою фишку или кнопку «На месте». Клавиши: стрелки — на соседнюю клетку, пробел — на месте.</p>';
+  $('rulesMenu').innerHTML = RULES; $('rulesDlg').innerHTML = RULES;
+  $('logoGem').innerHTML = A.gem(3, { id: 'logo' });
+  $('homeBtn').innerHTML = A.icon('home'); $('againBtn').innerHTML = A.icon('restart'); $('gameRulesBtn').innerHTML = A.icon('help');
+  $('stayBtn').innerHTML = A.icon('stay') + '<span>На месте</span>';
 
-  function toast(message) {
-    $('toast').textContent = message; $('toast').hidden = false;
-    clearTimeout(toastTimer); toastTimer = setTimeout(function(){$('toast').hidden=true;},3000);
+  // ---------- звук ----------
+  function ctx() { if (!S.sound) return null; try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); return audio; } catch (e) { return null; } }
+  function tone(f1, f2, dur, type, vol, delay) {
+    var a = ctx(); if (!a) return;
+    var o = a.createOscillator(), g = a.createGain(), t = a.currentTime + (delay || 0) / 1000;
+    o.type = type || 'triangle'; o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
   }
-  function savePrefs() { try { localStorage.setItem(PREFS,JSON.stringify(S)); } catch(e) {} }
-  function beep(fall) {
-    if (!S.sound) return;
-    try {
-      audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume();
-      var o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime;
-      o.type='triangle'; o.frequency.setValueAtTime(fall?150:380,t);
-      o.frequency.exponentialRampToValueAtTime(fall?40:130,t+.18);
-      g.gain.setValueAtTime(.065,t);g.gain.exponentialRampToValueAtTime(.001,t+.22);
-      o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+.23);
-    } catch(e) {}
+  function noise(dur, vol, freq, delay) {
+    var a = ctx(); if (!a) return;
+    var n = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+    var src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(), t = a.currentTime + (delay || 0) / 1000;
+    src.buffer = buf; f.type = 'lowpass'; f.frequency.value = freq; g.gain.value = vol;
+    src.connect(f); f.connect(g); g.connect(a.destination); src.start(t);
   }
+  var SFX = {
+    jump: function (d) { tone(320, 680, .16, 'triangle', .05, d); },
+    step: function (d) { tone(260, 430, .1, 'triangle', .045, d); },
+    land: function (d) { tone(150, 80, .09, 'sine', .09, d); },
+    crumble: function (d) { noise(.25, .09, 2200, d); },
+    fire: function (d) { noise(.6, .13, 700, d); tone(120, 38, .55, 'sawtooth', .025, d); },
+    push: function (d) { tone(190, 110, .1, 'square', .035, d); noise(.08, .06, 1200, d); },
+    win: function (d) { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, f * 1.01, .22, 'triangle', .05, (d || 0) + i * 110); }); }
+  };
+
+  // ---------- меню ----------
+  function activeCorners() { return [0, 1, 2, 3].filter(function (c) { return S.roles[c] !== 'off'; }); }
+  function setupError() {
+    var act = activeCorners(), rs = act.map(function (c) { return S.roles[c]; });
+    if (act.length < 2) return 'Нужно хотя бы два игрока';
+    if (window.IN_ROOM && (act.length !== 2 || rs.indexOf('human') < 0 || rs.indexOf('net') < 0)) return 'В комнате играют двое: отметь себя «Игрок», а соседний угол — «Друг»';
+    if (rs.indexOf('net') >= 0 && rs.filter(function (r) { return r === 'human'; }).length !== 1) return 'Для онлайна отметь «Игрок» только себя, а места друзей — «Друг»';
+    return '';
+  }
+  function selectedSetup() {
+    var act = activeCorners(), first = S.first === 'random' ? -1 : act.indexOf(+S.first);
+    if (first < 0) first = Math.floor(Math.random() * act.length);
+    return { mapId: S.mapId, corners: act, first: first, roles: act.map(function (c) { return S.roles[c]; }) };
+  }
+  function seg(el, items, cur, onPick) {
+    el.innerHTML = '';
+    items.forEach(function (it) {
+      var b = document.createElement('button'); b.type = 'button'; b.innerHTML = it.html; b.setAttribute('aria-pressed', String(it.v === cur)); if (it.label) b.setAttribute('aria-label', it.label);
+      if (it.disabled) b.disabled = true;
+      b.onclick = function () { onPick(it.v); }; el.appendChild(b);
+    });
+  }
+  function renderMenu() {
+    Array.prototype.forEach.call(document.querySelectorAll('#presets button'), function (b) {
+      var p = PRESETS[b.dataset.preset]; b.setAttribute('aria-pressed', String(p.join() === S.roles.join()));
+      b.disabled = !!window.IN_ROOM && b.dataset.preset !== 'net';
+    });
+    var grid = $('seatGrid'); grid.innerHTML = '';
+    [0, 1, 3, 2].forEach(function (c) {
+      var card = document.createElement('div'); card.className = 'seatc' + (S.roles[c] === 'off' ? ' off' : '');
+      card.style.setProperty('--cc', C[c].base); card.style.setProperty('--cg', C[c].glow);
+      card.innerHTML = '<div class="who">' + A.gem(c, { id: 'm' }) + '<span>' + C[c].name + '</span></div><div class="seg"></div>';
+      seg(card.querySelector('.seg'), ROLES.map(function (r) { return { v: r, html: ROLE_NAMES[r], disabled: !!window.IN_ROOM && r === 'bot' }; }), S.roles[c], function (r) { S.roles[c] = r; savePrefs(); renderMenu(); });
+      grid.appendChild(card);
+    });
+    var maps = $('maps'); maps.innerHTML = '';
+    L.MAPS.forEach(function (m) {
+      var b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-pressed', String(m.id === S.mapId));
+      b.innerHTML = (m.tiles ? A.mini(m.tiles) : '<span class="rnd">?</span>') + '<span>' + m.name + '</span>';
+      b.onclick = function () { S.mapId = m.id; savePrefs(); renderMenu(); }; maps.appendChild(b);
+    });
+    $('mapNote').textContent = L.map(S.mapId).note;
+    var act = activeCorners();
+    if (S.first !== 'random' && act.indexOf(+S.first) < 0) S.first = 'random';
+    seg($('firstSeg'), [{ v: 'random', html: 'Случайно' }].concat([0, 1, 2, 3].map(function (c) { return { v: String(c), html: A.gem(c, { id: 'f' }), label: C[c].name, disabled: act.indexOf(c) < 0 }; })), String(S.first), function (v) { S.first = v; savePrefs(); renderMenu(); });
+    var err = setupError(), net = act.some(function (c) { return S.roles[c] === 'net'; });
+    $('playBtn').innerHTML = A.icon('play') + (net ? (window.IN_ROOM ? 'Начать с другом' : 'Создать игру') : 'Играть');
+    $('playBtn').disabled = !!err;
+    $('seatHint').textContent = err || (window.IN_ROOM ? 'Ты и друг из комнаты: выберите себе углы. Ходят по часовой.' : 'Углы как на поле. «Друг» играет по ссылке со своего телефона; ходят по часовой.');
+    $('seatHint').style.color = err ? '#ff9a6b' : '';
+    $('resumeBtn').hidden = !!window.IN_ROOM || !readSave();
+    $('onlineCard').hidden = !!window.IN_ROOM;
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#presets button'), function (b) {
+    b.onclick = function () { S.roles = PRESETS[b.dataset.preset].slice(); savePrefs(); renderMenu(); };
+  });
+
+  // ---------- сохранение локальной партии ----------
   function readSave() {
     try {
-      var s=JSON.parse(localStorage.getItem(SAVED)),r=s&&(s.roles||s.kinds);
-      if (s && Lava.valid(s.state) && Array.isArray(r) && r.length===s.state.players.length && r.every(function(k){return k==='human'||k==='bot';})) return {state:s.state,roles:r};
-    } catch(e) {}
+      var s = JSON.parse(localStorage.getItem(SAVED));
+      if (s && L.valid(s.state) && !s.state.over && Array.isArray(s.roles) && s.roles.length === s.state.players.length && s.roles.every(function (k) { return k === 'human' || k === 'bot'; })) return s;
+    } catch (e) {}
     return null;
   }
   function saveGame() {
     if (LavaLink.current() || !state) return;
-    try {localStorage.setItem(SAVED,JSON.stringify({state:state,roles:roles}));}catch(e){}
-  }
-  function selectedSetup(randomize) {
-    var active=[];
-    S.roles.forEach(function(role,c){if(role!=='off')active.push(c);});
-    if(active.length<2)throw new Error('Нужно минимум два игрока. Выбери людей или ботов в углах.');
-    var first = active.indexOf(Number(S.first));
-    if(S.first==='random')first=randomize?Math.floor(Math.random()*active.length):0;
-    if(first<0)first=0;
-    var cfg=Lava.setup({mapId:S.mapId,corners:active,first:first});
-    cfg.roles=active.map(function(c){return S.roles[c];});
-    return cfg;
-  }
-  function setupError() {
-    try {
-      var cfg=selectedSetup(false);
-      if(window.IN_ROOM && (cfg.roles.length!==2 || cfg.roles.filter(function(r){return r==='human';}).length!==1 || cfg.roles.filter(function(r){return r==='net';}).length!==1))return 'В общей комнате выбери два угла: «Игрок» и «Друг». Остальные — «Пусто».';
-      if(cfg.roles.includes('net')&&!cfg.roles.includes('human'))return 'Выбери хотя бы один угол «Игрок» для своего устройства.';
-      return '';
-    }catch(e){return e.message;}
+    try { if (state.over) localStorage.removeItem(SAVED); else localStorage.setItem(SAVED, JSON.stringify({ state: state, roles: roles, setup: gameSetup })); } catch (e) {}
   }
 
-  for(var c=0;c<4;c++){
-    var cornerButton=document.createElement('button');
-    cornerButton.className='corner';cornerButton.dataset.corner=c;
-    cornerButton.style.setProperty('--pc',C[c].face);
-    cornerButton.onclick=(function(corner){return function(){
-      if(state)return;
-      var order=window.IN_ROOM?['human','net','off']:ROLE_ORDER;
-      S.roles[corner]=order[(order.indexOf(S.roles[corner])+1)%order.length];
-      savePrefs();renderMenu();
-    };})(c);
-    corners.push(cornerButton);$('corners').appendChild(cornerButton);
+  // ---------- размеры ----------
+  function layout() {
+    if ($('game').hidden) return;
+    var vw = window.innerWidth, vh = window.innerHeight, hub = window.hubH ? window.hubH() : 0;
+    var top = $('game').querySelector('.g-top').offsetHeight || 54, bar = 62, wide = vw >= 700 && vw > vh * 1.15, gem, b;
+    if (wide) {
+      gem = Math.max(50, Math.min(84, vh * .1));
+      b = Math.min(vh - hub - top - bar - 26, vw - 2 * (gem + 70) - 40);
+    } else {
+      gem = Math.max(38, Math.min(58, vw * .12));
+      b = Math.min(vw - 30, vh - hub - top - bar - 2 * (gem + 12) - 30);
+    }
+    B = Math.max(216, Math.floor(b / 1.04 / 6) * 6);
+    document.documentElement.style.setProperty('--B', B + 'px');
+    document.documentElement.style.setProperty('--gem', Math.round(gem) + 'px');
+    $('arena').classList.toggle('wide', wide);
+    if (state && !busy) placePieces();
   }
-  [0,1,3,2].forEach(function(c){
-    var row=document.createElement('div');row.className='seat-choice';row.dataset.corner=c;
-    row.innerHTML=A.gem(c,false)+'<div><label for="seat-'+c+'">'+CORNER_NAMES[c]+'</label><select id="seat-'+c+'" aria-label="'+C[c].name+' — '+CORNER_NAMES[c]+'"></select></div>';
-    var select=row.querySelector('select');
-    ROLE_ORDER.forEach(function(role){if(window.IN_ROOM&&role==='bot')return;var o=document.createElement('option');o.value=role;o.textContent=ROLE_NAMES[role];select.appendChild(o);});
-    select.onchange=function(){S.roles[c]=select.value;savePrefs();renderMenu();};
-    $('seatGrid').appendChild(row);
-  });
-  Lava.MAPS.forEach(function(m){
-    var b=document.createElement('button');b.dataset.map=m.id;b.id='map-'+m.id;
-    b.innerHTML='<span class="map-mini" style="--n:'+m.size+'" aria-hidden="true">'+m.rows.join('').split('').map(function(hp){return '<i class="'+(hp==='0'?'hole':hp==='2'?'strong':'')+'"></i>';}).join('')+'</span><span>'+m.name+'</span>';
-    b.onclick=function(){S.mapId=m.id;savePrefs();renderMenu();};$('maps').appendChild(b);
-  });
-  document.querySelectorAll('[data-preset]').forEach(function(b){
-    b.onclick=function(){S.roles=presets[b.dataset.preset].slice();S.first='3';savePrefs();renderMenu();};
-    if(window.IN_ROOM && b.dataset.preset!=='net')b.disabled=true;
-  });
-  $('firstSelect').onchange=function(){S.first=this.value;savePrefs();};
+  window.addEventListener('resize', layout);
+  function xy(i) { var cs = B / 6; return [(i % 6) * cs, Math.floor(i / 6) * cs]; }
+  function tf(i, s, dx, dy) { var p = xy(i); return 'translate(' + (p[0] + (dx || 0)) + 'px,' + (p[1] + (dy || 0)) + 'px) scale(' + (s || 1) + ')'; }
 
-  function renderMenu() {
-    if(state)return;
-    document.querySelectorAll('[data-preset]').forEach(function(b){b.setAttribute('aria-pressed',String(presets[b.dataset.preset].join()===S.roles.join()));});
-    document.querySelectorAll('[data-map]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.map===S.mapId));});
-    document.querySelectorAll('.seat-choice').forEach(function(el){var c=+el.dataset.corner;el.querySelector('select').value=S.roles[c];el.classList.toggle('off',S.roles[c]==='off');});
-    $('mapDescription').textContent=Lava.map(S.mapId).note;
-    $('firstSelect').replaceChildren();
-    var random=document.createElement('option');random.value='random';random.textContent='Случайно';$('firstSelect').appendChild(random);
-    S.roles.forEach(function(r,c){if(r==='off')return;var o=document.createElement('option');o.value=c;o.textContent=C[c].name;$('firstSelect').appendChild(o);});
-    if(S.first!=='random'&&S.roles[Number(S.first)]==='off')S.first=String(S.roles.findIndex(function(r){return r==='human';}));
-    if(S.first!=='random'&&(Number(S.first)<0||!S.roles[Number(S.first)]||S.roles[Number(S.first)]==='off'))S.first='random';
-    $('firstSelect').value=S.first;
-    var err=setupError(),net=S.roles.includes('net');
-    $('playHint').textContent=err;$('playHint').hidden=!err;
-    $('playBtn').disabled=!!err;$('playBtn').innerHTML=A.icon('play')+(net?(window.IN_ROOM?'С другом':'Создать игру'):'Играть');
-    $('onCreate').disabled=!!err||!net;
-    $('resumeBtn').hidden=!!window.IN_ROOM||!readSave();
-    if(window.IN_ROOM)$('onlineHint').textContent='В общей комнате — двое. Углы и карту выбирает хозяин. Для 3–4 друзей открой «Лаву» отдельно.';
-    renderCorners();
-  }
-  function playerName(seat) {return C[Lava.corner(state,seat)].name;}
-  function playerRole(seat,n) {
-    if(!state.players[seat].alive)return 'Выбыл';
-    if(n && !n.online[seat])return 'Нет связи';
-    if(roles[seat]==='bot')return 'Бот';
-    if(n&&n.role==='guest')return seat===n.seat?'Ты':roles[seat]==='human'?'Хозяин':'Друг';
-    if(roles[seat]==='net')return 'Друг';
-    return roles.filter(function(r){return r==='human';}).length===1?'Ты':'Игрок';
-  }
-  function renderCorners() {
-    var n=LavaLink.current();
-    corners.forEach(function(el,c){
-      var seat=state?state.players.findIndex(function(_,i){return Lava.corner(state,i)===c;}):-1;
-      var role=state?(seat<0?'off':roles[seat]):S.roles[c];
-      el.className='corner'+(role==='off'?' off':'')+(state&&seat>=0&&!state.players[seat].alive?' out':'')+(state&&state.turn===seat?' turn':'');
-      el.setAttribute('aria-label',C[c].name+', '+CORNER_NAMES[c]+': '+(state?(seat<0?'не участвует':playerRole(seat,n)):ROLE_NAMES[role]));
-      el.innerHTML='<span class="corner-content"><span class="corner-chip">'+A.gem(c,false)+'</span><span class="role-icon">'+A.icon(role)+'</span><span class="corner-kind">'+(state?(seat<0?'':playerRole(seat,n)):ROLE_NAMES[role])+'</span></span>';
+  // ---------- поле ----------
+  var RING = '<svg class="ring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-dasharray="100 44.5"/></svg>';
+  function buildBoard() {
+    var bd = $('board'), old = bd.querySelector('svg.lava'); if (old) old.remove();
+    bd.insertAdjacentHTML('afterbegin', A.board(1 + Math.floor(Math.random() * 900)));
+    holesKey = '';
+    var tl = $('tiles'), mk = $('marks'), pc = $('pieces'); tl.innerHTML = ''; mk.innerHTML = ''; pc.innerHTML = ''; $('fx').innerHTML = '';
+    tileEls = []; markEls = []; pieces = [];
+    for (var i = 0; i < 36; i++) {
+      var t = document.createElement('div'); t.className = 'tile';
+      t.style.left = 'calc(var(--B) / 6 * ' + (i % 6 + .07) + ')'; t.style.top = 'calc(var(--B) / 6 * ' + (Math.floor(i / 6) + .07) + ')';
+      tl.appendChild(t); tileEls.push(t);
+      var m = document.createElement('button'); m.className = 'mark'; m.type = 'button'; m.tabIndex = -1; m.dataset.i = i;
+      m.style.left = 'calc(var(--B) / 6 * ' + (i % 6) + ')'; m.style.top = 'calc(var(--B) / 6 * ' + Math.floor(i / 6) + ')';
+      mk.appendChild(m); markEls.push(m);
+    }
+    state.players.forEach(function (p, seat) {
+      var c = p.corner, el = document.createElement('div'); el.className = 'pc'; el.style.setProperty('--pc', C[c].light);
+      el.innerHTML = RING + A.gem(c, { id: 'p' }) + '<i class="ar a0"></i><i class="ar a1"></i><i class="ar a2"></i><i class="ar a3"></i>';
+      pc.appendChild(el); pieces.push(el);
+    });
+    [0, 1, 2, 3].forEach(function (c) {
+      var el = $('seat' + c), seat = seatOf(c);
+      el.hidden = seat < 0; el.style.setProperty('--cg', C[c].glow);
+      el.innerHTML = '<div class="sg">' + RING + A.gem(c, { id: 's' }) + '</div><div><div class="nm"></div><div class="st"></div></div>';
     });
   }
-  function stopTimers(){clearTimeout(botTimer);clearTimeout(animTimer);busy=false;pending=false;epoch++;}
-  function showGame(){if($('lobby').open)$('lobby').close();$('menu').hidden=true;$('game').hidden=false;document.body.classList.add('in-game');resize();}
-  function rebuildBoard() {
-    cells=[];tokens=[];$('board').replaceChildren();
-    var size=state.size||6;document.documentElement.style.setProperty('--N',size);
-    $('board').setAttribute('aria-label','Поле '+size+' на '+size);
-    state.tiles.forEach(function(_,i){
-      var b=document.createElement('button');b.className='tile';b.dataset.cell=i;b.style.setProperty('--x',i%size);b.style.setProperty('--y',Math.floor(i/size));b.style.setProperty('--delay',-(i%7)*.4+'s');
-      b.onclick=function(){if(!canAct())return;var p=state.players[state.turn];if(p.pos===i){act(4);return;}for(var d=0;d<4;d++)if(Lava.target(p.pos,d,size)===i){act(d);return;}};
-      cells.push(b);$('board').appendChild(b);
-    });
-    state.players.forEach(function(_,i){
-      var t=document.createElement('div');t.className='token no-motion';t.innerHTML='<span class="piece">'+A.gem(Lava.corner(state,i),true)+'</span>';t.setAttribute('aria-hidden','true');tokens.push(t);$('board').appendChild(t);
+  function seatOf(c) { if (!state) return -1; for (var i = 0; i < state.players.length; i++) if (state.players[i].corner === c) return i; return -1; }
+  function paintTiles(tiles) {
+    tiles.forEach(function (t, i) { tileEls[i].className = 'tile t' + t; });
+    var key = tiles.map(function (t) { return t ? 1 : 0; }).join('');
+    if (key !== holesKey) { holesKey = key; var cp = document.getElementById('lvHoles'); if (cp) cp.innerHTML = A.holes(tiles); }
+  }
+  function placePieces() {
+    state.players.forEach(function (p, seat) {
+      var el = pieces[seat]; if (!el) return;
+      el.getAnimations().forEach(function (a) { a.cancel(); });
+      el.classList.toggle('gone', !p.alive);
+      el.style.transform = tf(p.pos);
+      el.style.filter = ''; el.style.opacity = '';
     });
   }
-  function resize() {
-    if($('game').hidden)return;
-    var r=$('boardWrap').getBoundingClientRect();
-    document.documentElement.style.setProperty('--B',Math.floor(Math.max(120,Math.min(r.width,r.height)))+'px');
+
+  // ---------- кто есть кто ----------
+  function net() { return LavaLink.current(); }
+  function mine(seat) {
+    var n = net();
+    if (!n) return roles[seat] === 'human';
+    return n.role === 'host' ? roles[seat] === 'human' : seat === n.seat;
   }
-  window.addEventListener('resize',resize);
-  if(document.fonts)document.fonts.ready.then(resize);
+  function humansLocal() { return !net() && roles.filter(function (r) { return r === 'human'; }).length > 1; }
+  function label(seat) {
+    if (roles[seat] === 'bot') return 'Бот';
+    if (mine(seat)) return humansLocal() ? C[state.players[seat].corner].name : 'Ты';
+    return roles[seat] === 'human' && !net() ? C[state.players[seat].corner].name : 'Друг';
+  }
   function canAct() {
-    if(!state||state.over||busy||pending||$('game').hidden)return false;
-    var n=LavaLink.current();
-    if(!n)return roles[state.turn]==='human';
-    return LavaLink.ready()&&(n.role==='host'?roles[state.turn]==='human':state.turn===n.seat);
+    if (!state || state.over || busy || pending) return false;
+    var n = net();
+    if (!n) return roles[state.turn] === 'human';
+    return LavaLink.ready() && (n.role === 'host' ? roles[state.turn] === 'human' : state.turn === n.seat);
   }
-  function coord(i){var size=state.size||6;return 'abcdefgh'[i%size]+(size-Math.floor(i/size));}
+
+  // ---------- отрисовка ----------
   function render() {
-    if(!state)return;
-    var n=LavaLink.current(),size=state.size||6,can=canAct(),p=state.over?null:state.players[state.turn];
-    var legal=can?Lava.moves(state,state.turn,false):[],active=p?C[Lava.corner(state,state.turn)]:C[3];
-    document.documentElement.style.setProperty('--active-color',active.face);document.documentElement.style.setProperty('--active-dark',active.dark);
-    renderCorners();
-    cells.forEach(function(b,i){
-      var hp=state.tiles[i],dir=p&&p.pos===i?4:-1;
-      if(p)for(var d=0;d<4;d++)if(Lava.target(p.pos,d,size)===i)dir=d;
-      if(b.dataset.hp!==String(hp)){b.dataset.hp=hp;b.innerHTML=A.tile(hp,i)+'<span class="target" aria-hidden="true"></span>';}
-      var allowed=legal.includes(dir),occupant=state.players.findIndex(function(q){return q.alive&&q.pos===i;});
-      b.className='tile'+(hp===0?' hole':'')+(allowed?' can':'');b.disabled=!allowed;
-      b.querySelector('.target').textContent=allowed&&dir<4?Lava.DIRS[dir].label:'';
-      b.setAttribute('aria-label',coord(i)+': '+(hp===0?'лава':hp+' '+(hp===2?'слоя':'слой'))+(occupant>=0?', '+playerName(occupant):'')+(allowed?', '+(dir===4?(hp===1?'на месте: падение':'прыгнуть на месте'):'прыгнуть сюда'):''));
+    if (!state) return;
+    var can = canAct(), turn = state.turn, n = net();
+    if (!busy) { paintTiles(state.tiles); placePieces(); }
+    if (armed !== state.ply) armed = -1;
+    // стрелки и кольцо
+    state.players.forEach(function (p, seat) {
+      var el = pieces[seat]; if (!el) return;
+      var dirs = [false, false, false, false];
+      if (p.alive && !state.over) L.moves(state, seat).forEach(function (m) { if (m.n > 0) dirs[m.d] = true; });
+      for (var d = 0; d < 4; d++) el.querySelector('.a' + d).classList.toggle('on', dirs[d] && !busy);
+      el.classList.toggle('on', !state.over && seat === turn && !busy);
     });
-    tokens.forEach(function(t,i){
-      var q=state.players[i];t.hidden=!q.alive;t.classList.toggle('turn',state.turn===i);
-      t.style.setProperty('--x',q.pos%size);t.style.setProperty('--y',Math.floor(q.pos/size));
-      t.querySelectorAll('.gem-arrow').forEach(function(a,d){a.classList.toggle('blocked',q.back===d);});
+    // подсветка ходов
+    markEls.forEach(function (m) { m.className = 'mark'; m.removeAttribute('data-m'); m.removeAttribute('aria-label'); m.tabIndex = -1; });
+    if (can) {
+      var col = C[state.players[turn].corner].light;
+      L.moves(state, turn).forEach(function (mv) {
+        var m = markEls[mv.m === 0 ? mv.to : mv.land];
+        m.dataset.m = mv.m; m.style.setProperty('--mc', col); m.tabIndex = 0;
+        if (mv.m === 0) { m.className = 'mark stay' + (mv.fatal ? ' bad' : '') + (armed === state.ply ? ' armed' : ''); m.setAttribute('aria-label', 'Прыжок на месте' + (mv.fatal ? ' — сгоришь' : '')); }
+        else {
+          m.className = 'mark go ' + mv.kind + (mv.fatal ? ' bad' : '') + (mv.kills.length ? ' kill' : '');
+          m.setAttribute('aria-label', 'Прыжок ' + L.DIRS[mv.d].label + ' на ' + mv.n + (mv.kind === 'push' ? ', толкнуть' : '') + (mv.fatal ? ', сгоришь' : ''));
+        }
+      });
+    }
+    // игроки по углам
+    [0, 1, 2, 3].forEach(function (c) {
+      var seat = seatOf(c), el = $('seat' + c); if (seat < 0) return;
+      var p = state.players[seat], nm = label(seat), cn = C[c].name;
+      el.querySelector('.nm').textContent = nm;
+      el.querySelector('.nm').style.color = C[c].light;
+      var st = !p.alive ? 'сгорел' : state.over && state.winner === seat ? 'победил!' : n && roles[seat] === 'net' && !n.online[seat] ? 'нет связи' : nm === cn ? '' : cn.toLowerCase();
+      el.querySelector('.st').textContent = st;
+      el.classList.toggle('on', !state.over && seat === turn);
+      el.classList.toggle('dead', !p.alive);
     });
-    var mine=p&&(n&&n.role==='guest'?state.turn===n.seat:roles.filter(function(r){return r==='human';}).length===1&&roles[state.turn]==='human');
-    $('turnName').textContent=state.over?(state.winner===null?'Ничья':playerName(state.winner)+' победил!'):(mine?'Твой ход':playerName(state.turn)+(roles[state.turn]==='bot'?' думает…':' ходит'));
-    $('turnName').style.color=state.over?(state.winner===null?'':C[Lava.corner(state,state.winner)].light):active.light;
-    $('status').textContent=state.over?'Последний над лавой':n&&!LavaLink.ready()?'Ждём восстановления связи':pending?'Отправляем ход…':busy?'':p.back<0?'Прыжок в любую сторону':'Назад '+Lava.DIRS[p.back].label+' нельзя · на месте — разворот';
-    $('turnNumber').textContent=state.over?'Прыжков: '+state.ply:'Ход '+(state.ply+1);
-    $('mapName').textContent='· '+(Lava.map(state.mapId)||Lava.map('classic')).name+' '+size+'×'+size;
-    $('jumpBtn').disabled=!can;$('jumpBtn').classList.toggle('danger',!!p&&state.tiles[p.pos]===1);
-    $('jumpBtn').innerHTML=A.icon('jump')+'<span>На месте'+(p&&state.tiles[p.pos]===1?'<small>падение</small>':'')+'</span>';
-    $('jumpBtn').title=p&&state.tiles[p.pos]===1?'Последний слой: этот прыжок приведёт к падению':'Прыгнуть на месте и снять запрет направления';
-    $('soundBtn').innerHTML=A.icon(S.sound?'sound':'mute');$('soundBtn').setAttribute('aria-pressed',String(S.sound));$('soundBtn').setAttribute('aria-label',S.sound?'Выключить звук':'Включить звук');
-    $('againBtn').disabled=!!n&&(!state.over||n.role!=='host'||!n.online.every(Boolean));
-    $('netWarning').hidden=!n||LavaLink.ready();$('netWarningText').textContent=n?(n.error||'Ждём отключившегося игрока. Его угол сохранён.'):'';$('reconnectBtn').hidden=!n||n.role!=='guest';
-    if(state.over){
-      var key=(n?n.round:epoch)+':'+state.ply;
-      if(shownResult!==key){shownResult=key;$('winnerGem').innerHTML=state.winner===null?'':A.gem(Lava.corner(state,state.winner),false);$('resultTitle').textContent=state.winner===null?'Ничья':playerName(state.winner)+' победил!';$('resultText').textContent='Прыжков: '+state.ply+'.'+(n&&n.role==='guest'?' Реванш начинает хозяин.':' Сыграем ещё?');$('resultAgain').hidden=!!n&&n.role==='guest';$('resultAgain').disabled=!!n&&!n.online.every(Boolean);$('result').showModal();}
+    // заголовок
+    var tn = $('turnName'), stt = $('status');
+    if (state.over) {
+      var w = state.winner;
+      tn.textContent = w === null ? 'Все сгорели' : mine(w) && !humansLocal() ? 'Победа!' : C[state.players[w].corner].name + ' победил' + (roles[w] === 'bot' ? ' (бот)' : '');
+      tn.style.color = w === null ? '' : C[state.players[w].corner].light;
+      stt.textContent = 'Прыжков: ' + state.ply;
+    } else {
+      var c = state.players[turn].corner, p0 = state.players[turn];
+      tn.style.color = C[c].light;
+      tn.textContent = roles[turn] === 'bot' ? 'Ходит бот · ' + C[c].who : mine(turn) ? (humansLocal() ? 'Ходит ' + C[c].who : 'Твой ход') : 'Ходит друг · ' + C[c].who;
+      stt.textContent = n && !LavaLink.ready() ? 'Ждём связи…' : pending ? 'Отправляем ход…' : can ? (p0.back >= 0 ? 'Назад ' + L.DIRS[p0.back].label + ' нельзя · прыжок на месте снимет запрет' : 'Прыгай по прямой на любую плитку') : '';
+    }
+    $('stayBtn').disabled = !can; $('stayBtn').classList.toggle('armed', armed === state.ply && can);
+    $('soundBtn').innerHTML = A.icon(S.sound ? 'soundOn' : 'soundOff'); $('soundBtn').setAttribute('aria-pressed', String(S.sound));
+    $('againBtn').disabled = !!n && (n.role !== 'host' || !state.over);
+    $('netWarning').hidden = !n || LavaLink.ready(); $('netWarningText').textContent = n ? (n.error || 'Ждём игрока, у которого пропала связь. Его место сохранено.') : '';
+    $('reconnectBtn').hidden = !n || n.role !== 'guest';
+    if (state.over && !busy) {
+      var key = netRound + ':' + state.ply + ':' + state.winner;
+      if (shownResult !== key) { shownResult = key; clearTimeout(resultTimer); resultTimer = setTimeout(showResult, 700); }
     }
   }
-  function animate(old) {
-    if(!state||!old||!state.last||state.ply!==old.ply+1)return;
-    var l=state.last,reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,size=state.size||6;
-    if(!reduced){
-      var token=tokens[l.seat];
-      if(!token.hidden)token.querySelector('.piece').animate([{transform:'scale(1)'},{transform:'translateY(-20%) scale(1.18)',offset:.45},{transform:'scale(1)'}],{duration:300,easing:'ease-out'});
-      else {
-        var ghost=token.cloneNode(true);ghost.hidden=false;ghost.className='token';ghost.style.setProperty('--x',l.from%size);ghost.style.setProperty('--y',Math.floor(l.from/size));$('board').appendChild(ghost);
-        ghost.querySelector('.piece').animate([{transform:'scale(1)'},{transform:'translateY(18%) scale(.1)',opacity:0}],{duration:360,easing:'ease-in'}).onfinish=function(){ghost.remove();};
+  function showResult() {
+    if (!state || !state.over || $('game').hidden) return;
+    var w = state.winner, n = net();
+    $('winnerGem').innerHTML = w === null ? '' : A.gem(state.players[w].corner, { id: 'w' });
+    $('resultTitle').textContent = w === null ? 'Все сгорели' : mine(w) && !humansLocal() ? 'Ты победил!' : C[state.players[w].corner].name + ' победил' + (roles[w] === 'bot' ? ' (бот)' : '');
+    $('resultText').textContent = 'Прыжков за партию: ' + state.ply + '.' + (n && n.role === 'guest' ? ' Реванш запускает хозяин.' : '');
+    $('resultAgain').hidden = !!n && n.role === 'guest';
+    if (w !== null && (mine(w) || humansLocal())) SFX.win();
+    if (!$('result').open) $('result').showModal();
+  }
+
+  // ---------- эффекты ----------
+  function bits(i, kind, delay) {
+    setTimeout(function () {
+      var fx = $('fx'), cs = B / 6, cx = (i % 6 + .5) * cs, cy = (Math.floor(i / 6) + .5) * cs;
+      var fire = kind === 'fire', n = fire ? 18 : 14;
+      if (fire) {
+        var fl = document.createElement('div'); fl.className = 'bit';
+        fl.style.cssText = 'width:' + cs + 'px;height:' + cs + 'px;border-radius:50%;background:radial-gradient(circle,#ffe08a 0%,#ff7a1a 35%,rgba(255,60,0,0) 70%);mix-blend-mode:screen';
+        fx.appendChild(fl);
+        fl.animate([{ transform: 'translate(' + (cx - cs / 2) + 'px,' + (cy - cs / 2) + 'px) scale(.3)', opacity: 1 }, { transform: 'translate(' + (cx - cs / 2) + 'px,' + (cy - cs / 2) + 'px) scale(1.5)', opacity: 0 }], { duration: 520, easing: 'ease-out' }).onfinish = function () { fl.remove(); };
       }
-      cells[l.from].querySelector('svg').animate([{filter:'brightness(1.6)'},{filter:'brightness(1)'}],{duration:350});
-      var unit=$('board').clientWidth/size;
-      for(var f=0;f<6;f++){
-        var shard=document.createElement('i');shard.className='frag';shard.style.left=((l.from%size+.4)*unit)+'px';shard.style.top=((Math.floor(l.from/size)+.4)*unit)+'px';$('board').appendChild(shard);
-        var angle=f*Math.PI/3,dx=Math.cos(angle)*unit*.65,dy=Math.sin(angle)*unit*.65;
-        var anim=shard.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:'translate('+dx+'px,'+dy+'px) rotate('+(f*73)+'deg) scale(.25)',opacity:0}],{duration:420,easing:'ease-out'});
-        anim.onfinish=(function(el){return function(){el.remove();};})(shard);
+      for (var k = 0; k < n; k++) {
+        var b = document.createElement('div'), sz = cs * (fire ? .07 + Math.random() * .09 : .05 + Math.random() * .07);
+        var col = fire ? ['#ffe27a', '#ffa53a', '#ff6a1a', '#d8340c'][k % 4] : ['#efe7df', '#d3c6ba', '#a8998d', '#7d6e64'][k % 4];
+        b.className = 'bit';
+        b.style.cssText = 'width:' + sz + 'px;height:' + sz + 'px;background:' + col + ';border-radius:' + (fire ? '50%' : '18%') + (fire ? ';box-shadow:0 0 ' + sz + 'px ' + col : '');
+        fx.appendChild(b);
+        var x0 = cx + (Math.random() - .5) * cs * .6 - sz / 2, y0 = cy + (Math.random() - .5) * cs * .6 - sz / 2;
+        var ang = Math.random() * Math.PI * 2, dist = cs * (.25 + Math.random() * .4);
+        var x1 = x0 + Math.cos(ang) * dist, y1 = y0 + Math.sin(ang) * dist + (fire ? -cs * .35 : cs * .15);
+        b.animate([{ transform: 'translate(' + x0 + 'px,' + y0 + 'px) rotate(0deg) scale(1)', opacity: 1 }, { transform: 'translate(' + x1 + 'px,' + y1 + 'px) rotate(' + (Math.random() * 400 - 200) + 'deg) scale(' + (fire ? .2 : .5) + ')', opacity: 0 }],
+          { duration: 480 + Math.random() * 320, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = (function (el) { return function () { el.remove(); }; })(b);
       }
+    }, delay || 0);
+  }
+  function sink(el, pos, delay) {
+    el.animate([{ transform: tf(pos, 1), filter: 'brightness(1)', opacity: 1 },
+      { transform: tf(pos, .75), filter: 'brightness(.7) sepia(1) saturate(5) hue-rotate(-25deg)', opacity: .95, offset: .35 },
+      { transform: tf(pos, .12), filter: 'brightness(.15)', opacity: 0 }], { duration: 700, delay: delay, easing: 'ease-in', fill: 'both' });
+    bits(pos, 'fire', delay + 120); SFX.fire(delay + 80);
+  }
+  // анимация хода; done — когда всё закончилось
+  function animate(old, nw, done) {
+    var e = nw.last, my = epoch;
+    if (!e || !pieces[e.seat]) { done(); return; }
+    busy = true; render();
+    paintTiles(old.tiles);
+    old.players.forEach(function (p, seat) { var el = pieces[seat]; el.getAnimations().forEach(function (a) { a.cancel(); }); el.classList.toggle('gone', !p.alive); el.style.transform = tf(p.pos); });
+    var el = pieces[e.seat], n = e.m % 10, cs = B / 6, dur, tDepart = 0, end;
+    var breakTiles = function () { paintTiles(nw.tiles); bits(e.from, e.left > 0 ? 'debris' : 'fire'); if (e.left > 0) SFX.crumble(); else SFX.fire(); };
+    el.style.transform = tf(e.to);
+    if (e.kind === 'stay') {
+      dur = 420; tDepart = 330;
+      el.animate([{ transform: tf(e.from, 1) }, { transform: tf(e.from, 1.45), offset: .45 }, { transform: tf(e.from, 1) }], { duration: dur, easing: 'ease-in-out' });
+      SFX.jump();
+    } else {
+      var far = n > 1, fly = far ? 260 + 75 * (n - 1) : 210, up = far ? 1.38 : 1.08;
+      if (e.kind === 'bounce') {
+        var dv = L.DIRS[e.d], cx = -dv.dc * cs * .42, cy = -dv.dr * cs * .42;
+        dur = fly + 170;
+        var kf = [{ transform: tf(e.from, 1) }];
+        if (far) kf.push({ transform: 'translate(' + ((xy(e.from)[0] + xy(e.land)[0]) / 2) + 'px,' + ((xy(e.from)[1] + xy(e.land)[1]) / 2) + 'px) scale(' + up + ')', offset: fly / dur * .5 });
+        kf.push({ transform: tf(e.land, 1, cx, cy), offset: fly / dur });
+        kf.push({ transform: tf(e.to, 1) });
+        el.animate(kf, { duration: dur, easing: 'ease-in-out' });
+        // толкаемые вздрагивают у стены
+        var c = e.land, o;
+        while (c >= 0 && (o = L.who(old, c)) >= 0) {
+          pieces[o].animate([{ transform: tf(c) }, { transform: tf(c, 1, dv.dc * cs * .09, dv.dr * cs * .09), offset: .4 }, { transform: tf(c) }], { duration: 260, delay: fly, easing: 'ease-out' });
+          c = L.step(c, e.d, 1);
+        }
+        SFX.push(fly);
+      } else {
+        dur = fly;
+        el.animate([{ transform: tf(e.from, 1) }, { transform: 'translate(' + ((xy(e.from)[0] + xy(e.land)[0]) / 2) + 'px,' + ((xy(e.from)[1] + xy(e.land)[1]) / 2) + 'px) scale(' + up + ')' }, { transform: tf(e.land, 1) }], { duration: dur, easing: 'ease-in-out' });
+      }
+      (far ? SFX.jump : SFX.step)(); SFX.land(fly - 20);
     }
-    beep(l.eliminated.length>0);
+    end = dur;
+    setTimeout(function () { if (my === epoch) breakTiles(); }, tDepart);
+    e.pushed.forEach(function (q) {
+      var pe = pieces[q.seat];
+      pe.style.transform = tf(q.to);
+      pe.animate([{ transform: tf(q.from) }, { transform: tf(q.to) }], { duration: 200, delay: dur, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'backwards' });
+      if (q.fell) { sink(pe, q.to, dur + 200); end = Math.max(end, dur + 200 + 700); }
+      else end = Math.max(end, dur + 200);
+    });
+    if (e.pushed.length) SFX.push(dur);
+    if (e.fell) { sink(el, e.to, dur); end = Math.max(end, dur + 700); }
+    setTimeout(function () { if (my !== epoch) return; busy = false; done(); }, end + 60);
   }
-  function finishAnimation() {var captured=epoch;clearTimeout(animTimer);animTimer=setTimeout(function(){if(captured!==epoch)return;busy=false;render();schedule();},330);}
-  function commit(dir,seat) {
-    if(!state||state.turn!==seat||busy)return;
-    var next=Lava.apply(state,dir);if(!next)return;
-    var old=state;tokens.forEach(function(t){t.classList.remove('no-motion');});state=next;pending=false;busy=true;saveGame();
-    if(LavaLink.current())LavaLink.update(state);else render();
-    animate(old);finishAnimation();
+
+  // ---------- ходы ----------
+  function after() { render(); schedule(); }
+  function commit(m, seat) {
+    if (!state || state.turn !== seat || busy) return;
+    var next = L.apply(state, m); if (!next) return;
+    var old = state; state = next; pending = false; busy = true; armed = -1;
+    saveGame();
+    if (net()) LavaLink.update(state);
+    animate(old, state, after);
   }
-  function act(dir) {
-    if(!canAct()||!Lava.moves(state,state.turn,false).includes(dir))return;
-    var n=LavaLink.current();
-    if(!n){commit(dir,state.turn);return;}
-    if(n.role==='host'){LavaLink.act(dir);return;}
-    pending=true;render();
-    if(!LavaLink.act(dir)){pending=false;render();}
-    else {clearTimeout(animTimer);animTimer=setTimeout(function(){pending=false;render();},4000);}
+  function act(m) {
+    if (!canAct() || !L.moves(state, state.turn).some(function (x) { return x.m === m; })) return;
+    var n = net();
+    if (!n) { commit(m, state.turn); return; }
+    if (n.role === 'host') { LavaLink.act(m); return; }
+    pending = true; render();
+    if (!LavaLink.act(m)) { pending = false; render(); return; }
+    clearTimeout(pendTimer); pendTimer = setTimeout(function () { pending = false; render(); }, 4000);
+  }
+  function stayTap() {
+    if (!canAct()) return;
+    var mv = L.moves(state, state.turn).filter(function (x) { return x.m === 0; })[0];
+    if (armed === state.ply) { armed = -1; act(0); return; }
+    armed = state.ply; render();
+    toast(mv && mv.fatal ? 'Плитка последняя — прыжок на месте утопит тебя. Нажми ещё раз, если уверен.' : 'Нажми ещё раз — прыжок на месте. Плитка потеряет слой, запрет «назад» снимется.');
   }
   function schedule() {
     clearTimeout(botTimer);
-    var n=LavaLink.current();
-    if(!state||state.over||busy||$('game').hidden||roles[state.turn]!=='bot'||n&&(n.role!=='host'||!LavaLink.ready()))return;
-    var captured=epoch;
-    botTimer=setTimeout(function(){if(captured!==epoch||!state||state.over||LavaLink.current()&&!LavaLink.ready())return;var d=Lava.bot(state);if(d!==null)commit(d,state.turn);},650);
+    var n = net();
+    if (!state || state.over || busy || $('game').hidden || roles[state.turn] !== 'bot' || n && (n.role !== 'host' || !LavaLink.ready())) return;
+    var my = epoch, seat = state.turn;
+    botTimer = setTimeout(function () {
+      if (my !== epoch || !state || state.turn !== seat || busy || net() && !LavaLink.ready()) return;
+      var m = L.bot(state); if (m !== null) commit(m, seat);
+    }, 600);
   }
-  function localStart(saved) {
-    LavaLink.close();stopTimers();
-    if(saved){state=saved.state;roles=saved.roles.slice();gameSetup={mapId:state.mapId||'classic',corners:state.players.map(function(_,i){return Lava.corner(state,i);}),first:0,roles:roles.slice()};}
-    else {gameSetup=selectedSetup(true);roles=gameSetup.roles.slice();state=Lava.create(gameSetup);}
-    shownResult='';if($('result').open)$('result').close();rebuildBoard();showGame();saveGame();render();schedule();
-  }
-  $('playBtn').onclick=function(){if(setupError()){toast(setupError());return;}if(S.roles.includes('net'))host();else localStart();};
-  $('resumeBtn').onclick=function(){var s=readSave();if(s)localStart(s);};
-  $('jumpBtn').onclick=function(){act(4);};
-  document.addEventListener('keydown',function(e){
-    if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||document.querySelector('dialog[open]')||e.altKey||e.ctrlKey||e.metaKey||e.repeat)return;
-    var keys={ArrowUp:0,w:0,ц:0,ArrowRight:1,d:1,в:1,ArrowDown:2,s:2,ы:2,ArrowLeft:3,a:3,ф:3,' ':4},dir=keys[e.key];
-    if(dir!==undefined&&!$('game').hidden){e.preventDefault();act(dir);}
-  });
-  $('soundBtn').onclick=function(){S.sound=!S.sound;savePrefs();beep(false);render();};
-  function showRules() {$('rulesDialog').showModal();}
-  $('rulesBtn').onclick=showRules;$('gameRulesBtn').onclick=showRules;$('rulesClose').onclick=function(){$('rulesDialog').close();};
-  function home() {
-    stopTimers();LavaLink.close();state=null;roles=[];
-    document.querySelectorAll('dialog[open]').forEach(function(d){d.close();});
-    $('game').hidden=true;$('menu').hidden=false;document.body.classList.remove('in-game');
-    if(!window.IN_ROOM&&location.hash)history.replaceState(null,'',location.pathname+location.search);
-    renderMenu();$('menu').scrollTop=0;
-  }
-  $('homeBtn').onclick=function(){var n=LavaLink.current();if(n&&state&&!state.over)$('leaveDialog').showModal();else home();};
-  $('endMenu').onclick=home;$('leaveConfirm').onclick=home;$('leaveCancel').onclick=function(){$('leaveDialog').close();};
-  function restart() {
-    var n=LavaLink.current();
-    if(n&&(!state.over||n.role!=='host'||!n.online.every(Boolean)))return;
-    stopTimers();shownResult='';if($('result').open)$('result').close();if($('restartDialog').open)$('restartDialog').close();
-    if(n){LavaLink.start(Lava.create(n.cfg));return;}
-    state=Lava.create(gameSetup);roles=gameSetup.roles.slice();rebuildBoard();saveGame();render();schedule();
-  }
-  $('againBtn').onclick=function(){if(LavaLink.current()||state.over)restart();else $('restartDialog').showModal();};
-  $('resultAgain').onclick=restart;$('restartConfirm').onclick=restart;$('restartCancel').onclick=function(){$('restartDialog').close();};
-  $('viewBtn').onclick=function(){$('result').close();};
 
+  // нажатия и перетаскивание по полю
+  var D = null, ghost = null, hoverEl = null;
+  function markAt(x, y) { var el = document.elementFromPoint(x, y); return el && el.closest ? el.closest('#marks .mark') : null; }
+  function pick(mk) {
+    if (!mk || mk.dataset.m === undefined) return;
+    if (mk.classList.contains('stay')) stayTap(); else act(+mk.dataset.m);
+  }
+  $('marks').addEventListener('pointerdown', function (e) {
+    var mk = e.target.closest('.mark'); if (!mk || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    e.preventDefault();
+    D = { mk: mk, x: e.clientX, y: e.clientY, id: e.pointerId, own: mk.classList.contains('stay'), moved: false };
+  });
+  document.addEventListener('pointermove', function (e) {
+    if (!D || e.pointerId !== D.id || !D.own || !canAct()) return;
+    if (!D.moved) {
+      if (Math.abs(e.clientX - D.x) + Math.abs(e.clientY - D.y) < 8) return;
+      D.moved = true; ghost = document.createElement('div'); ghost.id = 'ghost'; ghost.innerHTML = A.gem(state.players[state.turn].corner, { id: 'gh' });
+      document.body.appendChild(ghost); pieces[state.turn].classList.add('drag');
+    }
+    var w = B / 6 * .7; ghost.style.transform = 'translate(' + (e.clientX - w / 2) + 'px,' + (e.clientY - w / 2) + 'px)';
+    var h = markAt(e.clientX, e.clientY); if (h && !h.classList.contains('go')) h = null;
+    if (h !== hoverEl) { if (hoverEl) hoverEl.classList.remove('hover'); hoverEl = h; if (h) h.classList.add('hover'); }
+  });
+  function endDrag(e, cancel) {
+    if (!D || e.pointerId !== D.id) return;
+    var d = D; D = null;
+    if (ghost) { ghost.remove(); ghost = null; }
+    if (hoverEl) { hoverEl.classList.remove('hover'); hoverEl = null; }
+    pieces.forEach(function (p) { p.classList.remove('drag'); });
+    if (cancel) return;
+    var t = markAt(e.clientX, e.clientY);
+    if (d.moved) { if (t && t.classList.contains('go')) pick(t); }
+    else if (t === d.mk) pick(t);
+  }
+  document.addEventListener('pointerup', function (e) { endDrag(e, false); });
+  document.addEventListener('pointercancel', function (e) { endDrag(e, true); });
+  $('marks').addEventListener('click', function (e) { if (e.detail === 0) pick(e.target.closest('.mark')); });   // клавиатура
+  $('stayBtn').onclick = stayTap;
+  document.addEventListener('keydown', function (e) {
+    if ($('game').hidden || document.querySelector('dialog[open]') || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) || e.altKey || e.ctrlKey || e.metaKey || e.repeat) return;
+    var k = { ArrowUp: 0, ArrowRight: 1, ArrowDown: 2, ArrowLeft: 3 }[e.key];
+    if (k !== undefined) { e.preventDefault(); act(k * 10 + 1); }
+    else if (e.key === ' ') { e.preventDefault(); stayTap(); }
+  });
+
+  // ---------- старт, меню, реванш ----------
+  function stopTimers() { epoch++; busy = false; pending = false; clearTimeout(botTimer); clearTimeout(pendTimer); clearTimeout(resultTimer); }
+  function showGame() {
+    if ($('game').hidden) { $('menu').hidden = true; $('game').hidden = false; window.scrollTo(0, 0); }
+    layout();
+  }
+  function startLocal(saved) {
+    LavaLink.close(); stopTimers();
+    if (saved) { state = saved.state; roles = saved.roles.slice(); gameSetup = saved.setup || null; }
+    else { gameSetup = selectedSetup(); roles = gameSetup.roles.slice(); state = L.create(gameSetup); }
+    shownResult = ''; if ($('result').open) $('result').close();
+    $('menu').hidden = true; $('game').hidden = false; layout(); buildBoard(); saveGame(); render(); schedule();
+  }
+  $('playBtn').onclick = function () {
+    var err = setupError(); if (err) { toast(err); return; }
+    if (activeCorners().some(function (c) { return S.roles[c] === 'net'; })) host(); else startLocal();
+  };
+  $('resumeBtn').onclick = function () { var s = readSave(); if (s) startLocal(s); };
+  $('soundBtn').onclick = function () { S.sound = !S.sound; savePrefs(); if (S.sound) SFX.step(); render(); };
+  function showRules() { $('rulesDialog').showModal(); }
+  $('gameRulesBtn').onclick = showRules; $('rulesClose').onclick = function () { $('rulesDialog').close(); };
+  function home() {
+    stopTimers(); LavaLink.close(); state = null; roles = [];
+    document.querySelectorAll('dialog[open]').forEach(function (d) { d.close(); });
+    $('game').hidden = true; $('menu').hidden = false;
+    if (!window.IN_ROOM && location.hash) history.replaceState(null, '', location.pathname + location.search);
+    renderMenu(); window.scrollTo(0, 0);
+  }
+  $('homeBtn').onclick = function () { var n = net(); if (n && state && !state.over) $('leaveDialog').showModal(); else { saveGame(); home(); } };
+  $('endMenu').onclick = home; $('leaveConfirm').onclick = home; $('leaveCancel').onclick = function () { $('leaveDialog').close(); };
+  function restart() {
+    var n = net();
+    if (n && (n.role !== 'host' || !state || !state.over || !n.online.every(Boolean))) return;
+    stopTimers(); shownResult = '';
+    ['result', 'restartDialog'].forEach(function (id) { if ($(id).open) $(id).close(); });
+    if (n) { LavaLink.start(L.create(n.cfg)); return; }
+    if (!gameSetup) gameSetup = { mapId: state.mapId, corners: state.players.map(function (p) { return p.corner; }), first: 0, roles: roles.slice() };
+    var g = { mapId: gameSetup.mapId, corners: gameSetup.corners, first: Math.floor(Math.random() * gameSetup.corners.length) };
+    state = L.create(g); roles = gameSetup.roles.slice(); buildBoard(); saveGame(); render(); schedule();
+  }
+  $('againBtn').onclick = function () { if (net() || state.over) restart(); else $('restartDialog').showModal(); };
+  $('resultAgain').onclick = restart; $('restartConfirm').onclick = restart; $('restartCancel').onclick = function () { $('restartDialog').close(); };
+  $('viewBtn').onclick = function () { $('result').close(); };
+
+  // ---------- онлайн ----------
   function renderLobby(n) {
-    $('lbCode').textContent=n.ready?n.code:'…';
-    $('lbText').textContent=n.error||(n.role==='host'?(n.ready?'Отправь друзьям ссылку. Начнём, когда все на месте.':'Создаём игру…'):'Выбери свободный угол и дождись старта от хозяина.');
-    $('lbLinkRow').hidden=n.role!=='host'||!n.ready||!!window.IN_ROOM;
-    $('lbLink').value=location.origin+location.pathname+location.search+'#'+n.code;
-    $('lbStart').hidden=n.role!=='host';$('lbStart').disabled=!LavaLink.ready();$('lbStart').textContent=LavaLink.ready()?'Играть':'Ждём друзей';$('lbRetry').hidden=!n.error;
-    $('lobbyMap').textContent=n.cfg?'Карта: '+Lava.map(n.cfg.mapId).name+' · '+Lava.map(n.cfg.mapId).size+'×'+Lava.map(n.cfg.mapId).size:'';
-    $('lobbyPlayers').replaceChildren();
-    if(n.cfg)[0,1,3,2].forEach(function(c){
-      var seat=n.cfg.corners.indexOf(c),role=seat<0?'off':n.cfg.roles[seat],mine=n.role==='host'?role==='human':seat===n.seat;
-      var el=document.createElement('div');el.className='lobby-player'+(mine?' mine':'');el.innerHTML=A.gem(c,false);
-      var body=document.createElement('div'),where=document.createElement('small'),label=document.createElement('b');where.textContent=CORNER_NAMES[c];label.textContent=role==='off'?'Пусто':mine?'Ты':role==='bot'?'Бот':n.online[seat]?(role==='human'?'Хозяин':'Друг'):'Свободно';body.append(where,label);
-      if(n.role==='guest'&&role==='net'&&!n.online[seat]){var b=document.createElement('button');b.textContent='Занять';b.setAttribute('aria-label','Занять '+C[c].name.toLowerCase()+' угол');b.onclick=function(){LavaLink.chooseSeat(seat);};body.appendChild(b);}
-      el.appendChild(body);$('lobbyPlayers').appendChild(el);
+    $('lbCode').textContent = n.ready ? n.code : '…';
+    $('lbText').textContent = n.error || (n.role === 'host' ? (n.ready ? 'Отправь друзьям ссылку или код. Начнём, когда все на месте.' : 'Создаём игру…') : n.ready ? 'Выбери свободный угол и дождись старта от хозяина.' : 'Подключаюсь к игре…');
+    $('lbLinkRow').hidden = n.role !== 'host' || !n.ready || !!window.IN_ROOM;
+    $('lbLink').value = location.origin + location.pathname + location.search + '#' + n.code;
+    $('lbStart').hidden = n.role !== 'host'; $('lbStart').disabled = !LavaLink.ready(); $('lbStart').textContent = LavaLink.ready() ? 'Играть' : 'Ждём друзей'; $('lbRetry').hidden = !n.error;
+    $('lobbyMap').textContent = n.cfg ? 'Поле: ' + L.map(n.cfg.mapId).name : '';
+    var box = $('lobbyPlayers'); box.innerHTML = '';
+    if (n.cfg) [0, 1, 3, 2].forEach(function (c) {
+      var seat = n.cfg.corners.indexOf(c), role = seat < 0 ? 'off' : n.cfg.roles[seat], me = n.role === 'host' ? role === 'human' : seat === n.seat;
+      var el = document.createElement('div'); el.className = 'lp' + (me ? ' mine' : ''); el.innerHTML = A.gem(c, { id: 'l' });
+      var body = document.createElement('div'), b = document.createElement('b'), sm = document.createElement('small');
+      sm.textContent = C[c].name; b.textContent = role === 'off' ? 'пусто' : me ? 'Ты' : role === 'bot' ? 'Бот' : role === 'human' ? 'Хозяин' : n.online[seat] ? 'Друг' : 'свободно';
+      body.append(sm, b); el.appendChild(body);
+      if (n.role === 'guest' && role === 'net' && !n.online[seat] && !me) { var t = document.createElement('button'); t.textContent = 'Сюда'; t.onclick = function () { LavaLink.chooseSeat(seat); }; el.appendChild(t); }
+      box.appendChild(el);
     });
-    if(!$('lobby').open)$('lobby').showModal();
+    if (!$('lobby').open) $('lobby').showModal();
+    // в комнате друг уже рядом — начинаем сразу, как только он подключился
+    if (window.IN_ROOM && n.role === 'host' && LavaLink.ready() && !n.state) LavaLink.start(L.create(n.cfg));
   }
   function netChange(n) {
-    if(!n.state){renderLobby(n);return;}
-    var old=state,fresh=!old||netRound!==n.round,moved=!!old&&!fresh&&n.state.ply===old.ply+1;
-    netRound=n.round;state=n.state;roles=n.cfg.roles.slice();gameSetup=n.cfg;pending=false;
-    if(fresh){stopTimers();shownResult='';if($('result').open)$('result').close();rebuildBoard();}
-    else if(moved)tokens.forEach(function(t){t.classList.remove('no-motion');});
-    if(moved&&n.role==='guest')busy=true;
-    showGame();render();
-    if(moved&&n.role==='guest'){animate(old);finishAnimation();}else if(!busy)schedule();
+    if (!n.state) { renderLobby(n); return; }
+    if ($('lobby').open) $('lobby').close();
+    if (n.state === state) { render(); return; }
+    var old = state, fresh = !old || netRound !== n.round, moved = !fresh && n.state.ply === old.ply + 1;
+    netRound = n.round; roles = n.cfg.roles.slice(); gameSetup = n.cfg;
+    clearTimeout(pendTimer); pending = false;
+    if (fresh) {
+      stopTimers(); shownResult = ''; if ($('result').open) $('result').close();
+      state = n.state; $('menu').hidden = true; $('game').hidden = false; layout(); buildBoard(); render(); schedule(); return;
+    }
+    if (busy) { state = n.state; return; }
+    state = n.state; showGame();
+    if (moved) animate(old, state, after); else after();
   }
-  var handlers={change:netChange,move:function(d,seat){commit(d,seat);}};
+  var handlers = { change: netChange, move: function (m, seat) { commit(m, seat); } };
   function host() {
-    if(setupError()){toast(setupError());return;}
-    try {var cfg=selectedSetup(true);if(!cfg.roles.includes('net'))throw new Error('Выбери место «Друг» для онлайн-игры.');stopTimers();state=null;netRound=0;shownResult='';LavaLink.host(cfg,handlers);}
-    catch(e){toast(e.message);}
+    var err = setupError(); if (err) { toast(err); return; }
+    try { var cfg = selectedSetup(); stopTimers(); state = null; netRound = 0; shownResult = ''; LavaLink.host(cfg, handlers); }
+    catch (e) { toast(e.message); }
   }
-  function join(code){stopTimers();state=null;netRound=0;shownResult='';LavaLink.join(code,handlers);}
-  $('onCreate').onclick=host;
-  $('onJoin').onclick=function(){$('joinRow').hidden=!$('joinRow').hidden;if(!$('joinRow').hidden)$('joinCode').focus();};
-  $('joinCode').oninput=function(){this.value=LavaLink.clean(this.value);};
-  $('joinCode').onkeydown=function(e){if(e.key==='Enter')$('joinGo').click();};
-  $('joinGo').onclick=function(){var c=LavaLink.clean($('joinCode').value);if(c.length!==5){toast('В коде должно быть 5 символов');return;}join(c);};
-  $('lbStart').onclick=function(){var n=LavaLink.current();if(n)LavaLink.start(Lava.create(n.cfg));};
-  $('lbCancel').onclick=home;
-  $('lobby').addEventListener('cancel',function(e){e.preventDefault();home();});
-  function retry(){var n=LavaLink.current();if(!n)return;var c=n.code;if(n.role==='guest')join(c);else host();}
-  $('lbRetry').onclick=retry;$('reconnectBtn').onclick=retry;
-  $('copyBtn').onclick=async function(){try{await navigator.clipboard.writeText($('lbLink').value);toast('Ссылка скопирована');}catch(e){$('lbLink').focus();$('lbLink').select();toast('Выделил ссылку — скопируй её');}};
-  renderMenu();var hash=/^#([A-Za-z0-9]{5})$/.exec(location.hash);if(hash)join(hash[1]);
+  function join(code) { stopTimers(); state = null; netRound = 0; shownResult = ''; LavaLink.join(code, handlers); }
+  $('onCreate').onclick = function () { if (!activeCorners().some(function (c) { return S.roles[c] === 'net'; })) { S.roles = PRESETS.net.slice(); savePrefs(); renderMenu(); } host(); };
+  $('onJoin').onclick = function () { $('joinRow').hidden = !$('joinRow').hidden; if (!$('joinRow').hidden) $('joinCode').focus(); };
+  $('joinCode').oninput = function () { this.value = LavaLink.clean(this.value); };
+  $('joinCode').onkeydown = function (e) { if (e.key === 'Enter') $('joinGo').click(); };
+  $('joinGo').onclick = function () { var c = LavaLink.clean($('joinCode').value); if (c.length !== 5) { toast('В коде 5 символов'); return; } join(c); };
+  $('lbStart').onclick = function () { var n = net(); if (n) LavaLink.start(L.create(n.cfg)); };
+  $('lbCancel').onclick = home;
+  $('lobby').addEventListener('cancel', function (e) { e.preventDefault(); home(); });
+  function retry() { var n = net(); if (!n) return; if (n.role === 'guest') join(n.code); else host(); }
+  $('lbRetry').onclick = retry; $('reconnectBtn').onclick = retry;
+  $('copyBtn').onclick = function () {
+    var v = $('lbLink').value;
+    (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(function () { toast('Ссылка скопирована'); }, function () { $('lbLink').focus(); $('lbLink').select(); toast('Выделил ссылку — скопируй её'); });
+  };
+  renderMenu();
+  var hash = /^#([A-Za-z0-9]{5})$/.exec(location.hash);
+  if (hash) join(hash[1]);
 })();
 </script>
 

@@ -52,7 +52,7 @@ test('same-seat duplicate tab cannot take over a connected player',async()=>{
 
 test('host can occupy the last corner with bots and guests; guests choose free corners before start',async()=>{
   const h=harness(),host=h.client(),a=h.client(),b=h.client();let accepted=0;
-  const cfg={mapId:'bridges',corners:[0,1,2,3],first:3,roles:['net','bot','net','human']};
+  const cfg={mapId:'ring',corners:[0,1,2,3],first:3,roles:['net','bot','net','human']};
   const handlers={change(){},move(d,seat){const s=host.LavaLink.current().state;assert.equal(seat,s.turn);const next=host.Lava.apply(s,d);if(next){accepted++;host.LavaLink.update(next);}}};
   try{
     host.LavaLink.host(cfg,handlers);await h.flush();const code=host.LavaLink.current().code;
@@ -63,7 +63,7 @@ test('host can occupy the last corner with bots and guests; guests choose free c
     b.LavaLink.join(code,{change(){}});await h.flush();assert.equal(b.LavaLink.current().seat,0);
     b.LavaLink.chooseSeat(2);await h.flush();assert.equal(b.LavaLink.current().seat,0);
     assert.equal(JSON.stringify(b.LavaLink.current().cfg),JSON.stringify(cfg));assert.ok(host.LavaLink.ready());
-    assert.equal(host.LavaLink.start(host.Lava.create({mapId:'arena',corners:cfg.corners})),false);
+    assert.equal(host.LavaLink.start(host.Lava.create({mapId:'cross',corners:cfg.corners})),false);
     assert.ok(host.LavaLink.start(host.Lava.create(cfg)));await h.flush();
     assert.equal(a.LavaLink.chooseSeat(0),false);
     host.LavaLink.act(0);await h.flush();assert.equal(accepted,1);

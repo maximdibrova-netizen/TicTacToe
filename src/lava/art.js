@@ -1,80 +1,95 @@
-// Vector artwork: bevelled stone, glowing lava and saturated faceted tokens.
-// Shared symbols keep the board light and remain sharp on phones and tablets.
+// Лава: рисунки — самоцветы, лава под плитками, рамка поля, иконки.
 var LavaArt = (function () {
   'use strict';
   var colors = [
-    {name:'Фиолетовый',light:'#f54aff',face:'#d500f0',dark:'#790088'},
-    {name:'Зелёный',light:'#6aff43',face:'#18df1a',dark:'#086c12'},
-    {name:'Синий',light:'#7771ff',face:'#2b2afa',dark:'#10118b'},
-    {name:'Красный',light:'#ff6b52',face:'#f11c27',dark:'#8c0715'}
+    { name: 'Фиолетовый', who: 'фиолетовый', base: '#c41bd6', light: '#f06bff', dark: '#6d0a7a', glow: 'rgba(222,60,240,.55)' },
+    { name: 'Зелёный', who: 'зелёный', base: '#1fb52a', light: '#6bf277', dark: '#0b5e12', glow: 'rgba(60,220,80,.5)' },
+    { name: 'Синий', who: 'синий', base: '#2335dd', light: '#7584ff', dark: '#0d1477', glow: 'rgba(70,90,255,.55)' },
+    { name: 'Красный', who: 'красный', base: '#d81e27', light: '#ff6b70', dark: '#760a0f', glow: 'rgba(240,50,60,.55)' }
   ];
-  var oct='14,3 86,3 97,14 97,86 86,97 14,97 3,86 3,14';
-  var lavaPaths=[
-    'M-8 18C13 12 28 26 30 42S11 71 22 104M30 42C48 34 58 49 67 45S79 13 106 22M67 45C61 67 87 75 106 69',
-    'M-8 75C16 77 19 54 38 56S60 83 66 108M38 56C43 37 21 30 29-9M38 56C64 56 58 27 80 28S104 42 109 17'
-  ];
-  function definitions() {
-    var s='<svg class="art-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>'+
-      '<linearGradient id="stone-rim" x2=".8" y2="1"><stop stop-color="#eee1c9"/><stop offset=".22" stop-color="#b69f84"/><stop offset=".6" stop-color="#6b5745"/><stop offset="1" stop-color="#cbb69c"/></linearGradient>'+
-      '<linearGradient id="stone-face" x2=".85" y2="1"><stop stop-color="#d2bc9d"/><stop offset=".45" stop-color="#ac987d"/><stop offset="1" stop-color="#c6ae8b"/></linearGradient>'+
-      '<linearGradient id="strong-face" x2=".8" y2="1"><stop stop-color="#fffcf2"/><stop offset=".6" stop-color="#f5eddf"/><stop offset="1" stop-color="#e1d0b8"/></linearGradient>'+
-      '<linearGradient id="tile-glass" x2="0" y2="1"><stop stop-color="#fff" stop-opacity=".2"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></linearGradient>'+
-      '<radialGradient id="lava-glow"><stop stop-color="#ffcb4a"/><stop offset=".3" stop-color="#ff7619"/><stop offset="1" stop-color="#ec3a07" stop-opacity="0"/></radialGradient>'+
-      '<pattern id="lava-micro-grid" width="44" height="44" patternUnits="userSpaceOnUse"><rect width="44" height="44" fill="#100f11"/><path d="M8 2H36L42 8V36L36 42H8L2 36V8Z" fill="#191719" stroke="#282426" stroke-width="2"/><path d="M8 5H36L39 8" fill="none" stroke="#322b29" stroke-opacity=".55"/></pattern>'+
-      '<clipPath id="tile-clip"><polygon points="'+oct+'"/></clipPath>';
-    [0,1].forEach(function(variant){
-      s+='<symbol id="lava-floor-'+variant+'" viewBox="0 0 100 100"><polygon points="'+oct+'" fill="#160e0c" stroke="#704024" stroke-width="2"/>'+
-        '<g clip-path="url(#tile-clip)"><path d="'+lavaPaths[variant]+'" fill="none" stroke="#982708" stroke-width="17"/>'+
-        '<path d="'+lavaPaths[variant]+'" fill="none" stroke="#ff6710" stroke-width="8"/>'+
-        '<path d="'+lavaPaths[variant]+'" fill="none" stroke="#ffbd38" stroke-width="2.4"/>'+
-        '<circle cx="'+(variant?38:30)+'" cy="'+(variant?56:42)+'" r="29" fill="url(#lava-glow)"/>'+
-        '<path d="M11 12L27 9 35 21 23 32 9 27ZM67 69L88 65 94 84 75 92 64 84Z" fill="#2c1710" opacity=".6"/></g></symbol>';
-      s+='<symbol id="lava-stone-'+variant+'" viewBox="0 0 100 100"><polygon points="'+oct+'" fill="url(#stone-rim)" stroke="#8b7560" stroke-width="1.5"/>'+
-        '<path d="M17 8H83L92 17V83L83 92H17L8 83V17Z" fill="#665348"/>'+
-        '<path d="M19 12H81L88 19V81L81 88H19L12 81V19Z" fill="url(#stone-face)"/>'+
-        '<g clip-path="url(#tile-clip)" opacity=".6"><path d="'+lavaPaths[variant]+'" fill="none" stroke="#e68b3d" stroke-width="9"/><path d="'+lavaPaths[variant]+'" fill="none" stroke="#ffc472" stroke-width="3"/></g>'+
-        '<path d="M19 12H81L88 19V81L81 88H19L12 81V19Z" fill="url(#tile-glass)" stroke="#f4d9b8" stroke-opacity=".75" stroke-width="1.4"/>'+
-        '<path d="M17 7H83L93 17M7 17V83" fill="none" stroke="#fff0d6" stroke-opacity=".65" stroke-width="1.5"/></symbol>';
-    });
-    s+='<symbol id="lava-strong" viewBox="0 0 100 100"><polygon points="'+oct+'" fill="url(#stone-rim)" stroke="#d4c1a6" stroke-width="1.5"/>'+
-      '<path d="M17 7H83L93 17V83L83 93H17L7 83V17Z" fill="#a48e76"/>'+
-      '<path d="M20 11H80L89 20V80L80 89H20L11 80V20Z" fill="#e6d6be" stroke="#fff8ed" stroke-width="2"/>'+
-      '<path d="M23 16H77L84 23V77L77 84H23L16 77V23Z" fill="url(#strong-face)" stroke="#fffcf4" stroke-width="1.5"/>'+
-      '<path d="M18 7H82L92 17M8 18V82" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="2"/></symbol>';
-    colors.forEach(function(c,i){
-      s+='<linearGradient id="gem-face-'+i+'" x2=".8" y2="1"><stop stop-color="'+c.light+'"/><stop offset=".35" stop-color="'+c.face+'"/><stop offset="1" stop-color="'+c.dark+'"/></linearGradient>'+
-        '<symbol id="lava-gem-'+i+'" viewBox="0 0 100 100">'+
-        '<path d="M28 11H72L89 28V72L72 89H28L11 72V28Z" fill="'+c.dark+'"/>'+
-        '<path d="M28 8H72L92 28V72L72 92H28L8 72V28Z" fill="url(#gem-face-'+i+')" stroke="'+c.face+'" stroke-width="2"/>'+
-        '<path d="M28 8 33 21H67L72 8ZM8 28 21 33V67L8 72Z" fill="'+c.light+'" opacity=".65"/>'+
-        '<path d="M92 28 79 33V67L92 72ZM28 92 33 79H67L72 92Z" fill="'+c.dark+'" opacity=".7"/>'+
-        '<path d="M33 21H67L79 33V67L67 79H33L21 67V33Z" fill="'+c.face+'" fill-opacity=".65" stroke="'+c.light+'" stroke-opacity=".7" stroke-width="2"/>'+
-        '<path d="M30 20V80M70 20V80M20 30H80M20 70H80" fill="none" stroke="'+c.light+'" stroke-width="3.2" stroke-opacity=".56"/>'+
-        '<path d="M29 10H71L90 29M10 29V71" stroke="#fff" stroke-opacity=".3" stroke-width="1.5" fill="none"/></symbol>';
-    });
-    return s+'</defs></svg>';
+  // восьмиугольный самоцвет с площадкой и гранями, как в оригинале
+  function gem(c, opts) {
+    var k = colors[c], id = 'g' + c + (opts && opts.id || '');
+    return '<svg viewBox="0 0 100 100" class="gem" aria-hidden="true"><defs>' +
+      '<linearGradient id="' + id + 't" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + k.light + '"/><stop offset="1" stop-color="' + k.base + '"/></linearGradient>' +
+      '<linearGradient id="' + id + 'm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + k.base + '"/><stop offset="1" stop-color="' + k.dark + '"/></linearGradient></defs>' +
+      '<polygon points="29,3 71,3 97,29 97,71 71,97 29,97 3,71 3,29" fill="' + k.dark + '"/>' +
+      '<polygon points="31,7 69,7 69,31 31,31" fill="url(#' + id + 't)"/>' +
+      '<polygon points="31,7 69,7 70,30 30,30" fill="url(#' + id + 't)"/>' +
+      '<polygon points="93,31 93,69 70,70 70,30" fill="' + k.base + '"/>' +
+      '<polygon points="69,93 31,93 30,70 70,70" fill="url(#' + id + 'm)"/>' +
+      '<polygon points="7,69 7,31 30,30 30,70" fill="' + k.base + '" opacity=".92"/>' +
+      '<polygon points="7,31 31,7 30,30" fill="' + k.light + '" opacity=".85"/>' +
+      '<polygon points="69,7 93,31 70,30" fill="' + k.base + '"/>' +
+      '<polygon points="93,69 69,93 70,70" fill="' + k.dark + '" opacity=".75"/>' +
+      '<polygon points="31,93 7,69 30,70" fill="' + k.base + '" opacity=".85"/>' +
+      '<rect x="30" y="30" width="40" height="40" fill="' + k.base + '"/>' +
+      '<rect x="30" y="30" width="40" height="40" fill="url(#' + id + 'm)" opacity=".55"/>' +
+      '<path d="M33 33h22l-3 4H37v15l-4 3z" fill="#fff" opacity=".28"/>' +
+      '<polygon points="29,3 71,3 97,29 97,71 71,97 29,97 3,71 3,29" fill="none" stroke="' + k.light + '" stroke-opacity=".55" stroke-width="2"/>' +
+      '<path d="M30 30h40v40H30z M31 7l-1 23 M69 7l1 23 M93 31l-23-1 M93 69l-23 1 M69 93l1-23 M31 93l-1-23 M7 69l23 1 M7 31l23-1" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="1.4"/>' +
+      '</svg>';
   }
-  function tile(hp, index) {
-    var name=hp===2?'strong':(hp===1?'stone-':'floor-')+(index%2);
-    return '<svg class="tile-art" viewBox="0 0 100 100" aria-hidden="true"><g transform="rotate('+(index%4*90)+' 50 50)"><use href="#lava-'+name+'"/></g></svg>';
+  // поле: лава под стеклянными плитками, горячая лава в дырах, тёмная рамка с оранжевыми заклёпками
+  function board(seed) {
+    var s = '', cell = 100, g = 7, i, j;
+    s += '<svg viewBox="0 0 600 600" class="lava" aria-hidden="true"><defs>' +
+      '<filter id="lvCool" x="0" y="0" width="600" height="600" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.021" numOctaves="3" seed="' + seed + '" result="t"/>' +
+      '<feColorMatrix in="t" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 0" result="r"/>' +
+      '<feComponentTransfer in="r" result="rock"><feFuncA type="table" tableValues="1 1 1 1 .9 0 .9 1 1 1 1"/></feComponentTransfer>' +
+      '<feGaussianBlur in="rock" stdDeviation="1.1" result="rs"/>' +
+      '<feFlood flood-color="#544944"/><feComposite in2="rs" operator="in" result="rocks"/>' +
+      '<feFlood flood-color="#d8742c" result="vein"/>' +
+      '<feMerge><feMergeNode in="vein"/><feMergeNode in="rocks"/></feMerge></filter>' +
+      '<filter id="lvHot" x="0" y="0" width="600" height="600" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.021" numOctaves="3" seed="' + seed + '" result="t"/>' +
+      '<feColorMatrix in="t" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 0" result="r"/>' +
+      '<feComponentTransfer in="r" result="vein"><feFuncA type="table" tableValues="0 0 0 0 .15 1 .15 0 0 0 0"/></feComponentTransfer>' +
+      '<feGaussianBlur in="vein" stdDeviation="4" result="glow"/>' +
+      '<feFlood flood-color="#120806"/><feComposite in2="SourceGraphic" operator="in" result="base"/>' +
+      '<feFlood flood-color="#ff4a00" flood-opacity=".85"/><feComposite in2="glow" operator="in" result="gl"/>' +
+      '<feFlood flood-color="#ffa13a"/><feComposite in2="vein" operator="in" result="vn"/>' +
+      '<feMerge><feMergeNode in="base"/><feMergeNode in="gl"/><feMergeNode in="vn"/></feMerge></filter>' +
+      '<clipPath id="lvHoles"></clipPath>' +
+      '<radialGradient id="lvStud"><stop offset="0" stop-color="#ffd27a"/><stop offset=".55" stop-color="#ff7a1a"/><stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/></radialGradient>' +
+      '</defs>';
+    s += '<rect width="600" height="600" filter="url(#lvCool)"/>';
+    s += '<g clip-path="url(#lvHoles)"><rect width="600" height="600" fill="#000" filter="url(#lvHot)"/></g>';
+    var frame = 'M0 0H600V600H0Z';
+    for (i = 0; i < 6; i++) for (j = 0; j < 6; j++) {
+      var x = j * cell + g, y = i * cell + g, w = cell - 2 * g, r = 13;
+      frame += 'M' + (x + r) + ' ' + y + 'H' + (x + w - r) + 'Q' + (x + w) + ' ' + y + ' ' + (x + w) + ' ' + (y + r) + 'V' + (y + w - r) + 'Q' + (x + w) + ' ' + (y + w) + ' ' + (x + w - r) + ' ' + (y + w) + 'H' + (x + r) + 'Q' + x + ' ' + (y + w) + ' ' + x + ' ' + (y + w - r) + 'V' + (y + r) + 'Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y + 'Z';
+    }
+    s += '<path d="' + frame + '" fill="#1b1514" fill-rule="evenodd"/>';
+    for (i = 0; i < 6; i++) for (j = 0; j < 6; j++) s += '<rect x="' + (j * cell + g - 1.5) + '" y="' + (i * cell + g - 1.5) + '" width="' + (cell - 2 * g + 3) + '" height="' + (cell - 2 * g + 3) + '" rx="14" fill="none" stroke="#3b302c" stroke-width="3"/>';
+    for (i = 0; i <= 6; i++) for (j = 0; j <= 6; j++) {
+      var cx = j * cell, cy = i * cell;
+      s += '<circle cx="' + cx + '" cy="' + cy + '" r="9" fill="url(#lvStud)" opacity=".75"/><path d="M' + cx + ' ' + (cy - 4.5) + 'l4.5 4.5-4.5 4.5-4.5-4.5z" fill="#ff9a3a"/>';
+    }
+    return s + '</svg>';
   }
-  function gem(corner, directions) {
-    var s='<svg class="gem" viewBox="0 0 100 100" aria-hidden="true"><use href="#lava-gem-'+corner+'"/>';
-    if(directions)for(var d=0;d<4;d++)s+='<path class="gem-arrow dir-'+d+'" transform="rotate('+(d*90)+' 50 50)" d="M50-4 57 4H43Z" fill="'+colors[corner].face+'"/>';
-    return s+'<g class="turn-ring"><path d="M8 31A46 46 0 0 1 66 7M92 69A46 46 0 0 1 34 93" stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none"/></g></svg>';
+  function holes(tiles) {
+    var s = '';
+    tiles.forEach(function (t, k) { if (t <= 0) s += '<rect x="' + ((k % 6) * 100 + 7) + '" y="' + (Math.floor(k / 6) * 100 + 7) + '" width="86" height="86" rx="13"/>'; });
+    return s;
   }
-  var paths={
-    human:'<circle cx="12" cy="6" r="4"/><path d="M4 23v-4a8 8 0 0 1 16 0v4Z"/>',
-    bot:'<rect x="4" y="6" width="16" height="13" rx="4"/><path d="M10 1h4v5h-4ZM1 10h2v6H1Zm20 0h2v6h-2ZM8 21h8v2H8Z"/><path d="M8 10v3m8-3v3m-7 3h6" stroke="var(--panel)" stroke-width="2" fill="none"/>',
-    net:'<circle cx="9" cy="7" r="3"/><path d="M3 20v-3a6 6 0 0 1 12 0v3ZM15 4a3 3 0 0 1 0 6 3 3 0 0 0 0-6Zm2 8a6 6 0 0 1 5 6v2h-5Z"/>',
-    off:'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="m5 19 14-14" stroke="currentColor" stroke-width="2.5"/>',
-    play:'<path d="M7 3v18l15-9Z"/>',
-    home:'<path d="m3 10 9-8 9 8v12h-7v-8h-4v8H3Z"/>',
-    restart:'<path d="M5 7a8 8 0 1 1-1 9M5 2v6h6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>',
-    sound:'<path d="M2 9h4l6-6v18l-6-6H2Z"/><path d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" fill="none" stroke="currentColor" stroke-width="2"/>',
-    mute:'<path d="M2 9h4l6-6v18l-6-6H2Z"/><path d="m16 8 6 8m0-8-6 8" stroke="currentColor" stroke-width="2"/>',
-    jump:'<path d="M5 19h14M12 16V3m-5 5 5-5 5 5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>'
+  // мини-карта для меню
+  function mini(tiles) {
+    var s = '<svg viewBox="0 0 60 60" aria-hidden="true">', fill = ['#1a0d08', '#6e5c52', '#b9a99c', '#f3ece5'];
+    tiles.forEach(function (t, k) { s += '<rect x="' + ((k % 6) * 10 + 1) + '" y="' + (Math.floor(k / 6) * 10 + 1) + '" width="8" height="8" rx="1.6" fill="' + fill[t] + '"/>'; });
+    return s + '</svg>';
+  }
+  var I = {
+    home: '<path d="M4 11 12 4l8 7M6.5 9.5V20h11V9.5"/><path d="M10 20v-5h4v5"/>',
+    restart: '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4 4v4.5h4.5"/>',
+    help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 0 1 5 1c0 1.8-2.5 2.1-2.5 3.8"/><circle cx="12" cy="17.3" r=".6" fill="currentColor"/>',
+    soundOn: '<path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
+    soundOff: '<path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z"/><path d="m16 9.5 5 5m0-5-5 5"/>',
+    play: '<path d="M8 5.5v13l10-6.5z" fill="currentColor"/>',
+    stay: '<path d="M12 20V9"/><path d="m7.5 13 4.5-4.5 4.5 4.5"/><path d="M5 4h14"/>',
+    flag: '<path d="M6 21V4h11l-2 4 2 4H6"/>'
   };
-  function icon(name){return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">'+(paths[name]||paths.off)+'</svg>';}
-  return {colors:colors,definitions:definitions,tile:tile,gem:gem,icon:icon};
+  function icon(n) { return '<svg viewBox="0 0 24 24" class="ic" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + I[n] + '</svg>'; }
+  return { colors: colors, gem: gem, board: board, holes: holes, mini: mini, icon: icon };
 })();
