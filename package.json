@@ -6,6 +6,7 @@
     "test:abalone": "node tests/abalone-ui.cjs",
     "test:view": "node tests/local-view-ui.cjs",
     "test:updates": "node tests/game-update-ui.cjs",
+    "test:match": "node tests/match-actions-ui.cjs && node tests/match-actions-extra.cjs && node tests/match-actions-online.cjs",
     "test:continue": "node tests/continue-ui.cjs",
     "test:checkers": "node tests/checkers-ui.cjs",
     "test:overlays": "node tests/chess-overlays.cjs",

@@ -8,6 +8,8 @@ net, room, review = read('shared', 'net.js'), read('shared', 'room-client.js'), 
 clock = read('shared', 'clock-core.js') + '\n' + read('shared', 'clock.js') + '\n' + read('shared', 'continue.js')
 clock_css = read('shared', 'clock.css') + '\n' + read('shared','view.css')
 view = read('shared','view.js')
+match = read('shared','match-core.js') + '\n' + read('shared','match-actions.js')
+clock_css += '\n' + read('shared','match-actions.css')
 hub_back = read('shared', 'hub-back.html')
 
 def head(extra='', root=''):
@@ -34,6 +36,7 @@ def build(name):
     if name == 'lava':
         for marker, filename in [('LAVA_NET', 'net.js'), ('LAVA_CSS', 'style.css'), ('LAVA_ART', 'art.js'), ('LAVA_APP', 'app.js')]:
             page = page.replace('/*' + marker + '*/', read('lava', filename))
+    page = page.replace('/*MATCH_ACTIONS*/', read(name, 'match.js'))
     d = os.path.join(here, name); os.makedirs(d, exist_ok=True)
     # папки с файлами для игры (движок, база) копируются рядом со страницей: src/chess/sf → chess/sf
     for sub in sorted(os.listdir(os.path.join(src, name))):
@@ -42,7 +45,7 @@ def build(name):
             dp = os.path.join(d, sub)
             if os.path.exists(dp): shutil.rmtree(dp)
             shutil.copytree(sp, dp)
-    open(os.path.join(d, 'index.html'), 'w', encoding='utf-8').write(head('<style>' + clock_css + '</style><script>' + room + '\n' + view + '</script>' + hub_back, '../') + page + '\n</body></html>\n')
+    open(os.path.join(d, 'index.html'), 'w', encoding='utf-8').write(head('<style>' + clock_css + '</style><script>' + room + '\n' + view + '\n' + match + '</script>' + hub_back, '../') + page + '\n</body></html>\n')
     print('собрано:', name + '/index.html')
 GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go', 'chess', 'lava', 'abalone', 'falling4']
 for g in GAMES: build(g)

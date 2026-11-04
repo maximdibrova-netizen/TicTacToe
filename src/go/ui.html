@@ -323,7 +323,7 @@ onmessage = function (e) {
     if (!G) return;
     var W = Math.min(window.innerWidth - 24, 760);
     var other = $('topRow').offsetHeight + $('status').offsetHeight + $('passRow').offsetHeight + $('rvMount').offsetHeight + $('barRow').offsetHeight + 5 * 8 + 66;
-    var B = Math.max(200, Math.min(W, window.innerHeight - (GC && GC.enabled()?68:0) - (window.hubH ? hubH() : 0) - other));
+    var B = Math.max(200, Math.min(W, window.innerHeight - MatchActions.space() - (GC && GC.enabled()?68:0) - (window.hubH ? hubH() : 0) - other));
     document.documentElement.style.setProperty('--B', Math.floor(B) + 'px');
     RV.refresh();
   }
@@ -379,6 +379,7 @@ onmessage = function (e) {
   }
   function finalScore(s) { if (!s.over || s.resign) return null; if (s === G.s && G.dead) return goScore(s, G.dead); return null; }
   function resultText(s) {
+    if(G&&G.adjudication&&!G.analysis)return G.adjudication.title;
     if (s.resign) return NAME[s.resign] + ' сдались — победили ' + NAME[3 - s.resign].toLowerCase();
     var sc = finalScore(s);
     if (!sc) return 'Два паса — партия окончена';
@@ -599,6 +600,7 @@ onmessage = function (e) {
     toast('Ты играешь ' + (hostSide === 1 ? 'чёрными' : 'белыми'));
   }
   function hostData(d) {
+    if(MA&&MA.receive(d,3-hostSide))return;
     if (GC && GC.receive(d)) return;
     if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     if (d.t === 'try') {
@@ -623,6 +625,7 @@ onmessage = function (e) {
   function guestKinds(hs) { var k = {}; k[hs] = 'net'; k[3 - hs] = 'me'; return k; }
   function guestCoords(hostOn) {}
   function guestData(d) {
+    if(MA&&MA.receive(d,null))return;
     if (GC && GC.receive(d)) return;
     if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     if (d.t === 'start') { newGame(guestKinds(d.hostSide), d.N, d.komi,d.seed||{}); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 1 ? 'белыми' : 'чёрными')); }
@@ -701,6 +704,7 @@ onmessage = function (e) {
   if (ONLINE && Net2P.hashCode()) { S.mode = 'net'; joinGame(Net2P.hashCode()); }
   renderMenu();
 
+  /*MATCH_ACTIONS*/
   BoardView.attach({id:'go',ref:function(){return G;},boards:['board'],autoFlip:function(){return mySide()===2;},coords:function(){return S.coords;},setCoords:function(v){setCoords(v,true);},analysis:function(){return G&&G.analysis;}});
 })();
 </script>

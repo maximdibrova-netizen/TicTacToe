@@ -122,7 +122,11 @@ var GameClock = (function () {
       if (!model && !guest() && s.ready && !s.over) { var c2 = config(); if (c2.enabled) model = new FischerClock(c2.left, c2.inc, s.turn, now); }
       var wasPaused = paused; paused = !!s.paused;
       if (model && !guest()) {
-        if (s.moves > lastMove) model.move(s.turn, now);
+        if (s.moves > lastMove) {
+          // Removing a resigned seat changes history/turn, but is not a played move.
+          if (s.noIncrement) { model.tick(now); model.turn = s.turn; }
+          else model.move(s.turn, now);
+        }
         else if (paused) model.at = now;          // анимация хода: часы стоят
         else model.tick(now);
         // При отмене хода сохраняем потраченное время, не добавляем прибавку.

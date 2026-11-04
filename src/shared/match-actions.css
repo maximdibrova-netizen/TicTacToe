@@ -1,0 +1,23 @@
+.match-actions{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:8px 12px;margin:0 auto;flex-shrink:0;z-index:8}
+.match-actions button,.match-dialog button{min-height:40px;border:1px solid #ffffff36;border-radius:10px;padding:8px 16px;font:600 13px system-ui;cursor:pointer}
+.match-actions #surrenderBtn{background:#fff!important;color:#252a32!important;border-color:#fff!important;box-shadow:0 2px 8px #0002}
+.match-actions #offerDrawBtn{background:var(--panel,#25303c);color:var(--text,#f2f1eb)}
+.match-actions button:disabled{opacity:.5;cursor:default}
+#matchWait{font-size:12px;opacity:.8;flex-basis:100%;text-align:center}
+#matchWait:empty{display:none}
+.match-dialog{box-sizing:border-box;width:min(390px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:24px;border:1px solid var(--line,#ffffff32);border-radius:18px;background:var(--bg-2,var(--table-2,#202631));color:var(--ink,#f3f0e7);box-shadow:0 18px 80px #0008;font:14px/1.5 system-ui}
+.match-dialog::backdrop{background:#080c14b8;backdrop-filter:blur(5px)}
+.match-dialog h2{font-size:23px;margin:0 0 10px}.match-dialog p{margin:0 0 20px;opacity:.8}
+.match-buttons{display:flex;flex-wrap:wrap;gap:8px}.match-dialog button{flex:1;background:var(--btn,#343e4c);color:var(--ink,#f3f0e7)}.match-dialog #matchYes,.match-dialog #matchAnalyze{background:#fff;color:#242b35}
+.match-dialog select{padding:8px;font:inherit;margin:0 0 16px}
+.match-actions button:focus-visible,.match-dialog button:focus-visible{outline:3px solid #71baff;outline-offset:3px}
+#game[data-match-actions=chess] #resignBtn,#game[data-match-actions=chess] #drawBtn,#game[data-match-actions=go] #resignBtn{display:none!important}
+#game[data-match-actions=tochki].match-actions-active .match-actions{position:absolute;bottom:env(safe-area-inset-bottom,0px);left:0;right:0}
+#game[data-match-actions=tochki].match-actions-active .bottombar{bottom:calc(var(--match-height) + env(safe-area-inset-bottom,0px))}
+#game[data-match-actions=tochki].match-actions-active #replay{bottom:calc(64px + var(--match-height) + env(safe-area-inset-bottom,0px))}
+#game[data-match-actions=tochki].match-actions-active #evalGraph{bottom:calc(112px + var(--match-height) + env(safe-area-inset-bottom,0px))}
+#game[data-match-actions=tochki].match-actions-active #boardWrap{bottom:calc(160px + var(--match-height) + env(safe-area-inset-bottom,0px))}
+body.no-eval #game[data-match-actions=tochki].match-actions-active #boardWrap{bottom:calc(118px + var(--match-height) + env(safe-area-inset-bottom,0px))}
+body.in-game:has(#game[data-match-actions=tochki].match-actions-active) .corner[data-p="2"],body.in-game:has(#game[data-match-actions=tochki].match-actions-active) .corner[data-p="3"]{bottom:calc(10px + var(--match-height) + env(safe-area-inset-bottom,0px))}
+.match-actions #matchReview,.match-actions #matchSummary{background:var(--btn,#25303c);color:var(--ink,#f2f1eb)}
+#game[data-match-actions=chess]{overflow-y:auto}

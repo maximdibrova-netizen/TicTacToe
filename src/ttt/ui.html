@@ -401,7 +401,7 @@ onmessage = function (e) {
     var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.id = 'bigLine'; svg.setAttribute('viewBox', '0 0 100 100'); big.appendChild(svg);
   }
   function layout() {
-    var cd = S.coords ? 22 : 0, top = 52 + 30 + 58 + 40 + $('rvMount').offsetHeight + 8 + cd, w = window.innerWidth - 24 - cd, h = window.innerHeight - (GC && GC.enabled()?68:0) - (window.hubH ? hubH() : 0) - top;
+    var cd = S.coords ? 22 : 0, top = 52 + 30 + 58 + 40 + $('rvMount').offsetHeight + 8 + cd, w = window.innerWidth - 24 - cd, h = window.innerHeight - MatchActions.space() - (GC && GC.enabled()?68:0) - (window.hubH ? hubH() : 0) - top;
     var B = Math.max(240, Math.min(w, h, 640));
     document.documentElement.style.setProperty('--B', B + 'px');
     $('big').style.marginLeft = cd ? '16px' : ''; $('big').style.marginBottom = cd ? '12px' : '';
@@ -504,6 +504,7 @@ onmessage = function (e) {
     return G.kind[3 - p] === 'me' ? NAME[p] : 'Ты';
   }
   function setStatus() {
+    if(G&&G.adjudication&&G.over&&!G.analysis){$('status').textContent=G.adjudication.title;return;}
     var s = G.s, st = $('status');
     if (s.winner === 3) { st.textContent = 'Ничья'; return; }
     if (s.winner) { st.textContent = (G.kind[s.winner] === 'me' && mySide() ? 'Ты победил!' : NAME[s.winner] + ' победили'); return; }
@@ -731,6 +732,7 @@ onmessage = function (e) {
       return;
     }
     if (conn !== n.conn) return;
+    if(MA&&MA.receive(d,3-n.hostSide))return;
     n.seen = Date.now(); if (n.peerOnline === false) { n.peerOnline = true; if (G) render(); }
     if (d.t === 'ping') { netSend({ t: 'pong' }); return; }
     if (d.t === 'try') {
@@ -784,6 +786,7 @@ onmessage = function (e) {
     });
   }
   function guestData(d) {
+    if(MA&&MA.receive(d,null))return;
     if (GC && GC.receive(d)) return;
     if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     var n = NET; if (!d || typeof d !== 'object') return;
@@ -863,6 +866,7 @@ onmessage = function (e) {
   window.RVready = true;
   renderMenu();
 
+  /*MATCH_ACTIONS*/
   BoardView.attach({id:'ttt',ref:function(){return G;},boards:['big'],autoFlip:function(){return mySide()===2;},coords:function(){return S.coords;},setCoords:function(v){setCoords(v,true);},analysis:function(){return G&&G.analysis;}});
 })();
 </script>

@@ -13,6 +13,30 @@
 .local-views{position:fixed;top:8px;right:8px;z-index:65;display:flex;gap:4px;background:#111827ed;border:1px solid #586176;border-radius:10px;padding:3px;color:#f1eee8}.local-views button{min-width:34px;height:30px;padding:3px 7px;border:0;border-radius:6px;color:inherit;background:transparent;font:800 12px system-ui;cursor:pointer}.local-views button[aria-pressed=true]{background:#eac17c;color:#211a10}.local-views button:focus-visible{outline:2px solid #eac17c}.local-rotated{rotate:180deg}.local-mirrored{scale:-1 1}.local-rotated :is(.coord,.lab,.cd){rotate:180deg;transform-box:fill-box;transform-origin:center}.view-no-coords :is(.coord,.cd,.ab-axis,.view-axis-label){display:none!important}.view-no-coords .grid .lab{visibility:hidden}.view-no-history :is(#nota,#notation,#ckNotation,.notation-card){display:none!important}.view-no-history:not(.view-analysis) :is(.rv-nav,#replay){display:none!important}.view-axis-label{position:absolute;pointer-events:none;color:#c6cbd4;font:700 11px system-ui}.local-rotated .view-axis-label{rotate:180deg}html.in-room #game{padding-top:42px!important}
 
 body:has(#replay) .local-views{right:calc(50% - 66px)}html:not(.in-room) body.in-game:has(#replay) .local-views{top:48px}html:not(.in-room) body.in-game:has(#replay) .topbar{top:86px}html:not(.in-room) body.in-game:has(#replay) .gc-bar{top:86px}html:not(.in-room) body.in-game.gc-timed:has(#replay) .topbar{top:148px}html:not(.in-room) body.in-game:has(#replay) #boardWrap{top:194px}html:not(.in-room) body.in-game.gc-timed:has(#replay) #boardWrap{top:256px}
+
+.match-actions{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:8px 12px;margin:0 auto;flex-shrink:0;z-index:8}
+.match-actions button,.match-dialog button{min-height:40px;border:1px solid #ffffff36;border-radius:10px;padding:8px 16px;font:600 13px system-ui;cursor:pointer}
+.match-actions #surrenderBtn{background:#fff!important;color:#252a32!important;border-color:#fff!important;box-shadow:0 2px 8px #0002}
+.match-actions #offerDrawBtn{background:var(--panel,#25303c);color:var(--text,#f2f1eb)}
+.match-actions button:disabled{opacity:.5;cursor:default}
+#matchWait{font-size:12px;opacity:.8;flex-basis:100%;text-align:center}
+#matchWait:empty{display:none}
+.match-dialog{box-sizing:border-box;width:min(390px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:24px;border:1px solid var(--line,#ffffff32);border-radius:18px;background:var(--bg-2,var(--table-2,#202631));color:var(--ink,#f3f0e7);box-shadow:0 18px 80px #0008;font:14px/1.5 system-ui}
+.match-dialog::backdrop{background:#080c14b8;backdrop-filter:blur(5px)}
+.match-dialog h2{font-size:23px;margin:0 0 10px}.match-dialog p{margin:0 0 20px;opacity:.8}
+.match-buttons{display:flex;flex-wrap:wrap;gap:8px}.match-dialog button{flex:1;background:var(--btn,#343e4c);color:var(--ink,#f3f0e7)}.match-dialog #matchYes,.match-dialog #matchAnalyze{background:#fff;color:#242b35}
+.match-dialog select{padding:8px;font:inherit;margin:0 0 16px}
+.match-actions button:focus-visible,.match-dialog button:focus-visible{outline:3px solid #71baff;outline-offset:3px}
+#game[data-match-actions=chess] #resignBtn,#game[data-match-actions=chess] #drawBtn,#game[data-match-actions=go] #resignBtn{display:none!important}
+#game[data-match-actions=tochki].match-actions-active .match-actions{position:absolute;bottom:env(safe-area-inset-bottom,0px);left:0;right:0}
+#game[data-match-actions=tochki].match-actions-active .bottombar{bottom:calc(var(--match-height) + env(safe-area-inset-bottom,0px))}
+#game[data-match-actions=tochki].match-actions-active #replay{bottom:calc(64px + var(--match-height) + env(safe-area-inset-bottom,0px))}
+#game[data-match-actions=tochki].match-actions-active #evalGraph{bottom:calc(112px + var(--match-height) + env(safe-area-inset-bottom,0px))}
+#game[data-match-actions=tochki].match-actions-active #boardWrap{bottom:calc(160px + var(--match-height) + env(safe-area-inset-bottom,0px))}
+body.no-eval #game[data-match-actions=tochki].match-actions-active #boardWrap{bottom:calc(118px + var(--match-height) + env(safe-area-inset-bottom,0px))}
+body.in-game:has(#game[data-match-actions=tochki].match-actions-active) .corner[data-p="2"],body.in-game:has(#game[data-match-actions=tochki].match-actions-active) .corner[data-p="3"]{bottom:calc(10px + var(--match-height) + env(safe-area-inset-bottom,0px))}
+.match-actions #matchReview,.match-actions #matchSummary{background:var(--btn,#25303c);color:var(--ink,#f2f1eb)}
+#game[data-match-actions=chess]{overflow-y:auto}
 </style><script>// Подключение игры к «комнате» (главная страница). Работает, только если игра открыта внутри главной.
 // Подменяет PeerJS мостом комнаты и подстраивает интерфейс: код не нужен, друг подключается сам.
 (function () {
@@ -67,6 +91,177 @@ var BoardView=(function(){
   if(a.setCoords)a.setCoords(pref.coords);views[a.id]={refresh:refresh,flipped:function(){return flipped;},setFlip:setFlip};refresh();return views[a.id];
  }
  return{defaults:defaults,attach:attach,isFlipped:function(id){return !!views[id]&&views[id].flipped();},refresh:function(id){if(views[id])views[id].refresh();}};
+})();
+
+// Consent is independent of game rules and engine strength.
+var MatchVote = (function () {
+  function create(players, proposer, version, id) {
+    var pending = players.filter(function (p) { return p.id !== proposer && p.kind !== 'bot'; }).map(function (p) { return p.id; });
+    return { id: id, proposer: proposer, version: version, pending: pending, status: pending.length ? 'pending' : 'accepted' };
+  }
+  function vote(v, seat, ok, version) {
+    if (!v || v.status !== 'pending' || v.version !== version || v.pending.indexOf(seat) < 0) return v;
+    var n = Object.assign({}, v, { pending: v.pending.filter(function (p) { return p !== seat; }) });
+    n.status = !ok ? 'declined' : n.pending.length ? 'pending' : 'accepted';
+    return n;
+  }
+  return { create: create, vote: vote };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = MatchVote;
+
+// One host-authoritative protocol for resignation and unanimous draw offers.
+var MatchActions = (function () {
+  var CHANNEL = 'match-actions-v1';
+  function attach(a) {
+    var ref = null, gameId = null, log = [], applied = {}, offer = null, sentVotes = {}, lastHello = 0, updating = false, dialogKey = '', answer = null, wasOver = false, finalResult = null;
+    var mount = document.getElementById('game'), row = document.createElement('div');
+    row.className = 'match-actions'; row.hidden = true;
+    row.innerHTML = '<button type="button" id="surrenderBtn">Сдаться</button><button type="button" id="offerDrawBtn">Предложить ничью</button><button type="button" id="matchReview" hidden>Анализ</button><button type="button" id="matchSummary" hidden>Результат</button><span id="matchWait" role="status"></span>';
+    mount.appendChild(row); mount.dataset.matchActions = a.id;
+    var dialog = document.createElement('dialog'); dialog.id = 'matchActionDialog'; dialog.className = 'match-dialog';
+    dialog.innerHTML = '<h2 id="matchQuestion"></h2><p id="matchDetail"></p><label id="matchSeatRow" hidden>Кто сдаётся? <select id="matchSeat"></select></label><div class="match-buttons"><button type="button" id="matchNo">Отмена</button><button type="button" id="matchYes">Да</button></div>';
+    var result = document.createElement('dialog'); result.id = 'matchResult'; result.className = 'match-dialog';
+    dialog.setAttribute('aria-labelledby', 'matchQuestion'); result.setAttribute('aria-labelledby', 'matchResultTitle');
+    result.innerHTML = '<h2 id="matchResultTitle"></h2><p id="matchResultText"></p><div class="match-buttons"><button type="button" id="matchAnalyze">Анализ</button><button type="button" id="matchAgain">Ещё партию</button><button type="button" id="matchMenu">В меню</button></div>';
+    document.body.appendChild(dialog); document.body.appendChild(result);
+    function el(id) { return document.getElementById(id); }
+    function state() { return a.state(); }
+    function role() { return a.role ? a.role() : null; }
+    function uid() { return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2); }
+    function send(d) { if (role() && a.send) a.send(Object.assign({ t: CHANNEL, game: gameId }, d)); }
+    function note(s) { if (a.notify) a.notify(s); }
+    function closeQuestion() { if (dialog.open) dialog.close(); dialogKey = ''; answer = null; }
+    function ask(key, title, detail, yes, no, fn, seats) {
+      if (dialogKey === key) return;
+      closeQuestion(); dialogKey = key; answer = fn;
+      el('matchQuestion').textContent = title; el('matchDetail').textContent = detail;
+      el('matchYes').textContent = yes; el('matchNo').textContent = no;
+      el('matchSeatRow').hidden = !seats || seats.length < 2;
+      el('matchSeat').replaceChildren();
+      (seats || []).forEach(function (p) { var o = document.createElement('option'); o.value = String(p.id); o.textContent = p.label; el('matchSeat').appendChild(o); });
+      dialog.showModal();
+    }
+    function reply(ok) { var f = answer, seat = el('matchSeat').value; closeQuestion(); if (f) f(ok, seat); refresh(); }
+    el('matchYes').onclick = function () { reply(true); }; el('matchNo').onclick = function () { reply(false); };
+    dialog.addEventListener('cancel', function (e) { e.preventDefault(); reply(false); });
+    result.addEventListener('cancel', function (e) { e.preventDefault(); result.close(); });
+    el('matchAnalyze').onclick = function () { result.close(); closeQuestion(); a.analyze(); refresh(); };
+    el('matchReview').onclick = el('matchAnalyze').onclick;
+    el('matchSummary').onclick = function () { if (!result.open) result.showModal(); };
+    el('matchAgain').onclick = function () { result.close(); closeQuestion(); if (a.again) a.again(); refresh(); };
+    el('matchMenu').onclick = function () { result.close(); closeQuestion(); a.menu(); refresh(); if (window.IN_ROOM && parent.ROOM) parent.ROOM.home(); };
+    function active(s) { return !!s && !s.over && !s.analysis && s.ready !== false && !mount.hidden; }
+    function local(s) { return s.players.filter(function (p) { return s.mine.indexOf(p.id) >= 0; }); }
+    function actor(s) { var mine = local(s); return mine.find(function (p) { return p.id === s.turn; }) || mine[0]; }
+    function cancel(notify) { if (!offer) return; offer = null; sentVotes = {}; closeQuestion(); if (notify && role() === 'host') send({ kind: 'cancel' }); }
+    function bind() { send({ kind: 'bind', log: log }); }
+    function apply(r) {
+      if (applied[r.id]) return;
+      applied[r.id] = true;
+      a.finish(r);
+      var s = state();
+      if (s && s.over) {
+        finalResult = r;
+        el('matchResultTitle').textContent = r.title;
+        el('matchResultText').textContent = r.type === 'draw' ? 'Ничья по соглашению игроков.' : r.winnerLabel ? 'Победа: ' + r.winnerLabel + '.' : 'Партия завершена.';
+        el('matchAgain').hidden = !a.again || role() === 'guest';
+        closeQuestion(); if (!result.open) result.showModal();
+      } else note(r.title + '. Остальные продолжают игру.');
+    }
+    function commit(type, seat) {
+      var s = state(); if (!active(s)) return;
+      var p = s.players.find(function (p) { return p.id === seat; }); if (!p) return;
+      var others = s.players.filter(function (p) { return p.id !== seat; });
+      var r = { id: uid(), type: type, actor: seat, title: type === 'draw' ? 'Ничья' : 'Сдача: ' + p.label, winner: others.length === 1 ? others[0].id : null, winnerLabel: others.length === 1 ? others[0].label : '' };
+      cancel(false); log.push(r); send({ kind: 'commit', result: r }); apply(r); refresh();
+    }
+    function publishOffer() {
+      if (!offer) return;
+      if (offer.status === 'accepted') { commit('draw', offer.proposer); return; }
+      if (offer.status === 'declined') { send({ kind: 'cancel' }); offer = null; closeQuestion(); note('Ничья отклонена. Игра продолжается.'); return; }
+      send({ kind: 'offer', offer: offer }); refresh();
+    }
+    function request(type, seat) {
+      var s = state(); if (!active(s) || !s.players.some(function (p) { return p.id === seat; })) return;
+      if (role() === 'guest') { if (!gameId || a.online && !a.online()) { note('Ждём связи с хозяином игры.'); return; } send({ kind: 'request', action: type, version: s.version }); return; }
+      if (type === 'resign') { commit(type, seat); return; }
+      if (type !== 'draw' || offer) return;
+      if (role() && a.online && !a.online()) { note('Дождитесь подключения всех игроков.'); return; }
+      offer = MatchVote.create(s.players, seat, s.version, uid()); publishOffer();
+    }
+    el('surrenderBtn').onclick = function () {
+      refresh(); var s = state(), p = s && actor(s); if (!p || !active(s)) return;
+      var seats = local(s); seats.sort(function (x, y) { return x.id === p.id ? -1 : y.id === p.id ? 1 : 0; });
+      ask('resign', 'Сдаться?', 'Это засчитает вам поражение.', 'Сдаться', 'Продолжить игру', function (ok, chosen) { if (ok) { var seat = seats.find(function (x) { return String(x.id) === chosen; }); if (seat) request('resign', seat.id); } }, seats);
+    };
+    el('offerDrawBtn').onclick = function () { refresh(); var s = state(), p = s && actor(s); if (p && active(s)) request('draw', p.id); };
+    function vote(seat, ok) {
+      var s = state(); if (!offer || !active(s)) return;
+      if (role() === 'guest') { sentVotes[offer.id + ':' + seat] = true; send({ kind: 'vote', id: offer.id, version: s.version, ok: ok }); closeQuestion(); return; }
+      offer = MatchVote.vote(offer, seat, ok, s.version); publishOffer();
+    }
+    function refresh() {
+      if (updating) return; updating = true;
+      try {
+        var s = state();
+        if (s && wasOver && !s.over && !s.analysis && a.resume) a.resume();
+        if (!s || s.ref !== ref || wasOver && !s.over && !s.analysis) {
+          ref = s && s.ref; cancel(false); log = []; applied = {}; gameId = role() === 'guest' ? null : uid(); lastHello = 0;
+          finalResult = null;
+          if (result.open) result.close(); closeQuestion();
+          if (s && role() === 'host') bind();
+        }
+        wasOver = !!s && s.over;
+        var visible = active(s) && local(s).length > 0, ended = !!(s && s.over && !s.analysis && finalResult && !mount.hidden), shown = visible || ended, changed = row.hidden === shown;
+        row.hidden = !shown; mount.classList.toggle('match-actions-active', shown);
+        el('surrenderBtn').hidden = el('offerDrawBtn').hidden = !visible;
+        el('matchReview').hidden = el('matchSummary').hidden = !ended;
+        if (s && role() === 'guest' && !gameId && Date.now() - lastHello > 1000) { lastHello = Date.now(); send({ kind: 'hello' }); }
+        if (offer && (!active(s) || offer.version !== s.version || role() && a.online && !a.online())) cancel(true);
+        if (!active(s)) closeQuestion();
+        el('offerDrawBtn').disabled = !!offer;
+        el('matchWait').textContent = offer ? 'Предложена ничья · ждём согласия' : '';
+        var height = shown ? row.offsetHeight : 0;
+        if (mount.style.getPropertyValue('--match-height') !== height + 'px') { mount.style.setProperty('--match-height', height + 'px'); changed = true; }
+        document.body.style.setProperty('--match-height', height + 'px');
+        if (changed) setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 0);
+        if (offer && visible) {
+          var seat = offer.pending.find(function (id) { return s.mine.indexOf(id) >= 0; });
+          if (seat !== undefined && !sentVotes[offer.id + ':' + seat]) {
+            var p = s.players.find(function (p) { return p.id === seat; });
+            ask('vote:' + offer.id + ':' + seat, 'Согласиться на ничью?', (p ? p.label + ': ' : '') + 'соперник предлагает завершить партию вничью.', 'Принять ничью', 'Отклонить', function (ok) { vote(seat, ok); });
+          } else if (dialogKey.indexOf('vote:') === 0) closeQuestion();
+        }
+      } finally { updating = false; }
+    }
+    function receive(d, from) {
+      if (!d || d.t !== CHANNEL) return false;
+      refresh(); var s = state(); if (!s) return true;
+      if (role() === 'host') {
+        if (!s.players.some(function (p) { return p.id === from && p.kind === 'remote'; }) && d.kind !== 'hello') return true;
+        if (d.kind === 'hello') { bind(); return true; }
+        if (d.game !== gameId || d.version !== s.version || !active(s)) return true;
+        if (d.kind === 'request') request(d.action, from);
+        else if (d.kind === 'vote' && offer && d.id === offer.id) { offer = MatchVote.vote(offer, from, d.ok === true, s.version); publishOffer(); }
+      } else if (role() === 'guest') {
+        if (d.kind === 'bind') {
+          if (gameId && gameId !== d.game) { applied = {}; log = []; cancel(false); }
+          gameId = d.game;
+          if (Array.isArray(d.log)) d.log.forEach(function (r) { apply(r); });
+        } else if (gameId && d.game === gameId) {
+          if (d.kind === 'commit' && d.result) { cancel(false); apply(d.result); }
+          else if (d.kind === 'offer' && active(s) && d.offer && d.offer.version === s.version) { offer = d.offer; }
+          else if (d.kind === 'cancel') { cancel(false); note('Предложение ничьей закрыто. Игра продолжается.'); }
+        }
+      }
+      refresh(); return true;
+    }
+    // A timer also catches menu changes, timeout and peer disconnections.
+    setInterval(refresh, 200);
+    refresh();
+    return { refresh: refresh, receive: receive };
+  }
+  return { attach: attach, space:function(){var row=document.querySelector('.match-actions');return row&&!row.hidden?row.offsetHeight+8:0;} };
 })();
 </script><style>
 /* «← Все игры» — на каждой странице игры, слева сверху. В комнате не нужна: там своя панель «← Игры». */
@@ -286,7 +481,7 @@ dialog p{margin:0 0 10px;color:#d8c8bd}
     </div>
 
     <details class="card rules"><summary><h2>Как играть</h2></summary><div class="rules-body" id="rulesMenu"></div></details>
-    <p class="version">Версия от 04.11.2026 23:01</p>
+    <p class="version">Версия от 04.11.2026 23:37</p>
   </div>
 </section>
 
@@ -465,6 +660,21 @@ var Lava = (function () {
   }
   function apply(s, m) {
     if (!s || s.over) return null;
+    // 40–43 are resignations; 44 is a draw accepted by every active player.
+    // They are kept in the log, rather than masquerading as ordinary jumps.
+    if (m >= 40 && m <= 44 && m % 1 === 0) {
+      var seat = m === 44 ? s.turn : m - 40, p = s.players[seat];
+      if (!p || !p.alive) return null;
+      var n = clone(s), alive = [];
+      if (m !== 44) n.players[seat].alive = false;
+      n.players.forEach(function (p, i) { if (p.alive) alive.push(i); });
+      n.ply++; n.log = s.log.concat(m);
+      n.last = { seat: seat, m: m, d: -1, from: p.pos, land: p.pos, to: p.pos, kind: m === 44 ? 'draw' : 'resign', pushed: [], killed: [], fell: false, left: n.tiles[p.pos] };
+      if (m === 44) { n.draw = true; n.over = true; n.turn = -1; n.winner = null; }
+      else if (alive.length === 1) { n.over = true; n.turn = -1; n.winner = alive[0]; }
+      else if (seat === s.turn) for (var i = 1; i <= n.players.length; i++) { var nx = (seat + i) % n.players.length; if (n.players[nx].alive) { n.turn = nx; break; } }
+      return n;
+    }
     return play(s, s.turn, m);
   }
   // ---------- бот ----------
@@ -516,6 +726,7 @@ var Lava = (function () {
       cs[p.corner] = 1; prev = p.corner;
       if (p.alive) { if (!s.tiles[p.pos] || pos[p.pos]) return false; pos[p.pos] = 1; alive++; }
     }
+    if (s.over && s.draw === true) return s.turn === -1 && s.winner === null && alive >= 2 && s.log[s.log.length - 1] === 44;
     if (s.over) return s.turn === -1 && alive <= 1 && (alive === 0 ? s.winner === null : typeof s.winner === 'number' && !!s.players[s.winner] && s.players[s.winner].alive);
     return alive >= 2 && typeof s.turn === 'number' && !!s.players[s.turn] && s.players[s.turn].alive && s.winner === null;
   }
@@ -1108,7 +1319,7 @@ var Review = function (o) {
   // ---------- размеры ----------
   function layout() {
     if ($('game').hidden) return;
-    var vw = window.innerWidth, vh = window.innerHeight, hub = window.hubH ? window.hubH() : 0;
+    var vw = window.innerWidth, vh = window.innerHeight - MatchActions.space(), hub = window.hubH ? window.hubH() : 0;
     var top = $('game').querySelector('.g-top').offsetHeight || 54, bar = 62 + ($('rvMount').offsetHeight || 38), wide = vw >= 700 && vw > vh * 1.15, gem, b;
     if (wide) {
       gem = Math.max(50, Math.min(84, vh * .1));
@@ -1233,7 +1444,7 @@ var Review = function (o) {
     if (V) { tn.textContent = rv.inVar() ? 'Вариант' : 'Просмотр партии'; tn.style.color = '#ffc58a'; }
     else if (state.over) {
       var w = state.winner;
-      tn.textContent = w === null ? 'Все сгорели' : mine(w) && !humansLocal() ? 'Победа!' : C[state.players[w].corner].name + ' победил' + (roles[w] === 'bot' ? ' (бот)' : '');
+      tn.textContent = state.draw ? 'Ничья' : w === null ? 'Все сгорели' : mine(w) && !humansLocal() ? 'Победа!' : C[state.players[w].corner].name + ' победил' + (roles[w] === 'bot' ? ' (бот)' : '');
       tn.style.color = w === null ? '' : C[state.players[w].corner].light;
       stt.textContent = 'Прыжков: ' + state.ply;
     } else {
@@ -1250,13 +1461,13 @@ var Review = function (o) {
     $('againBtn').disabled = !!n && (n.role !== 'host' || !state.over);
     $('netWarning').hidden = !n || LavaLink.ready(); $('netWarningText').textContent = n ? (n.error || 'Ждём игрока, у которого пропала связь. Его место сохранено.') : '';
     $('reconnectBtn').hidden = !n || n.role !== 'guest';
-    if (state.over && !busy && !V) {
+    if (state.over && !busy && !V && !state.settlement) {
       var key = netRound + ':' + state.ply + ':' + state.winner;
       if (shownResult !== key) { shownResult = key; clearTimeout(resultTimer); resultTimer = setTimeout(showResult, 700); }
     }
   }
   function showResult() {
-    if (!state || !state.over || $('game').hidden || viewing()) return;
+    if (!state || !state.over || state.settlement || $('game').hidden || viewing()) return;
     var w = state.winner, n = net();
     $('winnerGem').innerHTML = w === null ? '' : A.gem(state.players[w].corner, { id: 'w' });
     $('resultTitle').textContent = w === null ? 'Все сгорели' : mine(w) && !humansLocal() ? 'Ты победил!' : C[state.players[w].corner].name + ' победил' + (roles[w] === 'bot' ? ' (бот)' : '');
@@ -1352,6 +1563,7 @@ var Review = function (o) {
   function after() { render(); schedule(); }
   function commit(m, seat) {
     if (!state || state.turn !== seat || busy) return;
+    if (!L.moves(state, seat).some(function (x) { return x.m === m; })) return;
     var next = L.apply(state, m); if (!next) return;
     var old = state; state = next; pending = false; busy = true; armed = -1;
     saveGame(); if (rv) rv.sync();
@@ -1440,6 +1652,7 @@ var Review = function (o) {
   function moveText(e) {
     var t = e && e.s && e.s.last; if (!t) return '';
     var names = function (arr) { return arr.map(function (x) { return cname(x).toLowerCase(); }).join(', '); };
+    if(t.kind==='resign')return 'сдался';if(t.kind==='draw')return 'ничья по соглашению';
     if (t.kind === 'stay') return 'прыжок на месте' + (t.fell ? ' — сгорел' : '');
     var out = L.DIRS[t.d].label + ' на ' + (t.m % 10);
     if (t.kind === 'push') out += ', толкнул: ' + names(t.pushed.map(function (q) { return q.seat; }));
@@ -1546,6 +1759,7 @@ var Review = function (o) {
   $('askYes').onclick = function () { answer(true); }; $('askNo').onclick = function () { answer(false); };
   $('askDialog').addEventListener('cancel', function (e) { e.preventDefault(); answer(false); });
   function onMsg(d, from) {
+    if(MA&&MA.receive(d,from))return;
     var n = net(); if (!n || !state || !d) return;
     if (n.role === 'host') {
       if (d.k === 'undoAsk' && d.ply === state.ply) hostAsk(from);
@@ -1663,7 +1877,14 @@ var Review = function (o) {
   var hash = /^#([A-Za-z0-9]{5})$/.exec(location.hash);
   if (hash) join(hash[1]);
 
- BoardView.attach({id:'lava',ref:function(){return state?(net()?'net:'+net().code+':'+netRound:gameSetup):null;},boards:['board'],axes:6,autoFlip:function(){var n=LavaLink.current(),i=n&&n.role==='guest'?n.seat:roles.indexOf('human');return state&&i>=0&&state.players[i].corner<2;},coords:function(){return S.coords;},setCoords:function(v){S.coords=v;savePrefs();},analysis:function(){return state&&state.over;}});
+ var MA = MatchActions.attach({id:'lava',
+  state:function(){return state?{ref:net()?'net:'+net().code+':'+netRound:gameSetup,version:state.ply,turn:state.turn,over:state.over,analysis:false,players:state.players.map(function(p,i){return{id:i,label:C[p.corner].name,kind:roles[i]==='bot'?'bot':roles[i]==='net'?'remote':'human'};}).filter(function(p){return state.players[p.id].alive;}),mine:state.players.map(function(p,i){return i;}).filter(function(i){return state.players[i].alive&&(net()&&net().role==='guest'?i===net().seat:roles[i]==='human');})}:null;},
+  role:function(){return net()&&net().role;},send:function(m){if(net()&&net().role==='host')LavaLink.tellAll(m);else LavaLink.tell(m);},online:function(){return LavaLink.ready();},notify:toast,menu:home,again:restart,
+  analyze:function(){if($('result').open)$('result').close();rv.go(0);render();},
+  finish:function(r){if(!state||r.type==='draw'&&state.draw||r.type==='resign'&&!state.players[r.actor].alive)return;stopTimers();var n=L.apply(state,r.type==='draw'?44:40+r.actor);if(!n)return;state=n;state.settlement=r;armed=-1;rv.sync();saveGame();render();if(net()&&net().role==='host')LavaLink.update(state);schedule();}
+});
+
+  BoardView.attach({id:'lava',ref:function(){return state?(net()?'net:'+net().code+':'+netRound:gameSetup):null;},boards:['board'],axes:6,autoFlip:function(){var n=LavaLink.current(),i=n&&n.role==='guest'?n.seat:roles.indexOf('human');return state&&i>=0&&state.players[i].corner<2;},coords:function(){return S.coords;},setCoords:function(v){S.coords=v;savePrefs();},analysis:function(){return state&&state.over;}});
 })();
 </script>
 

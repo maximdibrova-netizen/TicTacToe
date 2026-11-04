@@ -135,7 +135,7 @@
   // ---------- размеры ----------
   function layout() {
     if ($('game').hidden) return;
-    var vw = window.innerWidth, vh = window.innerHeight, hub = window.hubH ? window.hubH() : 0;
+    var vw = window.innerWidth, vh = window.innerHeight - MatchActions.space(), hub = window.hubH ? window.hubH() : 0;
     var top = $('game').querySelector('.g-top').offsetHeight || 54, bar = 62 + ($('rvMount').offsetHeight || 38), wide = vw >= 700 && vw > vh * 1.15, gem, b;
     if (wide) {
       gem = Math.max(50, Math.min(84, vh * .1));
@@ -260,7 +260,7 @@
     if (V) { tn.textContent = rv.inVar() ? 'Вариант' : 'Просмотр партии'; tn.style.color = '#ffc58a'; }
     else if (state.over) {
       var w = state.winner;
-      tn.textContent = w === null ? 'Все сгорели' : mine(w) && !humansLocal() ? 'Победа!' : C[state.players[w].corner].name + ' победил' + (roles[w] === 'bot' ? ' (бот)' : '');
+      tn.textContent = state.draw ? 'Ничья' : w === null ? 'Все сгорели' : mine(w) && !humansLocal() ? 'Победа!' : C[state.players[w].corner].name + ' победил' + (roles[w] === 'bot' ? ' (бот)' : '');
       tn.style.color = w === null ? '' : C[state.players[w].corner].light;
       stt.textContent = 'Прыжков: ' + state.ply;
     } else {
@@ -277,13 +277,13 @@
     $('againBtn').disabled = !!n && (n.role !== 'host' || !state.over);
     $('netWarning').hidden = !n || LavaLink.ready(); $('netWarningText').textContent = n ? (n.error || 'Ждём игрока, у которого пропала связь. Его место сохранено.') : '';
     $('reconnectBtn').hidden = !n || n.role !== 'guest';
-    if (state.over && !busy && !V) {
+    if (state.over && !busy && !V && !state.settlement) {
       var key = netRound + ':' + state.ply + ':' + state.winner;
       if (shownResult !== key) { shownResult = key; clearTimeout(resultTimer); resultTimer = setTimeout(showResult, 700); }
     }
   }
   function showResult() {
-    if (!state || !state.over || $('game').hidden || viewing()) return;
+    if (!state || !state.over || state.settlement || $('game').hidden || viewing()) return;
     var w = state.winner, n = net();
     $('winnerGem').innerHTML = w === null ? '' : A.gem(state.players[w].corner, { id: 'w' });
     $('resultTitle').textContent = w === null ? 'Все сгорели' : mine(w) && !humansLocal() ? 'Ты победил!' : C[state.players[w].corner].name + ' победил' + (roles[w] === 'bot' ? ' (бот)' : '');
@@ -379,6 +379,7 @@
   function after() { render(); schedule(); }
   function commit(m, seat) {
     if (!state || state.turn !== seat || busy) return;
+    if (!L.moves(state, seat).some(function (x) { return x.m === m; })) return;
     var next = L.apply(state, m); if (!next) return;
     var old = state; state = next; pending = false; busy = true; armed = -1;
     saveGame(); if (rv) rv.sync();
@@ -467,6 +468,7 @@
   function moveText(e) {
     var t = e && e.s && e.s.last; if (!t) return '';
     var names = function (arr) { return arr.map(function (x) { return cname(x).toLowerCase(); }).join(', '); };
+    if(t.kind==='resign')return 'сдался';if(t.kind==='draw')return 'ничья по соглашению';
     if (t.kind === 'stay') return 'прыжок на месте' + (t.fell ? ' — сгорел' : '');
     var out = L.DIRS[t.d].label + ' на ' + (t.m % 10);
     if (t.kind === 'push') out += ', толкнул: ' + names(t.pushed.map(function (q) { return q.seat; }));
@@ -573,6 +575,7 @@
   $('askYes').onclick = function () { answer(true); }; $('askNo').onclick = function () { answer(false); };
   $('askDialog').addEventListener('cancel', function (e) { e.preventDefault(); answer(false); });
   function onMsg(d, from) {
+    if(MA&&MA.receive(d,from))return;
     var n = net(); if (!n || !state || !d) return;
     if (n.role === 'host') {
       if (d.k === 'undoAsk' && d.ply === state.ply) hostAsk(from);
@@ -690,5 +693,6 @@
   var hash = /^#([A-Za-z0-9]{5})$/.exec(location.hash);
   if (hash) join(hash[1]);
 
- BoardView.attach({id:'lava',ref:function(){return state?(net()?'net:'+net().code+':'+netRound:gameSetup):null;},boards:['board'],axes:6,autoFlip:function(){var n=LavaLink.current(),i=n&&n.role==='guest'?n.seat:roles.indexOf('human');return state&&i>=0&&state.players[i].corner<2;},coords:function(){return S.coords;},setCoords:function(v){S.coords=v;savePrefs();},analysis:function(){return state&&state.over;}});
+ /*MATCH_ACTIONS*/
+  BoardView.attach({id:'lava',ref:function(){return state?(net()?'net:'+net().code+':'+netRound:gameSetup):null;},boards:['board'],axes:6,autoFlip:function(){var n=LavaLink.current(),i=n&&n.role==='guest'?n.seat:roles.indexOf('human');return state&&i>=0&&state.players[i].corner<2;},coords:function(){return S.coords;},setCoords:function(v){S.coords=v;savePrefs();},analysis:function(){return state&&state.over;}});
 })();

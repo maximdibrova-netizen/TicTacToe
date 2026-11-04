@@ -828,7 +828,7 @@ onmessage = function (e) {
     if (G.me === undefined) G.me = [3, 0, 1, 2].filter(function (q) { return G.kinds[q] !== 'off'; })[0];
     syncEvalUi();
     G.hist.push(snap(-1, -1));
-    if(setup.seed)setup.seed.moves.forEach(function(m){if(G.over||G.turn!==m.by||G.own[m.cell]!==m.by)throw Error('Недопустимый ход в выбранной ветке.');applyMove(G.B,G.cnt,G.own,m.cell,m.by,false);G.mask=aliveMaskAfter(G.B,G.own,G.mask);G.moves++;G.over=bitCount(G.mask)===1;G.winner=G.over?m.by:-1;G.turn=G.over?m.by:nextAlive(G.mask,m.by);G.hist.push(snap(m.cell,m.by));});
+    if(setup.seed)setup.seed.moves.forEach(function(m){if(m.cell===-2){if(!resignSeat(m.by))throw Error('Неверная сдача игрока.');return;}if(G.over||G.turn!==m.by||G.own[m.cell]!==m.by)throw Error('Недопустимый ход в выбранной ветке.');applyMove(G.B,G.cnt,G.own,m.cell,m.by,false);G.mask=aliveMaskAfter(G.B,G.own,G.mask);G.moves++;G.over=bitCount(G.mask)===1;G.winner=G.over?m.by:-1;G.turn=G.over?m.by:nextAlive(G.mask,m.by);G.hist.push(snap(m.cell,m.by));});
     pendingContinuation=null;
     queueEval(G.hist.length-1);
     document.body.classList.add('in-game');
@@ -864,7 +864,7 @@ onmessage = function (e) {
     var vw = window.innerWidth, vh = window.innerHeight - (GC && GC.enabled()?68:0);
     var R = Math.max(64, Math.min(104, Math.min(vw, vh) * .13)) + 22;
     var ev = !document.body.classList.contains('no-eval');
-    var availW = vw - 32, availH = vh - (CONT&&!$('continueBtn').hidden?46:0) - (ev ? 68 + 160 : 56 + 118) - 12 - (window.IN_ROOM ? 0 : 48) - (ev ? 40 : 0);
+    var availW = vw - 32, availH = vh - MatchActions.space() - (CONT&&!$('continueBtn').hidden?46:0) - (ev ? 68 + 160 : 56 + 118) - 12 - (window.IN_ROOM ? 0 : 48) - (ev ? 40 : 0);
     if (vw > vh) availW = vw - 2 * R - 24; // landscape: keep the corners clear
     var W = G.B.W, H = G.B.H, cx = S.coords ? .55 : 0;   // room for the labels
     pitch = Math.max(16, Math.floor(Math.min(availW / (W + cx), availH / (H + cx), 96)));
@@ -988,6 +988,7 @@ onmessage = function (e) {
         sw(s.by) + '<span>Ход ' + G.view + ': ' + COLORS[s.by] + (S.coords && s.cell >= 0 ? ' · ' + cellName(s.cell) : '') + '</span>' + tag);
       return;
     }
+    if(G.over&&G.adjudication){st.textContent=G.adjudication.title;return;}
     if (G.over) { st.innerHTML = sw(G.winner) + '<span>' + COLORS_GEN[G.winner] + ' победили</span>'; return; }
     var p = G.turn, k = G.kinds[p], humans = G.kinds.filter(function (x) { return x === 'human'; }).length, who;
     if (k === 'human') who = humans > 1 || NET ? (NET ? 'Твой ход' : COLORS[p] + ': твой ход') : 'Твой ход';
@@ -1681,6 +1682,7 @@ onmessage = function (e) {
     }
     var seat2 = seatOf(conn);
     if (seat2 < 0) return;
+    if(MA&&MA.receive(d,seat2))return;
     NET.seats[seat2].seen = Date.now();
     if (d.t === 'pong') return;
     if (d.t === 'try') {
@@ -1847,6 +1849,7 @@ onmessage = function (e) {
     if (Date.now() - (n.seen || Date.now()) > 9000) { guestFail('Связь с игрой потеряна.'); try { n.conn.close(); } catch (e) {} }
   }, 2000);
   function guestOnData(d) {
+    if(MA&&MA.receive(d,null))return;
     if (GC && GC.receive(d)) return;
     if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     if (!d || typeof d !== 'object') return;
@@ -1894,7 +1897,7 @@ onmessage = function (e) {
   // a shared link (…/#CODE) drops the friend straight into the game
 
   var GC = GameClock.attach({id:"tochki", labels:["Фиолетовые", "Зелёные", "Синие", "Красные"],
-    state:function(){return G&&!G.analysis?{game:G,turn:(G.turn),moves:G.moves,over:!!(G.over),ready:true,paused:!!(G.playing||G.queue.length),active:[0,1,2,3].filter(function(i){return !!(G.mask&(1<<i));})}:null;}, role:function(){return NET && NET.role;},
+    state:function(){return G&&!G.analysis?{game:G,turn:(G.turn),moves:G.moves,noIncrement:G.hist[G.hist.length-1].cell===-2,over:!!(G.over),ready:true,paused:!!(G.playing||G.queue.length),active:[0,1,2,3].filter(function(i){return !!(G.mask&(1<<i));})}:null;}, role:function(){return NET && NET.role;},
     send:function(m){netBroadcast(m);}, menu:toMenu, analyze:analyzeFinished,
     expire:function(i){if(!G)return;token++;G.over=true; G.winner=nextAlive(G.mask,i); stopAnims();}
   });
@@ -1916,6 +1919,7 @@ onmessage = function (e) {
 
   renderMenu();
 
+  /*MATCH_ACTIONS*/
   BoardView.attach({id:'tochki',ref:function(){return G;},boards:['board'],autoFlip:function(){var seat=mySeat();return seat>=0&&seat<2;},coords:function(){return S.coords;},setCoords:function(v){setCoords(v,true);},analysis:function(){return G&&G.analysis;}});
 })();
 </script>

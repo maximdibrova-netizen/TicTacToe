@@ -293,7 +293,7 @@ onmessage = function (e) {
       n.style.top = 'calc(var(--B) * .045 + var(--B) / 8 * ' + (k + .5) + ')'; n.style.left = 'calc(var(--B) * .014)'; n.style.transform = 'translateY(-50%)'; wrap.appendChild(n);
     }
   }
-  function layout() { var wide=window.innerWidth>=900,extra=$('rvMount').offsetHeight+8,reserve=wide?0:230,B=Math.max(200,Math.min(window.innerWidth-(wide?400:40),window.innerHeight-(GC&&GC.enabled()?68:0)-(window.hubH?window.hubH():0)-246-extra-reserve,620));B=Math.floor(B/8)*8;document.documentElement.style.setProperty('--B',B+'px');document.documentElement.style.setProperty('--ck-panel-height',(wide?B*1.09+extra+65:230)+'px');if(window.RVready)RV.refresh();}
+  function layout() { var wide=window.innerWidth>=900,extra=$('rvMount').offsetHeight+8,reserve=wide?0:230,B=Math.max(200,Math.min(window.innerWidth-(wide?400:40),window.innerHeight-MatchActions.space()-(GC&&GC.enabled()?68:0)-(window.hubH?window.hubH():0)-246-extra-reserve,620));B=Math.floor(B/8)*8;document.documentElement.style.setProperty('--B',B+'px');document.documentElement.style.setProperty('--ck-panel-height',(wide?B*1.09+extra+65:230)+'px');if(window.RVready)RV.refresh();}
   window.addEventListener('resize', layout);
   function mySide() { return G.kind[1] === 'me' && G.kind[-1] !== 'me' ? 1 : G.kind[-1] === 'me' && G.kind[1] !== 'me' ? -1 : 0; }
 
@@ -387,6 +387,7 @@ onmessage = function (e) {
   }
   function setStatus(all) {
     var s = G.s, st = $('status');
+    if(G.adjudication&&G.over&&!G.analysis){st.textContent=G.adjudication.title;return;}
     if (s.winner === 3) { st.textContent = 'Ничья: ' + (s.drawReason || ''); return; }
     if (s.winner) { st.textContent = NAME[s.winner] + ' победили'; return; }
     if (G.undoVote) { st.textContent = 'Ждём ответа про отмену хода'; return; }
@@ -534,7 +535,7 @@ onmessage = function (e) {
     $('endAgain').hidden = Net2P.active() && Net2P.role() === 'guest';
     $('endOv').hidden = false;
   }
-  function analyzeFinished(){if(!G)return;G.pdnHeaders=Object.assign({},G.pdnHeaders||{},{Result:G.s.winner===3?'1/2-1/2':G.s.winner===1?'1-0':G.s.winner===-1?'0-1':'*'});G.pdnMain=G.moves.join(' ');token++;Net2P.close();G.analysis=true;G.evalOn=true;G.kind={1:'me','-1':'me'};G.s=replay(G.moves);G.over=!!G.s.winner;G.busy=false;G.part=null;G.pre=null;G.endShown=true;G.line=lineOf(G.moves);$('endOv').hidden=true;RV.reset();RV.go(0);GC.sync();render();}
+  function analyzeFinished(){if(!G)return;G.pdnHeaders=Object.assign({},G.pdnHeaders||{},{Result:G.adjudication?G.pdnHeaders.Result:G.s.winner===3?'1/2-1/2':G.s.winner===1?'1-0':G.s.winner===-1?'0-1':'*'});G.pdnMain=G.moves.join(' ');token++;Net2P.close();G.analysis=true;G.evalOn=true;G.kind={1:'me','-1':'me'};G.s=replay(G.moves);G.over=!!G.s.winner;G.busy=false;G.part=null;G.pre=null;G.endShown=true;G.line=lineOf(G.moves);$('endOv').hidden=true;RV.reset();RV.go(0);GC.sync();render();}
   $('endLook').onclick=analyzeFinished;
   // ---------- coordinates (shared with the friend online) ----------
   function setCoords(on, fromNet) {
@@ -595,6 +596,7 @@ onmessage = function (e) {
     toast('Ты играешь ' + (hostSide === 1 ? 'белыми' : 'чёрными'));
   }
   function hostData(d) {
+    if(MA&&MA.receive(d,-hostSide))return;
     if (GC && GC.receive(d)) return;
     if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     if (d.t === 'try') {
@@ -618,6 +620,7 @@ onmessage = function (e) {
   function guestCoords(hostOn) {}
   function guestKinds(hs) { var k = {}; k[hs] = 'net'; k[-hs] = 'me'; return k; }
   function guestData(d) {
+    if(MA&&MA.receive(d,null))return;
     if (GC && GC.receive(d)) return;
     if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     if (d.t === 'start') { newGame(guestKinds(d.hostSide),d.seed||{}); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 1 ? 'чёрными' : 'белыми')); }
@@ -709,7 +712,7 @@ onmessage = function (e) {
   $('ckNotation').onclick=function(e){var go=e.target.closest('[data-ck-go]'),branch=e.target.closest('[data-ck-branch]');if(go)RV.go(+go.dataset.ckGo);if(branch)selectBranch(G.studyBranches[+branch.dataset.ckBranch]);};
   $('ckBestMove').onclick=function(){if(!studyAllowed())return;var path=this.dataset.path;if(!path)return;if(RV.display().mode==='live'){if(canTap())submit(path);}else RV.play(path);};
   $('ckAnalyzeBtn').onclick=function(){Net2P.close();newGame({1:'me','-1':'me'},{analysis:true});ckTab='engine';renderStudyPanel();};
-  function pdnText(){var scope=$('ckScope').value,headers=Object.assign({},G.pdnHeaders||{});headers.Result=scope==='path'?'*':G.analysis?(G.pdnMain===G.moves.join(' ')?headers.Result||'*':'*'):G.s.winner===3?'1/2-1/2':G.s.winner===1?'1-0':G.s.winner===-1?'0-1':'*';saveCurrentBranch();return ckPdnWrite(scope==='path'?RV.pathHere():G.moves,headers,G.baseFen,scope==='path'?[]:G.studyBranches);}
+  function pdnText(){var scope=$('ckScope').value,headers=Object.assign({},G.pdnHeaders||{});headers.Result=scope==='path'?'*':G.analysis?(G.pdnMain===G.moves.join(' ')?headers.Result||'*':'*'):G.adjudication?headers.Result:G.s.winner===3?'1/2-1/2':G.s.winner===1?'1-0':G.s.winner===-1?'0-1':'*';saveCurrentBranch();return ckPdnWrite(scope==='path'?RV.pathHere():G.moves,headers,G.baseFen,scope==='path'?[]:G.studyBranches);}
   function pdnFile(){return new File([pdnText()],'russian-draughts-'+new Date().toISOString().slice(0,10)+'.pdn',{type:'application/x-draughts-pdn'});}
   function refreshPdn(){try{$('ckPdnText').value=pdnText();$('ckPdnError').textContent='';$('ckPdnShare').hidden=!(navigator.canShare&&navigator.canShare({files:[pdnFile()]}));}catch(e){$('ckPdnError').textContent=e.message;}}
   $('ckExport').onclick=function(){if(!G)return;$('ckPdnTitle').textContent='Сохранить PDN';$('ckScopeRow').hidden=false;$('ckPdnFile').hidden=true;$('ckPdnApply').hidden=true;$('ckPdnDownload').hidden=false;$('ckPdnText').readOnly=true;$('ckScope').value='all';refreshPdn();$('ckPdnDialog').showModal();};
@@ -739,6 +742,7 @@ onmessage = function (e) {
   window.RVready = true;
   renderMenu();
 
+  /*MATCH_ACTIONS*/
   BoardView.attach({id:'checkers',ref:function(){return G;},autoFlip:function(){return mySide()===-1;},getFlip:function(){return G&&G.flip;},flip:function(v){if(G){G.flip=v;buildBoard();render();}},coords:function(){return S.coords;},setCoords:function(v){setCoords(v,true);},analysis:function(){return G&&G.analysis;}});
 })();
 </script>

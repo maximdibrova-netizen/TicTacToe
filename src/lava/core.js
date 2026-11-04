@@ -154,6 +154,21 @@ var Lava = (function () {
   }
   function apply(s, m) {
     if (!s || s.over) return null;
+    // 40–43 are resignations; 44 is a draw accepted by every active player.
+    // They are kept in the log, rather than masquerading as ordinary jumps.
+    if (m >= 40 && m <= 44 && m % 1 === 0) {
+      var seat = m === 44 ? s.turn : m - 40, p = s.players[seat];
+      if (!p || !p.alive) return null;
+      var n = clone(s), alive = [];
+      if (m !== 44) n.players[seat].alive = false;
+      n.players.forEach(function (p, i) { if (p.alive) alive.push(i); });
+      n.ply++; n.log = s.log.concat(m);
+      n.last = { seat: seat, m: m, d: -1, from: p.pos, land: p.pos, to: p.pos, kind: m === 44 ? 'draw' : 'resign', pushed: [], killed: [], fell: false, left: n.tiles[p.pos] };
+      if (m === 44) { n.draw = true; n.over = true; n.turn = -1; n.winner = null; }
+      else if (alive.length === 1) { n.over = true; n.turn = -1; n.winner = alive[0]; }
+      else if (seat === s.turn) for (var i = 1; i <= n.players.length; i++) { var nx = (seat + i) % n.players.length; if (n.players[nx].alive) { n.turn = nx; break; } }
+      return n;
+    }
     return play(s, s.turn, m);
   }
   // ---------- бот ----------
@@ -205,6 +220,7 @@ var Lava = (function () {
       cs[p.corner] = 1; prev = p.corner;
       if (p.alive) { if (!s.tiles[p.pos] || pos[p.pos]) return false; pos[p.pos] = 1; alive++; }
     }
+    if (s.over && s.draw === true) return s.turn === -1 && s.winner === null && alive >= 2 && s.log[s.log.length - 1] === 44;
     if (s.over) return s.turn === -1 && alive <= 1 && (alive === 0 ? s.winner === null : typeof s.winner === 'number' && !!s.players[s.winner] && s.players[s.winner].alive);
     return alive >= 2 && typeof s.turn === 'number' && !!s.players[s.turn] && s.players[s.turn].alive && s.winner === null;
   }

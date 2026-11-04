@@ -490,7 +490,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   function hubH() { return window.hubH ? window.hubH() : 0; }
   function layout() {
     if (!G) return;
-    var cd = S.coords ? Math.max(26,Math.min(34,Math.ceil(Math.min(window.innerWidth,window.innerHeight)*.045))) : 0, vw = window.innerWidth, vh = window.innerHeight, wide = vw >= 860;
+    var cd = S.coords ? Math.max(26,Math.min(34,Math.ceil(Math.min(window.innerWidth,window.innerHeight)*.045))) : 0, vw = window.innerWidth, vh = window.innerHeight - MatchActions.space(), wide = vw >= 860;
     var head = $('topRow').offsetHeight + $('status').offsetHeight, bar = $('barRow').offsetHeight || 42, clock = (GC.enabled() ? 60 : 0)+(CONT&&!$('continueBtn').hidden?46:0), B, SW, SH;
     if (wide) {
       SW = Math.min(380, Math.max(300, vw * .3));
@@ -1139,29 +1139,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   function confirmBox(title, text, yes, no, onYes, onNo) { $('cfTitle').textContent = title; $('cfText').textContent = text; $('cfYes').textContent = yes; $('cfNo').textContent = no; CF = { y: onYes, n: onNo }; $('confirmOv').hidden = false; }
   $('cfYes').onclick = function () { $('confirmOv').hidden = true; var f = CF && CF.y; CF = null; if (f) f(); };
   $('cfNo').onclick = function () { $('confirmOv').hidden = true; var f = CF && CF.n; CF = null; if (f) f(); };
-  $('drawBtn').onclick = function () {
-    if (!G || G.over || !canOfferDraw()) return;
-    G.drawAsked = G.c.history().length;
-    var me = mySide() || G.c.turn();
-    if (G.kind.w === 'me' && G.kind.b === 'me') {                 // вдвоём: спрашиваем другую сторону
-      var other = me === 'w' ? 'b' : 'w';
-      confirmBox('Ничья?', NAME[me] + ' предлагают ничью. ' + NAME[other] + ' согласны?', 'Согласны', 'Нет', function () { endDraw('по согласию'); }, function () { toast(NAME[other] + ' отказались'); render(); });
-      return;
-    }
-    if (net()) { G.drawOffer = 'me'; Net2P.send({ t: 'drawOffer' }); render(); toast('Предложил ничью'); return; }
-    // Stockfish соглашается, если у него нет перевеса
-    G.drawOffer = 'me'; render(); toast('Stockfish думает над ничьей…');
-    var my = token, n = G.c.history().length, botSide = me === 'w' ? 'b' : 'w';
-    BOT.evalCb = true; BOT.evalTurn = G.c.turn(); BOT.last = null; setStrength(null);   // оценка для ничьей — на полной силе
-    BOT.cb = function () {
-      BOT.evalCb = false;
-      if (my !== token || !G || G.over || G.c.history().length !== n) return;
-      G.drawOffer = null;
-      var r = BOT.last, botScore = r ? (r.mate != null ? (r.mate > 0 ? 1e4 : -1e4) : r.cp) * (botSide === 'w' ? 1 : -1) : 0;
-      if (botScore <= 25) endDraw('по согласию'); else { toast('Stockfish отказался от ничьей'); render(); }
-    };
-    botEng.send('position fen ' + G.c.fen()); botEng.send('go depth 14');
-  };
+  $('drawBtn').onclick = function () { $('offerDrawBtn').click(); };
   function endDraw(why) {
     if (!G || G.over) return;
     G.over = true; G.result = { w: 'd', t: why }; G.drawOffer = null;
@@ -1264,6 +1242,7 @@ body.blind.peek .sq .pc { visibility: visible; }
     toast('Ты играешь ' + (hostSide === 'w' ? 'белыми' : 'чёрными'));
   }
   function hostData(d) {
+    if(MA&&MA.receive(d,other(hostSide)))return;
     if (GC.receive(d)) return;
     if (d.t === 'try') {
       if (!GC.before()) return;
@@ -1297,6 +1276,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   function guestKinds(hs) { var k = {}; k[hs] = 'net'; k[other(hs)] = 'me'; return k; }
   function guestCoords(hostOn) {}
   function guestData(d) {
+    if(MA&&MA.receive(d,null))return;
     if (GC.receive(d)) return;
     if (d.t === 'start') { newGame(guestKinds(d.hostSide),d.seed||{}); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 'w' ? 'чёрными' : 'белыми')); }
     else if (d.t === 'sync') { newGame(guestKinds(d.hostSide),d.seed||{}); if(!d.seed)rebuild(d.moves); if (d.result) { G.over = true; G.result = d.result; } G.endShown = G.over; guestCoords(d.coords); render(); }
@@ -1358,6 +1338,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   renderMenu();
 
   $('playEval').appendChild($('flipBtn'));
+  /*MATCH_ACTIONS*/
   BoardView.attach({id:'chess',ref:function(){return G;},autoFlip:function(){return mySide()==='b';},getFlip:function(){return G&&G.flip;},flip:function(v){if(G){G.flip=v;buildBoard();render();}},coords:function(){return S.coords;},setCoords:function(v){setCoords(v,true);},analysis:function(){return G&&G.analysis;}});
 })();
 </script>

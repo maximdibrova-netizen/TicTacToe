@@ -1,5 +1,12 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const L=require('../src/lava/core.js');
+test('resigning removes only that player, including off-turn, and survives replay',()=>{
+  const s=L.create(4),n=L.apply(s,42);assert.ok(n);assert.equal(n.players[2].alive,false);assert.equal(n.turn,s.turn);assert.equal(n.over,false);assert.ok(L.valid(n));assert.deepEqual(L.replay(n,n.log),n);
+  const m=L.apply(L.apply(n,40),41);assert.equal(m.over,true);assert.equal(m.winner,3);assert.ok(L.valid(m));assert.deepEqual(L.history(m).at(-1),m);
+});
+test('an agreed draw stops all players and survives replay and validation',()=>{
+  const s=L.create(3),n=L.apply(s,44);assert.ok(n);assert.equal(n.over,true);assert.equal(n.draw,true);assert.equal(n.winner,null);assert.equal(n.turn,-1);assert.ok(L.valid(n));assert.deepEqual(L.replay(n,n.log),n);assert.equal(L.apply(n,0),null);assert.equal(s.over,false);
+});
 const at=(r,c)=>r*6+c;
 function game(first=0,corners=[0,1,2,3]){return L.create({mapId:'classic',corners,first});}
 
