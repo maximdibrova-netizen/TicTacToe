@@ -1,4 +1,4 @@
-"""Собирает все игры: главная (index.html, комната), tochki/, ttt/, battleship/, checkers/, go/ из папки src (плюс chess/). Запуск: python3 build.py"""
+"""Собирает все игры и главную из src, включая lava/. Запуск: python3 build.py"""
 import os, re, json, shutil, datetime, zoneinfo
 here = os.path.dirname(os.path.abspath(__file__))
 src = os.path.join(here, 'src')
@@ -27,6 +27,7 @@ def build(name):
     if os.path.exists(pf): page = page.replace('/*PIECES*/', read(name, 'pieces.js'))
     if name == 'chess': page = page.replace('/*PGN_EXPORT*/', read('chess', 'pgn.js'))
     if name == 'checkers': page = page.replace('/*PDN*/', read('checkers', 'pdn.js'))
+    if name == 'lava': page = page.replace('/*LAVA_NET*/', read('lava', 'net.js'))
     d = os.path.join(here, name); os.makedirs(d, exist_ok=True)
     # папки с файлами для игры (движок, база) копируются рядом со страницей: src/chess/sf → chess/sf
     for sub in sorted(os.listdir(os.path.join(src, name))):
@@ -37,7 +38,7 @@ def build(name):
             shutil.copytree(sp, dp)
     open(os.path.join(d, 'index.html'), 'w', encoding='utf-8').write(head('<style>' + clock_css + '</style><script>' + room + '</script>' + hub_back, '../') + page + '\n</body></html>\n')
     print('собрано:', name + '/index.html')
-GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go', 'chess']
+GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go', 'chess', 'lava']
 for g in GAMES: build(g)
 hub = read('hub.html').replace('/*NET*/', net).replace('/*VER*/', ver)
 open(os.path.join(here, 'index.html'), 'w', encoding='utf-8').write(head() + hub + '\n</body></html>\n')
