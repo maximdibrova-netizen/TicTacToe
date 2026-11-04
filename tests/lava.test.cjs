@@ -52,3 +52,27 @@ test('hundreds of complete bot/random matches terminate with valid state and a b
 test('saved/network state validation rejects malformed positions',()=>{
   const s=L.create(2);for(const mutate of [x=>x.players[1].pos=x.players[0].pos,x=>x.tiles[7]=0,x=>x.turn=4,x=>x.tiles[1]=3,x=>x.ply=-1,x=>x.players[0].back=4,x=>x.players[0].alive='true']){const bad=structuredClone(s);mutate(bad);assert.equal(L.valid(bad),false);}assert.equal(L.valid(null),false);
 });
+
+test('every map supports every subset of corners and every starting player',()=>{
+  for(const m of L.MAPS)for(let mask=1;mask<16;mask++){
+    const corners=[0,1,2,3].filter(c=>mask&(1<<c));if(corners.length<2)continue;
+    for(let first=0;first<corners.length;first++){
+      const s=L.create({mapId:m.id,corners,first});assert.ok(L.valid(s));assert.equal(s.turn,first);
+      assert.equal(s.tiles.length,m.size*m.size);assert.deepEqual(s.players.map(p=>p.corner),corners);
+      for(let i=0;i<corners.length;i++){assert.equal(s.players[i].pos,L.startCells(m.size)[corners[i]]);assert.ok(L.moves(s,i,true).some(d=>d<4));}
+      // Initial islands are connected, so every player can reach every other start.
+      const seen=new Set([s.players[0].pos]),queue=[s.players[0].pos];
+      while(queue.length){const p=queue.shift();for(let d=0;d<4;d++){const to=L.target(p,d,m.size);if(to>=0&&s.tiles[to]>0&&!seen.has(to)){seen.add(to);queue.push(to);}}}
+      for(const p of s.players)assert.ok(seen.has(p.pos));
+      let n=s,steps=0;const budget=s.tiles.reduce((a,b)=>a+b,0);
+      while(!n.over){const d=L.bot(n);assert.ok(L.moves(n,n.turn,true).includes(d));n=L.apply(n,d);assert.ok(L.valid(n));assert.ok(++steps<=budget);}
+      assert.equal(n.players.filter(p=>p.alive).length,1);
+    }
+  }
+});
+test('eight-cell rows cannot wrap; map and corner corruption is rejected',()=>{
+  assert.equal(L.target(7,1,8),-1);assert.equal(L.target(8,3,8),-1);assert.equal(L.target(63,2,8),-1);assert.equal(L.target(9,2,8),17);
+  for(const cfg of [{mapId:'unknown',corners:[0,1]},{mapId:'arena',corners:[1,1]},{mapId:'ring',corners:[-1,3]},{mapId:'cross',corners:[0,2],first:2}])assert.throws(()=>L.create(cfg));
+  const s=L.create({mapId:'arena',corners:[1,3],first:1});
+  for(const mutate of [x=>x.size=6,x=>x.mapId='classic',x=>x.players[1].corner=1,x=>x.players[1].corner=4,x=>x.tiles.pop()]){const bad=structuredClone(s);mutate(bad);assert.equal(L.valid(bad),false);}
+});

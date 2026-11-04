@@ -27,7 +27,9 @@ def build(name):
     if os.path.exists(pf): page = page.replace('/*PIECES*/', read(name, 'pieces.js'))
     if name == 'chess': page = page.replace('/*PGN_EXPORT*/', read('chess', 'pgn.js'))
     if name == 'checkers': page = page.replace('/*PDN*/', read('checkers', 'pdn.js'))
-    if name == 'lava': page = page.replace('/*LAVA_NET*/', read('lava', 'net.js'))
+    if name == 'lava':
+        for marker, filename in [('LAVA_NET', 'net.js'), ('LAVA_CSS', 'style.css'), ('LAVA_ART', 'art.js'), ('LAVA_APP', 'app.js')]:
+            page = page.replace('/*' + marker + '*/', read('lava', filename))
     d = os.path.join(here, name); os.makedirs(d, exist_ok=True)
     # папки с файлами для игры (движок, база) копируются рядом со страницей: src/chess/sf → chess/sf
     for sub in sorted(os.listdir(os.path.join(src, name))):

@@ -49,3 +49,40 @@ test('a full lobby refuses extra participants and heartbeat loss pauses the host
 test('same-seat duplicate tab cannot take over a connected player',async()=>{
   const h=harness(),host=h.client(),guest=h.client(),extra=h.client();try{host.LavaLink.host(2,{change(){},move(){}});await h.flush();const code=host.LavaLink.current().code;guest.LavaLink.join(code,{change(){}});await h.flush();const hello=guest.LavaLink.current().conn.sent.find(d=>d.t==='hello');extra.sessionStorage.setItem('lava-seat-'+code,hello.token);extra.LavaLink.join(code,{change(){}});await h.flush();assert.match(extra.LavaLink.current().error,/другой вкладке/);assert.ok(guest.LavaLink.ready());}finally{h.close();}
 });
+
+test('host can occupy the last corner with bots and guests; guests choose free corners before start',async()=>{
+  const h=harness(),host=h.client(),a=h.client(),b=h.client();let accepted=0;
+  const cfg={mapId:'bridges',corners:[0,1,2,3],first:3,roles:['net','bot','net','human']};
+  const handlers={change(){},move(d,seat){const s=host.LavaLink.current().state;assert.equal(seat,s.turn);const next=host.Lava.apply(s,d);if(next){accepted++;host.LavaLink.update(next);}}};
+  try{
+    host.LavaLink.host(cfg,handlers);await h.flush();const code=host.LavaLink.current().code;
+    assert.equal(host.LavaLink.current().seat,3);assert.equal(host.LavaLink.ready(),false);
+    a.LavaLink.join(code,{change(){}});await h.flush();assert.equal(a.LavaLink.current().seat,0);
+    a.LavaLink.chooseSeat(2);await h.flush();assert.equal(a.LavaLink.current().seat,2);
+    for(const seat of [1,3,-1,8]){a.LavaLink.chooseSeat(seat);await h.flush();assert.equal(a.LavaLink.current().seat,2);}
+    b.LavaLink.join(code,{change(){}});await h.flush();assert.equal(b.LavaLink.current().seat,0);
+    b.LavaLink.chooseSeat(2);await h.flush();assert.equal(b.LavaLink.current().seat,0);
+    assert.equal(JSON.stringify(b.LavaLink.current().cfg),JSON.stringify(cfg));assert.ok(host.LavaLink.ready());
+    assert.equal(host.LavaLink.start(host.Lava.create({mapId:'arena',corners:cfg.corners})),false);
+    assert.ok(host.LavaLink.start(host.Lava.create(cfg)));await h.flush();
+    assert.equal(a.LavaLink.chooseSeat(0),false);
+    host.LavaLink.act(0);await h.flush();assert.equal(accepted,1);
+    assert.equal(host.LavaLink.act(0),false);b.LavaLink.act(0);await h.flush();assert.equal(accepted,2);
+    assert.equal(host.LavaLink.current().state.turn,1);assert.equal(host.LavaLink.act(0),false);
+    // Host-authoritative bot move is broadcast to all clients.
+    host.LavaLink.update(host.Lava.apply(host.LavaLink.current().state,0));await h.flush();
+    a.LavaLink.act(0);await h.flush();assert.equal(accepted,3);
+    for(const guest of [a,b])assert.equal(JSON.stringify(guest.LavaLink.current().state),JSON.stringify(host.LavaLink.current().state));
+    a.LavaLink.close();await h.flush();a.LavaLink.join(code,{change(){}});await h.flush();assert.equal(a.LavaLink.current().seat,2);assert.ok(host.LavaLink.ready());
+  }finally{h.close();}
+});
+test('multiple local humans share a host device while a remote guest keeps their own turn',async()=>{
+  const h=harness(),host=h.client(),guest=h.client();let accepted=0;
+  const cfg={mapId:'ring',corners:[0,2,3],first:1,roles:['net','human','human']};
+  try{
+    host.LavaLink.host(cfg,{change(){},move(d){const next=host.Lava.apply(host.LavaLink.current().state,d);if(next){accepted++;host.LavaLink.update(next);}}});await h.flush();
+    guest.LavaLink.join(host.LavaLink.current().code,{change(){}});await h.flush();host.LavaLink.start(host.Lava.create(cfg));await h.flush();
+    assert.ok(host.LavaLink.act(0));await h.flush();assert.ok(host.LavaLink.act(0));await h.flush();assert.equal(accepted,2);
+    assert.equal(host.LavaLink.act(0),false);assert.ok(guest.LavaLink.act(0));await h.flush();assert.equal(accepted,3);
+  }finally{h.close();}
+});
