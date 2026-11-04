@@ -9,6 +9,10 @@
 #game:has(#replay):has(.continue-button:not([hidden])) .evalgraph{bottom:158px}#game:has(#replay):has(.continue-button:not([hidden])) #boardWrap{bottom:206px}body.no-eval #game:has(#replay):has(.continue-button:not([hidden])) #boardWrap{bottom:164px}
 
 #continueDialog .card{background:var(--bg-3,var(--table,var(--bg-2,#1c2537)));color:inherit}#continueDialog .card h2{color:inherit;font:800 12px/1.4 var(--body,system-ui);letter-spacing:.08em}#continueDialog .gc-note{color:inherit;opacity:.85}#continueDialog .gc-presets button{background:var(--btn,var(--panel-dark,#293248));color:inherit}#continueDialog .gc-presets button[aria-pressed=true]{background:var(--gold,#ffd166);color:#211700}
+
+.local-views{position:fixed;top:8px;right:8px;z-index:65;display:flex;gap:4px;background:#111827ed;border:1px solid #586176;border-radius:10px;padding:3px;color:#f1eee8}.local-views button{min-width:34px;height:30px;padding:3px 7px;border:0;border-radius:6px;color:inherit;background:transparent;font:800 12px system-ui;cursor:pointer}.local-views button[aria-pressed=true]{background:#eac17c;color:#211a10}.local-views button:focus-visible{outline:2px solid #eac17c}.local-rotated{rotate:180deg}.local-mirrored{scale:-1 1}.local-rotated :is(.coord,.lab,.cd){rotate:180deg;transform-box:fill-box;transform-origin:center}.view-no-coords :is(.coord,.cd,.ab-axis,.view-axis-label){display:none!important}.view-no-coords .grid .lab{visibility:hidden}.view-no-history :is(#nota,#notation,#ckNotation,.notation-card){display:none!important}.view-no-history:not(.view-analysis) :is(.rv-nav,#replay){display:none!important}.view-axis-label{position:absolute;pointer-events:none;color:#c6cbd4;font:700 11px system-ui}.local-rotated .view-axis-label{rotate:180deg}html.in-room #game{padding-top:42px!important}
+
+body:has(#replay) .local-views{right:calc(50% - 66px)}html:not(.in-room) body.in-game:has(#replay) .local-views{top:48px}html:not(.in-room) body.in-game:has(#replay) .topbar{top:86px}html:not(.in-room) body.in-game:has(#replay) .gc-bar{top:86px}html:not(.in-room) body.in-game.gc-timed:has(#replay) .topbar{top:148px}html:not(.in-room) body.in-game:has(#replay) #boardWrap{top:194px}html:not(.in-room) body.in-game.gc-timed:has(#replay) #boardWrap{top:256px}
 </style><script>// Подключение игры к «комнате» (главная страница). Работает, только если игра открыта внутри главной.
 // Подменяет PeerJS мостом комнаты и подстраивает интерфейс: код не нужен, друг подключается сам.
 (function () {
@@ -44,6 +48,25 @@
       fix();
     }
   });
+})();
+
+// Device-local view state. Never enters game snapshots or network packets.
+var BoardView=(function(){
+ var views={};
+ function defaults(s,save){if(s.localViewVersion!==1){s.evalOn=false;s.coords=false;s.localViewVersion=1;if(save)save();}}
+ function attach(a){
+  var pref={coords:false,moves:false};try{Object.assign(pref,JSON.parse(sessionStorage.getItem('view-'+a.id)||'{}'));}catch(e){}
+    var bar=document.createElement('div');bar.className='local-views';bar.setAttribute('aria-label','Личный вид доски');bar.innerHTML='<button id="viewFlipBtn" title="Перевернуть доску" aria-label="Перевернуть доску">⇅</button><button id="viewCoordBtn" title="Координаты" aria-label="Координаты">a1</button><button id="viewMovesBtn" title="Показывать ходы" aria-label="Показывать ходы">Ходы</button>';document.body.appendChild(bar);
+  if(a.horizontal){bar.querySelector('#viewFlipBtn').textContent='↔';bar.querySelector('#viewFlipBtn').title='Отразить доску слева направо: фишки падают сверху';}var ref=null,flipped=false;
+  function save(){try{sessionStorage.setItem('view-'+a.id,JSON.stringify(pref));}catch(e){}}
+  function paint(){document.body.classList.toggle('view-no-coords',!pref.coords);document.body.classList.toggle('view-no-history',!pref.moves);document.body.classList.toggle('view-analysis',!!(a.analysis&&a.analysis()));bar.querySelector('#viewFlipBtn').setAttribute('aria-pressed',String(flipped));bar.querySelector('#viewCoordBtn').setAttribute('aria-pressed',String(pref.coords));bar.querySelector('#viewMovesBtn').setAttribute('aria-pressed',String(pref.moves));(a.boards||[]).forEach(function(id){var el=document.getElementById(id);if(el){if(a.axes&&!el.querySelector('.view-axis-label')){for(var j=0;j<a.axes;j++){var f=document.createElement('span'),r=document.createElement('span');f.className=r.className='view-axis-label';f.textContent=String.fromCharCode(65+j);r.textContent=String(a.axes-j);f.style.cssText='left:'+((j+.5)/a.axes*100)+'%;top:100%;transform:translate(-50%,2px)';r.style.cssText='left:-12px;top:'+((j+.5)/a.axes*100)+'%;transform:translateY(-50%)';el.appendChild(f);el.appendChild(r);}}el.classList.toggle('local-rotated',flipped&&!a.flip&&!a.horizontal);el.classList.toggle('local-mirrored',flipped&&!!a.horizontal);}});}
+  function setFlip(v){flipped=!!v;paint();if(a.flip)a.flip(flipped);}
+  function refresh(){var g=a.ref();bar.hidden=!g||document.getElementById('game').hidden;if(g!==ref){ref=g;setFlip(g&&a.autoFlip?!!a.autoFlip():false);}if(a.coords&&pref.coords!==!!a.coords()){pref.coords=!!a.coords();save();}if(a.getFlip)flipped=!!a.getFlip();paint();}
+  bar.querySelector('#viewFlipBtn').onclick=function(){setFlip(!flipped);};bar.querySelector('#viewCoordBtn').onclick=function(){pref.coords=!pref.coords;if(a.setCoords)a.setCoords(pref.coords);save();paint();};bar.querySelector('#viewMovesBtn').onclick=function(){pref.moves=!pref.moves;save();paint();window.dispatchEvent(new Event('resize'));};
+  document.addEventListener('click',function(e){if(e.target.closest('#tab-nota,#ckTabNota')){pref.moves=true;save();paint();}});var game=document.getElementById('game');if(game)new MutationObserver(refresh).observe(game,{attributes:true,attributeFilter:['hidden']});
+  if(a.setCoords)a.setCoords(pref.coords);views[a.id]={refresh:refresh,flipped:function(){return flipped;},setFlip:setFlip};refresh();return views[a.id];
+ }
+ return{defaults:defaults,attach:attach,isFlipped:function(id){return !!views[id]&&views[id].flipped();},refresh:function(id){if(views[id])views[id].refresh();}};
 })();
 </script><style>
 /* «← Все игры» — на каждой странице игры, слева сверху. В комнате не нужна: там своя панель «← Игры». */
@@ -448,7 +471,7 @@ body.no-eval #boardWrap { top: calc(56px + env(safe-area-inset-top, 0px)); botto
       <button class="sq-btn" id="rulesBtn" aria-label="Правила">?</button>
     </div>
     <p class="hint" id="playHint" hidden>Нужно минимум два игрока.</p>
-    <p class="hint" id="verLine" style="font-size:11.5px"><a href="../" style="color:var(--ink-dim)">← все игры</a> · <span style="opacity:.6">версия от 04.11.2026 22:11</span></p>
+    <p class="hint" id="verLine" style="font-size:11.5px"><a href="../" style="color:var(--ink-dim)">← все игры</a> · <span style="opacity:.6">версия от 04.11.2026 23:01</span></p>
     <div class="card" id="onlineCard" hidden>
       <h2>Онлайн с друзьями</h2>
       <div class="seg" style="--cols:2">
@@ -1178,8 +1201,9 @@ onmessage = function (e) {
   corners.forEach(function (el, p) { el.style.setProperty('--pc', 'var(--p' + p + ')'); });
 
   // ---------- settings ----------
-  var S = { kinds: ['off', 'bot', 'off', 'human'], map: 'big', level: 2, first: 'me', sound: true, evalOn: true, coords: false, cw: 7, ch: 7 };
+  var S = { kinds: ['off', 'bot', 'off', 'human'], map: 'big', level: 2, first: 'me', sound: true, evalOn: false, coords: false, cw: 7, ch: 7 };
   try { var saved = JSON.parse(localStorage.getItem('bgc-tochki') || 'null'); if (saved && saved.kinds && saved.kinds.length === 4) Object.assign(S, saved); } catch (e) {}
+  BoardView.defaults(S,saveS);
   if (!S.kinds.some(function (k) { return k !== 'off'; })) S.kinds = ['off', 'bot', 'off', 'human'];
   function saveS() { try { localStorage.setItem('bgc-tochki', JSON.stringify(S)); } catch (e) {} }
 
@@ -1284,12 +1308,11 @@ onmessage = function (e) {
   Array.prototype.forEach.call(document.querySelectorAll('#coordSeg button'), function (b) {
     b.onclick = function () { setCoords(b.dataset.v === '1', false); };
   });
-  // координаты общие для всех игроков онлайн-партии: кто-то включил — видно у всех
+  // координаты — личная настройка этого устройства
   function setCoords(on, fromNet) {
     S.coords = !!on; saveS(); document.body.classList.toggle('coords', S.coords); renderMenu(); if (G) { layout(); setStatus(); }
     var rc = document.getElementById('rpCoord'); if (rc) rc.classList.toggle('on', S.coords);
-    if (fromNet || !NET) return;
-    if (NET.role === 'host') netBroadcast({ t: 'coords', on: S.coords }); else netSend({ t: 'coords', on: S.coords });
+
   }
   document.body.classList.toggle('coords', !!S.coords);
   function sizeStep(k, d) { S[k] = Math.max(SIZE_MIN, Math.min(SIZE_MAX, (S[k] | 0) + d)); S.map = 'custom'; saveS(); renderMenu(); }
@@ -1581,6 +1604,7 @@ onmessage = function (e) {
     if (on && G && G.over) for (var k = 0; k < G.hist.length; k++) if (!G.evals[k]) queueEval(k);
   }
   function renderLive() {
+    BoardView.refresh('tochki');
     if (GC) GC.sync();
     syncEvalUi();
     for (var i = 0; i < G.B.n; i++) drawCell(i, G.cnt, G.own);
@@ -2344,7 +2368,7 @@ onmessage = function (e) {
       var ok = G && NET.setup && !NET.undo && !G.over && G.turn === seat2 && d.n === G.hist.length && i >= 0 && i < G.B.n && G.own[i] === seat2;
       if (ok) decide(i, seat2); else { try { conn.send({ t: 'nack' }); } catch (e) {} }
     } else if (d.t === 'undoReq') { if (G) hostStartVote(seat2); }
-    else if (d.t === 'coords') { setCoords(d.on, true); netBroadcast({ t: 'coords', on: S.coords }); }
+    else if (d.t === 'coords') {}
     else if (d.t === 'undoVote') { hostVote(seat2, d.id, !!d.ok); }
     else if (d.t === 'needsync') { if (G) try { conn.send(syncMsg()); } catch (e) {} }
     else if (d.t === 'leave') { hostOnClose(conn); }
@@ -2445,7 +2469,7 @@ onmessage = function (e) {
     hostPushPeers();
   }
   function syncMsg() {
-    return { t: 'sync', setup: NET.setup, winner: G.winner, watching: false, coords: S.coords,
+    return { t: 'sync', setup: NET.setup, winner: G.winner, watching: false,
       hist: G.hist.map(function (h) { return { c: Array.from(h.cnt), o: Array.from(h.own), m: h.mask, tu: h.turn, ov: h.over, cell: h.cell, by: h.by }; }) };
   }
   function hostStartGame() {
@@ -2455,7 +2479,7 @@ onmessage = function (e) {
     var kinds = kindsFor(setup);
     setup.first = seed?seed.first:firstSeat(kinds, S.first);
     NET.setup = setup;
-    netBroadcast({ t: 'start', setup: setup, coords: S.coords });
+    netBroadcast({ t: 'start', setup: setup });
     newGame({ rows: setup.rows, mapId: setup.mapId, kinds: kinds, level: setup.level, first: setup.first, seed:setup.seed });
   }
 
@@ -2516,9 +2540,9 @@ onmessage = function (e) {
     else if (d.t === 'start') {
       n.setup = d.setup;
       newGame({ rows: d.setup.rows, mapId: d.setup.mapId, kinds: kindsFor(d.setup, n.seat), level: d.setup.level, first: d.setup.first, seed:d.setup.seed });
-      if (d.coords) setCoords(true, true); else if (S.coords) netSend({ t: 'coords', on: true });
+
     }
-    else if (d.t === 'coords') setCoords(d.on, true);
+    else if (d.t === 'coords') {}
     else if (d.t === 'sync') guestSync(d);
     else if (d.t === 'move') {
       n.pendingTry = false; clearTimeout(n.tryTimer);
@@ -2543,7 +2567,7 @@ onmessage = function (e) {
     G.cnt = L.cnt.slice(); G.own = L.own.slice(); G.mask = L.mask; G.turn = L.turn; G.over = L.over; G.winner = d.winner;
     G.moves = G.hist.length - 1; G.endShown = G.over;
     tiles.forEach(function (t) { t._c = -2; });
-    if (d.coords) setCoords(true, true);
+
     idle();
   }
 
@@ -2571,6 +2595,8 @@ onmessage = function (e) {
   })();
 
   renderMenu();
+
+  BoardView.attach({id:'tochki',ref:function(){return G;},boards:['board'],autoFlip:function(){var seat=mySeat();return seat>=0&&seat<2;},coords:function(){return S.coords;},setCoords:function(v){setCoords(v,true);},analysis:function(){return G&&G.analysis;}});
 })();
 </script>
 

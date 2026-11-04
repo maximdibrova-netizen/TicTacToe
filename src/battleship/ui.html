@@ -239,8 +239,9 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
   var ICON_SND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>';
   var ICON_MUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></svg>';
 
-  var S = { mode: 'bot', level: 2, sound: true, evalOn: true };
+  var S = { mode: 'bot', level: 2, sound: true, evalOn: false };
   try { var sv = JSON.parse(localStorage.getItem('bs-set') || 'null'); if (sv) Object.assign(S, sv); } catch (e) {}
+  BoardView.defaults(S,saveS);
   if (!ONLINE) S.mode = 'bot';
   function saveS() { try { localStorage.setItem('bs-set', JSON.stringify(S)); } catch (e) {} }
   BS_LEVELS.forEach(function (L, i) { var b = document.createElement('button'); b.textContent = L.name; b.dataset.v = i; b.id = 'lv-' + i; b.onclick = function () { S.level = i; saveS(); renderMenu(); }; $('levelSeg').appendChild(b); });
@@ -522,6 +523,7 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
 
   // ---------- render ----------
   function renderAll() {
+    BoardView.refresh('battleship');
     if (GC) GC.sync();
     if (!G) return;
     var place = G.phase === 'place', s;
@@ -689,6 +691,8 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
   });
   if (ONLINE && Net2P.hashCode()) { S.mode = 'net'; joinGame(Net2P.hashCode()); }
   renderMenu();
+
+  BoardView.attach({id:'battleship',ref:function(){return G;},boards:['myGrid','enGrid'],autoFlip:function(){return Net2P.role()==='guest';},coords:function(){return S.coords;},setCoords:function(v){S.coords=v;saveS();},analysis:function(){return G&&G.analysis;}});
 })();
 </script>
 

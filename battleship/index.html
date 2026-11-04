@@ -9,6 +9,10 @@
 #game:has(#replay):has(.continue-button:not([hidden])) .evalgraph{bottom:158px}#game:has(#replay):has(.continue-button:not([hidden])) #boardWrap{bottom:206px}body.no-eval #game:has(#replay):has(.continue-button:not([hidden])) #boardWrap{bottom:164px}
 
 #continueDialog .card{background:var(--bg-3,var(--table,var(--bg-2,#1c2537)));color:inherit}#continueDialog .card h2{color:inherit;font:800 12px/1.4 var(--body,system-ui);letter-spacing:.08em}#continueDialog .gc-note{color:inherit;opacity:.85}#continueDialog .gc-presets button{background:var(--btn,var(--panel-dark,#293248));color:inherit}#continueDialog .gc-presets button[aria-pressed=true]{background:var(--gold,#ffd166);color:#211700}
+
+.local-views{position:fixed;top:8px;right:8px;z-index:65;display:flex;gap:4px;background:#111827ed;border:1px solid #586176;border-radius:10px;padding:3px;color:#f1eee8}.local-views button{min-width:34px;height:30px;padding:3px 7px;border:0;border-radius:6px;color:inherit;background:transparent;font:800 12px system-ui;cursor:pointer}.local-views button[aria-pressed=true]{background:#eac17c;color:#211a10}.local-views button:focus-visible{outline:2px solid #eac17c}.local-rotated{rotate:180deg}.local-mirrored{scale:-1 1}.local-rotated :is(.coord,.lab,.cd){rotate:180deg;transform-box:fill-box;transform-origin:center}.view-no-coords :is(.coord,.cd,.ab-axis,.view-axis-label){display:none!important}.view-no-coords .grid .lab{visibility:hidden}.view-no-history :is(#nota,#notation,#ckNotation,.notation-card){display:none!important}.view-no-history:not(.view-analysis) :is(.rv-nav,#replay){display:none!important}.view-axis-label{position:absolute;pointer-events:none;color:#c6cbd4;font:700 11px system-ui}.local-rotated .view-axis-label{rotate:180deg}html.in-room #game{padding-top:42px!important}
+
+body:has(#replay) .local-views{right:calc(50% - 66px)}html:not(.in-room) body.in-game:has(#replay) .local-views{top:48px}html:not(.in-room) body.in-game:has(#replay) .topbar{top:86px}html:not(.in-room) body.in-game:has(#replay) .gc-bar{top:86px}html:not(.in-room) body.in-game.gc-timed:has(#replay) .topbar{top:148px}html:not(.in-room) body.in-game:has(#replay) #boardWrap{top:194px}html:not(.in-room) body.in-game.gc-timed:has(#replay) #boardWrap{top:256px}
 </style><script>// Подключение игры к «комнате» (главная страница). Работает, только если игра открыта внутри главной.
 // Подменяет PeerJS мостом комнаты и подстраивает интерфейс: код не нужен, друг подключается сам.
 (function () {
@@ -44,6 +48,25 @@
       fix();
     }
   });
+})();
+
+// Device-local view state. Never enters game snapshots or network packets.
+var BoardView=(function(){
+ var views={};
+ function defaults(s,save){if(s.localViewVersion!==1){s.evalOn=false;s.coords=false;s.localViewVersion=1;if(save)save();}}
+ function attach(a){
+  var pref={coords:false,moves:false};try{Object.assign(pref,JSON.parse(sessionStorage.getItem('view-'+a.id)||'{}'));}catch(e){}
+    var bar=document.createElement('div');bar.className='local-views';bar.setAttribute('aria-label','Личный вид доски');bar.innerHTML='<button id="viewFlipBtn" title="Перевернуть доску" aria-label="Перевернуть доску">⇅</button><button id="viewCoordBtn" title="Координаты" aria-label="Координаты">a1</button><button id="viewMovesBtn" title="Показывать ходы" aria-label="Показывать ходы">Ходы</button>';document.body.appendChild(bar);
+  if(a.horizontal){bar.querySelector('#viewFlipBtn').textContent='↔';bar.querySelector('#viewFlipBtn').title='Отразить доску слева направо: фишки падают сверху';}var ref=null,flipped=false;
+  function save(){try{sessionStorage.setItem('view-'+a.id,JSON.stringify(pref));}catch(e){}}
+  function paint(){document.body.classList.toggle('view-no-coords',!pref.coords);document.body.classList.toggle('view-no-history',!pref.moves);document.body.classList.toggle('view-analysis',!!(a.analysis&&a.analysis()));bar.querySelector('#viewFlipBtn').setAttribute('aria-pressed',String(flipped));bar.querySelector('#viewCoordBtn').setAttribute('aria-pressed',String(pref.coords));bar.querySelector('#viewMovesBtn').setAttribute('aria-pressed',String(pref.moves));(a.boards||[]).forEach(function(id){var el=document.getElementById(id);if(el){if(a.axes&&!el.querySelector('.view-axis-label')){for(var j=0;j<a.axes;j++){var f=document.createElement('span'),r=document.createElement('span');f.className=r.className='view-axis-label';f.textContent=String.fromCharCode(65+j);r.textContent=String(a.axes-j);f.style.cssText='left:'+((j+.5)/a.axes*100)+'%;top:100%;transform:translate(-50%,2px)';r.style.cssText='left:-12px;top:'+((j+.5)/a.axes*100)+'%;transform:translateY(-50%)';el.appendChild(f);el.appendChild(r);}}el.classList.toggle('local-rotated',flipped&&!a.flip&&!a.horizontal);el.classList.toggle('local-mirrored',flipped&&!!a.horizontal);}});}
+  function setFlip(v){flipped=!!v;paint();if(a.flip)a.flip(flipped);}
+  function refresh(){var g=a.ref();bar.hidden=!g||document.getElementById('game').hidden;if(g!==ref){ref=g;setFlip(g&&a.autoFlip?!!a.autoFlip():false);}if(a.coords&&pref.coords!==!!a.coords()){pref.coords=!!a.coords();save();}if(a.getFlip)flipped=!!a.getFlip();paint();}
+  bar.querySelector('#viewFlipBtn').onclick=function(){setFlip(!flipped);};bar.querySelector('#viewCoordBtn').onclick=function(){pref.coords=!pref.coords;if(a.setCoords)a.setCoords(pref.coords);save();paint();};bar.querySelector('#viewMovesBtn').onclick=function(){pref.moves=!pref.moves;save();paint();window.dispatchEvent(new Event('resize'));};
+  document.addEventListener('click',function(e){if(e.target.closest('#tab-nota,#ckTabNota')){pref.moves=true;save();paint();}});var game=document.getElementById('game');if(game)new MutationObserver(refresh).observe(game,{attributes:true,attributeFilter:['hidden']});
+  if(a.setCoords)a.setCoords(pref.coords);views[a.id]={refresh:refresh,flipped:function(){return flipped;},setFlip:setFlip};refresh();return views[a.id];
+ }
+ return{defaults:defaults,attach:attach,isFlipped:function(id){return !!views[id]&&views[id].flipped();},refresh:function(id){if(views[id])views[id].refresh();}};
 })();
 </script><style>
 /* «← Все игры» — на каждой странице игры, слева сверху. В комнате не нужна: там своя панель «← Игры». */
@@ -239,7 +262,7 @@ h1 { margin: 0; text-align: center; font: 700 clamp(46px, 13vw, 64px)/.95 var(--
         <li>Побеждает тот, кто первым потопит весь флот соперника.</li>
       </ol>
     </div>
-    <p class="hint"><a href="../" style="color:var(--pen)">← все игры</a> · <span style="opacity:.7">версия от 04.11.2026 22:11</span></p>
+    <p class="hint"><a href="../" style="color:var(--pen)">← все игры</a> · <span style="opacity:.7">версия от 04.11.2026 23:01</span></p>
   </div>
 </section>
 
@@ -1099,8 +1122,9 @@ function bsProb(view0, left) {
   var ICON_SND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>';
   var ICON_MUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></svg>';
 
-  var S = { mode: 'bot', level: 2, sound: true, evalOn: true };
+  var S = { mode: 'bot', level: 2, sound: true, evalOn: false };
   try { var sv = JSON.parse(localStorage.getItem('bs-set') || 'null'); if (sv) Object.assign(S, sv); } catch (e) {}
+  BoardView.defaults(S,saveS);
   if (!ONLINE) S.mode = 'bot';
   function saveS() { try { localStorage.setItem('bs-set', JSON.stringify(S)); } catch (e) {} }
   BS_LEVELS.forEach(function (L, i) { var b = document.createElement('button'); b.textContent = L.name; b.dataset.v = i; b.id = 'lv-' + i; b.onclick = function () { S.level = i; saveS(); renderMenu(); }; $('levelSeg').appendChild(b); });
@@ -1382,6 +1406,7 @@ function bsProb(view0, left) {
 
   // ---------- render ----------
   function renderAll() {
+    BoardView.refresh('battleship');
     if (GC) GC.sync();
     if (!G) return;
     var place = G.phase === 'place', s;
@@ -1549,6 +1574,8 @@ function bsProb(view0, left) {
   });
   if (ONLINE && Net2P.hashCode()) { S.mode = 'net'; joinGame(Net2P.hashCode()); }
   renderMenu();
+
+  BoardView.attach({id:'battleship',ref:function(){return G;},boards:['myGrid','enGrid'],autoFlip:function(){return Net2P.role()==='guest';},coords:function(){return S.coords;},setCoords:function(v){S.coords=v;saveS();},analysis:function(){return G&&G.analysis;}});
 })();
 </script>
 

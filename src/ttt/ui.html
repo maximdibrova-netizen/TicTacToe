@@ -287,8 +287,9 @@ onmessage = function (e) {
   var ICON_MUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></svg>';
 
   // ---------- settings ----------
-  var S = { mode: 'bot', level: 1, side: 1, sound: true, evalOn: true, coords: false };
+  var S = { mode: 'bot', level: 1, side: 1, sound: true, evalOn: false, coords: false };
   try { var sv = JSON.parse(localStorage.getItem('ttt-3x3') || 'null'); if (sv) Object.assign(S, sv); } catch (e) {}
+  BoardView.defaults(S,saveS);
   if (!ONLINE && S.mode === 'net') S.mode = 'bot';
   function saveS() { try { localStorage.setItem('ttt-3x3', JSON.stringify(S)); } catch (e) {} }
   TTT_LEVELS.forEach(function (L, i) {
@@ -448,6 +449,7 @@ onmessage = function (e) {
     active: function () { return !!G && !$('game').hidden && $('endOv').hidden && $('lobbyOv').hidden; }
   });
   function render(full) {
+    BoardView.refresh('ttt');
     if (GC) GC.sync();
     var d = RV.display(), liveView = d.mode === 'live', s = liveView ? G.s : d.s;
     var last = liveView ? (G.moves.length ? G.moves[G.moves.length - 1] : -1) : (d.e && typeof d.e.mv === 'number' ? d.e.mv : -1);
@@ -613,7 +615,7 @@ onmessage = function (e) {
   // ---------- coordinates (shared with the friend online) ----------
   function setCoords(on, fromNet) {
     S.coords = !!on; saveS(); renderMenu(); if (G) layout();
-    if (!fromNet && NET) netSend({ t: 'coords', on: S.coords });
+
   }
   $('coordBtn').onclick = function () { setCoords(!S.coords, false); toast(S.coords ? 'Координаты включены' : 'Координаты скрыты'); };
   // ---------- hint ----------
@@ -736,18 +738,18 @@ onmessage = function (e) {
       if (ok) decide(d.i | 0); else netSend({ t: 'nack' });
     }
     else if (d.t === 'undoReq') startVote('friend');
-    else if (d.t === 'coords') setCoords(d.on, true);
+    else if (d.t === 'coords') {}
     else if (d.t === 'undoVote') voteAnswer(!!d.ok);
     else if (d.t === 'needsync') { if (G) netSend(syncMsg()); }
     else if (d.t === 'leave') { n.peerOnline = false; if (G) render(); toast('Друг вышел'); }
   }
-  function syncMsg() { return { t: 'sync', hostSide: NET.hostSide, moves: G.moves.slice(), coords: S.coords }; }
+  function syncMsg() { return { t: 'sync', hostSide: NET.hostSide, moves: G.moves.slice() }; }
   function hostStart(swap) {
     var n = NET; if (!n) return;
     if (!n.hostSide) n.hostSide = S.side || (Math.random() < .5 ? 1 : 2);
     else if (swap) n.hostSide = 3 - n.hostSide;      // rematch: swap sides, so the first move alternates
     var k = {}; k[n.hostSide] = 'me'; k[3 - n.hostSide] = 'net';
-    netSend({ t: 'start', hostSide: n.hostSide, coords: S.coords });
+    netSend({ t: 'start', hostSide: n.hostSide });
     newGame(k);
     toast('Ты играешь за ' + (n.hostSide === 1 ? '✕' : '◯'));
   }
@@ -790,7 +792,7 @@ onmessage = function (e) {
     if (d.t === 'pong') return;
     if (d.t === 'start') { var k = {}; k[d.hostSide] = 'net'; k[3 - d.hostSide] = 'me'; newGame(k); guestCoords(d.coords); toast('Ты играешь за ' + (d.hostSide === 1 ? '◯' : '✕')); }
     else if (d.t === 'sync') { var k2 = {}; k2[d.hostSide] = 'net'; k2[3 - d.hostSide] = 'me'; newGame(k2); d.moves.forEach(function (m) { G.moves.push(m); play(G.s, m); }); G.line = lineOf(G.moves); G.over = !!G.s.winner; G.endShown = G.over; guestCoords(d.coords); RV.sync(); render(true); }
-    else if (d.t === 'coords') setCoords(d.on, true);
+    else if (d.t === 'coords') {}
     else if (d.t === 'move') { n.pendingTry = false; if (!G) return; if (d.n === G.moves.length) apply(d.i); else if (d.n > G.moves.length) netSend({ t: 'needsync' }); }
     else if (d.t === 'nack') { n.pendingTry = false; if (G) render(); }
     else if (d.t === 'full') guestFail('В этой игре уже два игрока.');
@@ -801,7 +803,7 @@ onmessage = function (e) {
     else if (d.t === 'undo') { n.undo = null; if (G) applyUndo(d.to, d.mine ? 'Ход отменён, ходи заново' : 'Друг вернул свой ход'); }
   }
 
-  function guestCoords(hostOn) { if (hostOn) setCoords(true, true); else if (S.coords) netSend({ t: 'coords', on: true }); }
+  function guestCoords(hostOn) {}
   // take-back by agreement (the host runs it)
   function requestUndo() {
     if (!NET || !G || NET.undo) return;
@@ -860,5 +862,7 @@ onmessage = function (e) {
   (function autoJoin() { if (!ONLINE) return; var m = /^#([A-Za-z0-9]{5})$/.exec(location.hash || ''); if (m) { S.mode = 'net'; renderMenu(); guestJoin(m[1]); } })();
   window.RVready = true;
   renderMenu();
+
+  BoardView.attach({id:'ttt',ref:function(){return G;},boards:['big'],autoFlip:function(){return mySide()===2;},coords:function(){return S.coords;},setCoords:function(v){setCoords(v,true);},analysis:function(){return G&&G.analysis;}});
 })();
 </script>

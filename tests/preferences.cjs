@@ -6,7 +6,7 @@ try{for(const game of ['go','checkers','ttt','tochki','battleship','chess'])for(
  await page.goto(url+'/'+game+'/',{waitUntil:'domcontentloaded'});
  await page.locator('#evalSeg button[data-v="'+(enabled?'1':'0')+'"]').click({timeout:3000});
  if(!enabled&&await page.locator('#m-duo').count())await page.locator('#m-duo').click();
- await page.locator('#playBtn').click();if(game==='battleship'){await page.locator('#rndBtn').click();await page.locator('#readyBtn').click();}
+ await page.locator('#playBtn').click();await page.locator('#viewMovesBtn').click();if(game==='battleship'){await page.locator('#rndBtn').click();await page.locator('#readyBtn').click();}
  const bar=page.locator(game==='tochki'?'#evalBar':game==='chess'?'#playEval':game==='battleship'?'#shotEval':'.rv-bar');
  await page.waitForTimeout(500);assert.equal(await bar.isVisible(),enabled,game+' evaluation visibility');
  if(enabled){await page.waitForFunction(sel=>sel==='#playEval'?/^[+−-]\d+\.\d+|^#/.test(document.querySelector('#playEvalText').textContent):/\d+%/.test(document.querySelector(sel).textContent),game==='tochki'?'#evalBar':game==='chess'?'#playEval':game==='battleship'?'#shotEval':'.rv-bar',{timeout:20000});await page.screenshot({path:path.join(root,'..',game+'-preferences.png')});}

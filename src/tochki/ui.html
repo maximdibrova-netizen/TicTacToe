@@ -521,8 +521,9 @@ onmessage = function (e) {
   corners.forEach(function (el, p) { el.style.setProperty('--pc', 'var(--p' + p + ')'); });
 
   // ---------- settings ----------
-  var S = { kinds: ['off', 'bot', 'off', 'human'], map: 'big', level: 2, first: 'me', sound: true, evalOn: true, coords: false, cw: 7, ch: 7 };
+  var S = { kinds: ['off', 'bot', 'off', 'human'], map: 'big', level: 2, first: 'me', sound: true, evalOn: false, coords: false, cw: 7, ch: 7 };
   try { var saved = JSON.parse(localStorage.getItem('bgc-tochki') || 'null'); if (saved && saved.kinds && saved.kinds.length === 4) Object.assign(S, saved); } catch (e) {}
+  BoardView.defaults(S,saveS);
   if (!S.kinds.some(function (k) { return k !== 'off'; })) S.kinds = ['off', 'bot', 'off', 'human'];
   function saveS() { try { localStorage.setItem('bgc-tochki', JSON.stringify(S)); } catch (e) {} }
 
@@ -627,12 +628,11 @@ onmessage = function (e) {
   Array.prototype.forEach.call(document.querySelectorAll('#coordSeg button'), function (b) {
     b.onclick = function () { setCoords(b.dataset.v === '1', false); };
   });
-  // координаты общие для всех игроков онлайн-партии: кто-то включил — видно у всех
+  // координаты — личная настройка этого устройства
   function setCoords(on, fromNet) {
     S.coords = !!on; saveS(); document.body.classList.toggle('coords', S.coords); renderMenu(); if (G) { layout(); setStatus(); }
     var rc = document.getElementById('rpCoord'); if (rc) rc.classList.toggle('on', S.coords);
-    if (fromNet || !NET) return;
-    if (NET.role === 'host') netBroadcast({ t: 'coords', on: S.coords }); else netSend({ t: 'coords', on: S.coords });
+
   }
   document.body.classList.toggle('coords', !!S.coords);
   function sizeStep(k, d) { S[k] = Math.max(SIZE_MIN, Math.min(SIZE_MAX, (S[k] | 0) + d)); S.map = 'custom'; saveS(); renderMenu(); }
@@ -924,6 +924,7 @@ onmessage = function (e) {
     if (on && G && G.over) for (var k = 0; k < G.hist.length; k++) if (!G.evals[k]) queueEval(k);
   }
   function renderLive() {
+    BoardView.refresh('tochki');
     if (GC) GC.sync();
     syncEvalUi();
     for (var i = 0; i < G.B.n; i++) drawCell(i, G.cnt, G.own);
@@ -1687,7 +1688,7 @@ onmessage = function (e) {
       var ok = G && NET.setup && !NET.undo && !G.over && G.turn === seat2 && d.n === G.hist.length && i >= 0 && i < G.B.n && G.own[i] === seat2;
       if (ok) decide(i, seat2); else { try { conn.send({ t: 'nack' }); } catch (e) {} }
     } else if (d.t === 'undoReq') { if (G) hostStartVote(seat2); }
-    else if (d.t === 'coords') { setCoords(d.on, true); netBroadcast({ t: 'coords', on: S.coords }); }
+    else if (d.t === 'coords') {}
     else if (d.t === 'undoVote') { hostVote(seat2, d.id, !!d.ok); }
     else if (d.t === 'needsync') { if (G) try { conn.send(syncMsg()); } catch (e) {} }
     else if (d.t === 'leave') { hostOnClose(conn); }
@@ -1788,7 +1789,7 @@ onmessage = function (e) {
     hostPushPeers();
   }
   function syncMsg() {
-    return { t: 'sync', setup: NET.setup, winner: G.winner, watching: false, coords: S.coords,
+    return { t: 'sync', setup: NET.setup, winner: G.winner, watching: false,
       hist: G.hist.map(function (h) { return { c: Array.from(h.cnt), o: Array.from(h.own), m: h.mask, tu: h.turn, ov: h.over, cell: h.cell, by: h.by }; }) };
   }
   function hostStartGame() {
@@ -1798,7 +1799,7 @@ onmessage = function (e) {
     var kinds = kindsFor(setup);
     setup.first = seed?seed.first:firstSeat(kinds, S.first);
     NET.setup = setup;
-    netBroadcast({ t: 'start', setup: setup, coords: S.coords });
+    netBroadcast({ t: 'start', setup: setup });
     newGame({ rows: setup.rows, mapId: setup.mapId, kinds: kinds, level: setup.level, first: setup.first, seed:setup.seed });
   }
 
@@ -1859,9 +1860,9 @@ onmessage = function (e) {
     else if (d.t === 'start') {
       n.setup = d.setup;
       newGame({ rows: d.setup.rows, mapId: d.setup.mapId, kinds: kindsFor(d.setup, n.seat), level: d.setup.level, first: d.setup.first, seed:d.setup.seed });
-      if (d.coords) setCoords(true, true); else if (S.coords) netSend({ t: 'coords', on: true });
+
     }
-    else if (d.t === 'coords') setCoords(d.on, true);
+    else if (d.t === 'coords') {}
     else if (d.t === 'sync') guestSync(d);
     else if (d.t === 'move') {
       n.pendingTry = false; clearTimeout(n.tryTimer);
@@ -1886,7 +1887,7 @@ onmessage = function (e) {
     G.cnt = L.cnt.slice(); G.own = L.own.slice(); G.mask = L.mask; G.turn = L.turn; G.over = L.over; G.winner = d.winner;
     G.moves = G.hist.length - 1; G.endShown = G.over;
     tiles.forEach(function (t) { t._c = -2; });
-    if (d.coords) setCoords(true, true);
+
     idle();
   }
 
@@ -1914,6 +1915,8 @@ onmessage = function (e) {
   })();
 
   renderMenu();
+
+  BoardView.attach({id:'tochki',ref:function(){return G;},boards:['board'],autoFlip:function(){var seat=mySeat();return seat>=0&&seat<2;},coords:function(){return S.coords;},setCoords:function(v){setCoords(v,true);},analysis:function(){return G&&G.analysis;}});
 })();
 </script>
 

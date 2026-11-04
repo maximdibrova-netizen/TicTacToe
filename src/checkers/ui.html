@@ -198,8 +198,9 @@ onmessage = function (e) {
   var NAME = { 1: 'Белые', '-1': 'Чёрные' };
   var ICON_SND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>';
   var ICON_MUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></svg>';
-  var S = { mode: 'bot', level: 1, side: 1, sound: true, evalOn: true, coords: true };
+  var S = { mode: 'bot', level: 1, side: 1, sound: true, evalOn: false, coords: false };
   try { var sv = JSON.parse(localStorage.getItem('ck-set') || 'null'); if (sv) Object.assign(S, sv); } catch (e) {}
+  BoardView.defaults(S,saveS);
   if (!ONLINE && S.mode === 'net') S.mode = 'bot';
   function saveS() { try { localStorage.setItem('ck-set', JSON.stringify(S)); } catch (e) {} }
   CK_LEVELS.forEach(function (L, i) { var b = document.createElement('button'); b.textContent = L.name; b.dataset.v = i; b.id = 'lv-' + i; b.onclick = function () { S.level = i; saveS(); renderMenu(); }; $('levelSeg').appendChild(b); });
@@ -334,6 +335,7 @@ onmessage = function (e) {
   });
 
   function render() {
+    BoardView.refresh('checkers');
     if(CONT)CONT.refresh();
     if (GC) GC.sync();
     var d = RV.display(), live = d.mode === 'live', s = live ? G.s : d.s, part = live ? G.part : G.vpart;
@@ -537,7 +539,7 @@ onmessage = function (e) {
   // ---------- coordinates (shared with the friend online) ----------
   function setCoords(on, fromNet) {
     S.coords = !!on; saveS(); renderMenu();
-    if (!fromNet && Net2P.active()) Net2P.send({ t: 'coords', on: S.coords });
+
   }
   $('coordBtn').onclick = function () { setCoords(!S.coords, false); toast(S.coords ? 'Координаты включены' : 'Координаты скрыты'); };
   // ---------- hint ----------
@@ -579,7 +581,7 @@ onmessage = function (e) {
     lobby('Создаю игру', 'Подключаюсь к серверу связи…');
     Net2P.host({ prefix: PREFIX,
       onReady: function (code, link) { lobby('Игра создана', link ? 'Отправь другу ссылку или код. Партия начнётся, как только он зайдёт.' : 'Скажи другу код: он вводит его в «Войти по коду».', { code: code, link: link }); },
-      onJoin: function (o) { if (o.returning && G) { Net2P.send({ t: 'sync', hostSide: hostSide, seed:{fen:G.baseFen,moves:G.moves}, moves: G.moves, coords: S.coords }); toast('Друг вернулся'); render(); } else hostStart(false); },
+      onJoin: function (o) { if (o.returning && G) { Net2P.send({ t: 'sync', hostSide: hostSide, seed:{fen:G.baseFen,moves:G.moves}, moves: G.moves }); toast('Друг вернулся'); render(); } else hostStart(false); },
       onPeer: function (on) { if (G) render(); if (!on) { toast('Связь с другом пропала'); if (G && G.undoVote) endVote(false, 'gone'); } },
       onLeave: function () { toast('Друг вышел'); },
       onData: hostData,
@@ -588,7 +590,7 @@ onmessage = function (e) {
   }
   function hostStart(swap) {
     if (!hostSide) hostSide = S.side || (Math.random() < .5 ? 1 : -1); else if (swap) hostSide = -hostSide;
-    var seed=pendingContinuation;Net2P.send({ t: 'start', hostSide: hostSide, seed:seed, coords: S.coords });
+    var seed=pendingContinuation;Net2P.send({ t: 'start', hostSide: hostSide, seed:seed });
     var k = {}; k[hostSide] = 'me'; k[-hostSide] = 'net'; newGame(k,seed||{});
     toast('Ты играешь ' + (hostSide === 1 ? 'белыми' : 'чёрными'));
   }
@@ -600,8 +602,8 @@ onmessage = function (e) {
       if (ok) decide(d.path); else Net2P.send({ t: 'nack' });
     } else if (d.t === 'undoReq') startVote('friend');
     else if (d.t === 'undoVote') endVote(!!d.ok, d.ok ? '' : 'no');
-    else if (d.t === 'needsync') { if (G) Net2P.send({ t: 'sync', hostSide: hostSide, seed:{fen:G.baseFen,moves:G.moves}, moves: G.moves, coords: S.coords }); }
-    else if (d.t === 'coords') setCoords(d.on, true);
+    else if (d.t === 'needsync') { if (G) Net2P.send({ t: 'sync', hostSide: hostSide, seed:{fen:G.baseFen,moves:G.moves}, moves: G.moves }); }
+    else if (d.t === 'coords') {}
   }
   function joinGame(code) {
     lastJoin = code;
@@ -613,14 +615,14 @@ onmessage = function (e) {
       onFail: function (m) { lobby('Онлайн-игра', '', { err: m }); }
     });
   }
-  function guestCoords(hostOn) { if (hostOn) setCoords(true, true); else if (S.coords) Net2P.send({ t: 'coords', on: true }); }
+  function guestCoords(hostOn) {}
   function guestKinds(hs) { var k = {}; k[hs] = 'net'; k[-hs] = 'me'; return k; }
   function guestData(d) {
     if (GC && GC.receive(d)) return;
     if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     if (d.t === 'start') { newGame(guestKinds(d.hostSide),d.seed||{}); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 1 ? 'чёрными' : 'белыми')); }
     else if (d.t === 'sync') { newGame(guestKinds(d.hostSide),d.seed||{}); G.moves = d.moves.slice(); G.s = replay(G.moves); G.line = lineOf(G.moves); G.over = !!G.s.winner; G.endShown = G.over; guestCoords(d.coords); RV.sync(); render(); turnLoop(); }
-    else if (d.t === 'coords') setCoords(d.on, true);
+    else if (d.t === 'coords') {}
     else if (!G) return;
     else if (d.t === 'move') { G.netPending = false; if (d.n === G.moves.length) apply(d.path); else if (d.n > G.moves.length) Net2P.send({ t: 'needsync' }); }
     else if (d.t === 'nack') { G.netPending = false; render(); }
@@ -736,6 +738,8 @@ onmessage = function (e) {
   if (ONLINE && Net2P.hashCode()) { S.mode = 'net'; joinGame(Net2P.hashCode()); }
   window.RVready = true;
   renderMenu();
+
+  BoardView.attach({id:'checkers',ref:function(){return G;},autoFlip:function(){return mySide()===-1;},getFlip:function(){return G&&G.flip;},flip:function(v){if(G){G.flip=v;buildBoard();render();}},coords:function(){return S.coords;},setCoords:function(v){setCoords(v,true);},analysis:function(){return G&&G.analysis;}});
 })();
 </script>
 

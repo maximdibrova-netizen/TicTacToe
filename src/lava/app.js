@@ -9,8 +9,10 @@
   var S = { roles: PRESETS.bot1.slice(), mapId: 'classic', first: 'random', sound: true };
   try {
     var pr = JSON.parse(localStorage.getItem(PREFS));
-    if (pr && Array.isArray(pr.roles) && pr.roles.length === 4 && pr.roles.every(function (r) { return ROLES.indexOf(r) >= 0; }) && L.map(pr.mapId)) S = { roles: pr.roles, mapId: pr.mapId, first: pr.first === undefined ? 'random' : pr.first, sound: pr.sound !== false };
+    if (pr && Array.isArray(pr.roles) && pr.roles.length === 4 && pr.roles.every(function (r) { return ROLES.indexOf(r) >= 0; }) && L.map(pr.mapId)) S = { roles: pr.roles, mapId: pr.mapId, first: pr.first === undefined ? 'random' : pr.first, sound: pr.sound !== false,evalOn:!!pr.evalOn,coords:!!pr.coords,localViewVersion:pr.localViewVersion };
   } catch (e) {}
+  BoardView.defaults(S,savePrefs);
+  $('lavaEval').checked=!!S.evalOn;$('lavaEval').onchange=function(){S.evalOn=this.checked;savePrefs();if(rv)rv.refresh();};
   if (window.IN_ROOM) S.roles = PRESETS.net.slice();
   var state = null, roles = [], gameSetup = null, epoch = 0, netRound = 0, shownResult = '';
   var busy = false, pending = false, botTimer = 0, pendTimer = 0, toastTimer = 0, resultTimer = 0;
@@ -218,6 +220,7 @@
   // ---------- отрисовка ----------
   function viewing() { return !!rv && rv.viewing(); }
   function render() {
+    BoardView.refresh('lava');
     if (!state) return;
     var V = viewing(), S0 = V ? rv.display().s : state, vary = V && rv.canPlay();
     var can = canAct(), turn = S0.turn, n = net();
@@ -480,7 +483,7 @@
     me: function () { var k = mySeat(); return k < 0 ? 0 : k; }, side: cname,
     moveText: moveText,
     overText: function (s) { return s.winner === null ? 'все сгорели' : cname(s.winner) + ' победил'; },
-    engine: function () { return !!state && (!net() || state.over); }, evalOn: function () { return true; },
+    engine: function () { return !!state && (!net() || state.over); }, evalOn: function () { return !!S.evalOn || !!(state&&state.over); },
     analyze: function (s, cb) { cb(null); },
     redraw: function () { render(); }, relayout: function () { layout(); },
     active: function () { return !$('game').hidden && !document.querySelector('dialog[open]'); },
@@ -686,4 +689,6 @@
   renderMenu();
   var hash = /^#([A-Za-z0-9]{5})$/.exec(location.hash);
   if (hash) join(hash[1]);
+
+ BoardView.attach({id:'lava',ref:function(){return state?(net()?'net:'+net().code+':'+netRound:gameSetup):null;},boards:['board'],axes:6,autoFlip:function(){var n=LavaLink.current(),i=n&&n.role==='guest'?n.seat:roles.indexOf('human');return state&&i>=0&&state.players[i].corner<2;},coords:function(){return S.coords;},setCoords:function(v){S.coords=v;savePrefs();},analysis:function(){return state&&state.over;}});
 })();

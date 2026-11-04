@@ -6,7 +6,8 @@ ver = datetime.datetime.now(zoneinfo.ZoneInfo('Europe/Vienna')).strftime('%d.%m.
 read = lambda *p: open(os.path.join(src, *p), encoding='utf-8').read()
 net, room, review = read('shared', 'net.js'), read('shared', 'room-client.js'), read('shared', 'review.js')
 clock = read('shared', 'clock-core.js') + '\n' + read('shared', 'clock.js') + '\n' + read('shared', 'continue.js')
-clock_css = read('shared', 'clock.css')
+clock_css = read('shared', 'clock.css') + '\n' + read('shared','view.css')
+view = read('shared','view.js')
 hub_back = read('shared', 'hub-back.html')
 
 def head(extra='', root=''):
@@ -27,9 +28,9 @@ def build(name):
     if os.path.exists(pf): page = page.replace('/*PIECES*/', read(name, 'pieces.js'))
     if name == 'chess': page = page.replace('/*PGN_EXPORT*/', read('chess', 'pgn.js'))
     if name == 'checkers': page = page.replace('/*PDN*/', read('checkers', 'pdn.js'))
-    if name == 'abalone':
+    if name in ['abalone','falling4']:
         for marker, filename in [('ABALONE_CSS', 'style.css'), ('ABALONE_APP', 'app.js')]:
-            page = page.replace('/*' + marker + '*/', read('abalone', filename))
+            page = page.replace('/*' + (marker if name=='abalone' else marker.replace('ABALONE','FALLING4')) + '*/', read(name, filename))
     if name == 'lava':
         for marker, filename in [('LAVA_NET', 'net.js'), ('LAVA_CSS', 'style.css'), ('LAVA_ART', 'art.js'), ('LAVA_APP', 'app.js')]:
             page = page.replace('/*' + marker + '*/', read('lava', filename))
@@ -41,9 +42,9 @@ def build(name):
             dp = os.path.join(d, sub)
             if os.path.exists(dp): shutil.rmtree(dp)
             shutil.copytree(sp, dp)
-    open(os.path.join(d, 'index.html'), 'w', encoding='utf-8').write(head('<style>' + clock_css + '</style><script>' + room + '</script>' + hub_back, '../') + page + '\n</body></html>\n')
+    open(os.path.join(d, 'index.html'), 'w', encoding='utf-8').write(head('<style>' + clock_css + '</style><script>' + room + '\n' + view + '</script>' + hub_back, '../') + page + '\n</body></html>\n')
     print('собрано:', name + '/index.html')
-GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go', 'chess', 'lava', 'abalone']
+GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go', 'chess', 'lava', 'abalone', 'falling4']
 for g in GAMES: build(g)
 hub = read('hub.html').replace('/*NET*/', net).replace('/*VER*/', ver)
 open(os.path.join(here, 'index.html'), 'w', encoding='utf-8').write(head() + hub + '\n</body></html>\n')

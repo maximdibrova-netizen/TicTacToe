@@ -63,18 +63,19 @@ var Abalone = (function () {
     for(var i=0;i<61;i++)if(s.b[i]){var c=cells[i],dist=Math.max(Math.abs(c.q),Math.abs(c.r),Math.abs(c.q+c.r)),friends=0;for(var d=0;d<6;d++)if(next[i][d]>=0&&s.b[next[i][d]]===s.b[i])friends++;var v=(4-dist)*14+friends*5-(dist===4?28:0)-(friends===0?18:0);score+=(s.b[i]===side?1:-1)*v;}
     return score;
   }
-  var levels=[{name:'Лёгкий',ms:150,depth:1,beam:8},{name:'Средний',ms:550,depth:2,beam:16},{name:'Сильный',ms:1400,depth:4,beam:22}];
-  function think(s,level,ms){
-    var L=levels[level]||levels[1],deadline=Date.now()+(ms||L.ms),nodes=0,ABORT={},depthDone=0;
-    if(s.winner)return{p:s.winner===s.turn?1:0,v:value(s,s.turn),best:null,depth:0,nodes:0};
-    function ordered(pos){return moves(pos).map(function(m){var n=applyKnown(pos,m,false);return{m:m,n:n,v:value(n,pos.turn)};}).sort(function(a,b){return b.v-a.v;});}
-    var root=ordered(s);if(!root.length)return{p:.5,v:0,best:null,depth:0,nodes:0};var best=root[0].m.key,score=root[0].v;
-    function neg(pos,depth,alpha,beta){nodes++;if((nodes&15)===0&&Date.now()>deadline)throw ABORT;if(!depth||pos.winner)return value(pos,pos.turn);var list=ordered(pos).slice(0,L.beam);if(!list.length)return value(pos,pos.turn);var v=-Infinity;for(var i=0;i<list.length;i++){var n=-neg(list[i].n,depth-1,-beta,-alpha);v=Math.max(v,n);alpha=Math.max(alpha,n);if(alpha>=beta)break;}return v;}
+  var levels=[{name:'Лёгкий',ms:350,depth:2},{name:'Средний',ms:900,depth:3},{name:'Сильный',ms:2000,depth:5},{name:'Эксперт',ms:4000,depth:10},{name:'Мастер',ms:6000,depth:15},{name:'Максимум',ms:8500,depth:64}];
+  function think(s,level,ms,progress){
+    var L=levels[level]||levels[1],deadline=Date.now()+(ms||L.ms),nodes=0,ABORT={},depthDone=0,table=new Map();
+    if(s.winner)return{p:s.winner===s.turn?1:0,v:value(s,s.turn),best:null,depth:0,nodes:0,target:L.depth};
+    function ordered(pos,preferred){return moves(pos).map(function(m){var n=applyKnown(pos,m,false);return{m:m,n:n,v:value(n,pos.turn)+(m.key===preferred?200000:0)};}).sort(function(a,b){return b.v-a.v;});}
+    var root=ordered(s);if(!root.length)return{p:.5,v:0,best:null,depth:0,nodes:0,target:L.depth};var best=root[0].m.key,score=root[0].v;
+    function result(){return{best:best,v:score,p:score>90000?1:score< -90000?0:1/(1+Math.exp(-score/650)),depth:depthDone,nodes:nodes,target:L.depth};}
+    function neg(pos,depth,alpha,beta){nodes++;if(Date.now()>deadline)throw ABORT;if(!depth||pos.winner)return value(pos,pos.turn);var hash=key(pos),hit=table.get(hash),oldAlpha=alpha,oldBeta=beta;if(hit&&hit.depth>=depth){if(hit.flag===0)return hit.v;if(hit.flag===1)alpha=Math.max(alpha,hit.v);else beta=Math.min(beta,hit.v);if(alpha>=beta)return hit.v;}var list=ordered(pos,hit&&hit.best);if(!list.length)return value(pos,pos.turn);var v=-Infinity,pick=list[0].m.key;for(var i=0;i<list.length;i++){var n=-neg(list[i].n,depth-1,-beta,-alpha);if(n>v){v=n;pick=list[i].m.key;}alpha=Math.max(alpha,n);if(alpha>=beta)break;}if(table.size>100000)table.clear();table.set(hash,{depth:depth,v:v,best:pick,flag:v<=oldAlpha?2:v>=oldBeta?1:0});return v;}
     for(var depth=1;depth<=L.depth;depth++){
-      try{var top=-Infinity,pick=best,rows=[];for(var i=0;i<root.length;i++){if(i&&Date.now()>deadline)throw ABORT;var v=-neg(root[i].n,depth-1,-Infinity,-top);rows.push({m:root[i].m,n:root[i].n,v:v});if(v>top){top=v;pick=root[i].m.key;}}best=pick;score=top;depthDone=depth;root=rows.sort(function(a,b){return b.v-a.v;});if(Math.abs(score)>90000)break;}
+      try{var top=-Infinity,pick=best,rows=[];for(var i=0;i<root.length;i++){if(Date.now()>deadline)throw ABORT;var v=-neg(root[i].n,depth-1,-Infinity,-top);rows.push({m:root[i].m,n:root[i].n,v:v});if(v>top){top=v;pick=root[i].m.key;}}best=pick;score=top;depthDone=depth;root=rows.sort(function(a,b){return b.v-a.v;});if(progress)progress(result());if(Math.abs(score)>90000)break;}
       catch(e){if(e!==ABORT)throw e;break;}
     }
-    return{best:best,v:score,p:score>90000?1:score< -90000?0:1/(1+Math.exp(-score/650)),depth:depthDone,nodes:nodes};
+    return result();
   }
   return{cells:cells,dirs:dirs,next:next,index:index,setups:setups,create:create,clone:clone,groupAxis:groupAxis,legal:legal,play:play,moves:moves,key:key,notation:notation,levels:levels,think:think};
 })();

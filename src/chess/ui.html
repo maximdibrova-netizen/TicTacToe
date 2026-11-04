@@ -301,7 +301,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   $('logoPiece').innerHTML = pieceSVG('w', 'n');
 
   // ---------- settings ----------
-  var S = { mode: 'bot', side: 'w', blind: false, coords: true, sound: true, tab: 'nota', engine: true, evalOn: true, positionEval: true, hintArrows: true, level: 8 };
+  var S = { mode: 'bot', side: 'w', blind: false, coords: false, sound: true, tab: 'nota', engine: true, evalOn: false, positionEval: true, hintArrows: true, level: 8 };
   // уровни как на Lichess: 1–3 — ограниченная глубина и «мастерство», 4–7 — по рейтингу (UCI_Elo), 8 — полная сила
   var LEVELS = [
     { n: 1, cap: 'новичок', skill: 0, depth: 1, ms: 60, about: 'зевает фигуры, видит на ход вперёд' },
@@ -314,6 +314,7 @@ body.blind.peek .sq .pc { visibility: visible; }
     { n: 8, cap: 'максимум', about: 'полная сила Stockfish 19 — сильнее любого человека' }
   ];
   try { var sv = JSON.parse(localStorage.getItem('chess-set') || 'null'); if (sv) Object.assign(S, sv); } catch (e) {}
+  BoardView.defaults(S,saveS);
   if (!ONLINE && S.mode === 'net') S.mode = 'bot';
   function saveS() { try { localStorage.setItem('chess-set', JSON.stringify(S)); } catch (e) {} }
   function bindSeg(id, key, conv) { Array.prototype.forEach.call(document.querySelectorAll('#' + id + ' button'), function (b) { b.onclick = function () { S[key] = conv(b.dataset.v); saveS(); renderMenu(); if (G) render(); }; }); }
@@ -513,6 +514,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   window.addEventListener('resize', function () { layout(); });
 
   function render() {
+    BoardView.refresh('chess');
     if(CONT)CONT.refresh();
     if (!G) return;
     var c = curChess(), live = !viewing() && !G.over;
@@ -1223,7 +1225,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   // ---------- coordinates (shared with the friend online) ----------
   function setCoords(on, fromNet) {
     S.coords = !!on; saveS(); renderMenu(); if (G) { layout(); render(); }
-    if (!fromNet && net()) Net2P.send({ t: 'coords', on: S.coords });
+
   }
   $('coordBtn').onclick = function () { setCoords(!S.coords, false); toast(S.coords ? 'Координаты включены' : 'Координаты скрыты'); };
 
@@ -1242,7 +1244,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   var lastJoin = null;
   $('lbRetry').onclick = function () { if (lastJoin) joinGame(lastJoin); else hostGame(); };
   function other(s) { return s === 'w' ? 'b' : 'w'; }
-  function syncMsg() { return { t: 'sync', hostSide: hostSide, seed:{fen:G.root.fen,moves:moves()}, moves: moves(), result: G.over ? G.result : null, coords: S.coords }; }
+  function syncMsg() { return { t: 'sync', hostSide: hostSide, seed:{fen:G.root.fen,moves:moves()}, moves: moves(), result: G.over ? G.result : null }; }
   function hostGame() {
     lastJoin = null; hostSide = '';
     lobby('Создаю игру', 'Подключаюсь к серверу связи…');
@@ -1257,7 +1259,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   }
   function hostStart(swap) {
     if (!hostSide) hostSide = S.side === 'r' ? (Math.random() < .5 ? 'w' : 'b') : S.side; else if (swap) hostSide = other(hostSide);
-    var seed=pendingContinuation;Net2P.send({ t: 'start', hostSide: hostSide, seed:seed, coords: S.coords });
+    var seed=pendingContinuation;Net2P.send({ t: 'start', hostSide: hostSide, seed:seed });
     var k = {}; k[hostSide] = 'me'; k[other(hostSide)] = 'net'; newGame(k,seed||{}); GC.publish();
     toast('Ты играешь ' + (hostSide === 'w' ? 'белыми' : 'чёрными'));
   }
@@ -1274,7 +1276,7 @@ body.blind.peek .sq .pc { visibility: visible; }
     else if (d.t === 'undoReq') startVote('friend');
     else if (d.t === 'undoVote') endVote(!!d.ok, d.ok ? '' : 'no');
     else if (d.t === 'needsync') { if (G) Net2P.send(syncMsg()); }
-    else if (d.t === 'coords') setCoords(d.on, true);
+    else if (d.t === 'coords') {}
   }
   // друг предложил ничью
   function drawAsked() {
@@ -1293,7 +1295,7 @@ body.blind.peek .sq .pc { visibility: visible; }
     });
   }
   function guestKinds(hs) { var k = {}; k[hs] = 'net'; k[other(hs)] = 'me'; return k; }
-  function guestCoords(hostOn) { if (hostOn) setCoords(true, true); else if (S.coords) Net2P.send({ t: 'coords', on: true }); }
+  function guestCoords(hostOn) {}
   function guestData(d) {
     if (GC.receive(d)) return;
     if (d.t === 'start') { newGame(guestKinds(d.hostSide),d.seed||{}); guestCoords(d.coords); toast('Ты играешь ' + (d.hostSide === 'w' ? 'чёрными' : 'белыми')); }
@@ -1304,7 +1306,7 @@ body.blind.peek .sq .pc { visibility: visible; }
     else if (d.t === 'result') { if (!G.over) { G.over = true; G.result = d.res; G.drawOffer = null; render(); showEnd(); } }
     else if (d.t === 'drawOffer') { if (!G.over) drawAsked(); }
     else if (d.t === 'drawReply') { if (G.drawOffer === 'me') { G.drawOffer = null; if (!d.ok) { toast('Друг отказался от ничьей'); render(); } } }
-    else if (d.t === 'coords') setCoords(d.on, true);
+    else if (d.t === 'coords') {}
     else if (d.t === 'undoAsk') { G.undoVote = { by: 'friend' }; showAsk(d.back); render(); }
     else if (d.t === 'undoWait') { G.undoVote = { by: 'me' }; render(); toast('Спрашиваю у друга…'); }
     else if (d.t === 'undoNo') { G.undoVote = null; $('askOv').hidden = true; render(); toast(d.mine ? (d.why === 'time' ? 'Друг не ответил' : 'Друг не согласен') : 'Ход не отменён'); }
@@ -1354,6 +1356,9 @@ body.blind.peek .sq .pc { visibility: visible; }
   $('joinGo').onclick = function () { var c = Net2P.cleanCode($('joinCode').value); if (c.length === 5) joinGame(c); };
   if (ONLINE && Net2P.hashCode()) { S.mode = 'net'; joinGame(Net2P.hashCode()); }
   renderMenu();
+
+  $('playEval').appendChild($('flipBtn'));
+  BoardView.attach({id:'chess',ref:function(){return G;},autoFlip:function(){return mySide()==='b';},getFlip:function(){return G&&G.flip;},flip:function(v){if(G){G.flip=v;buildBoard();render();}},coords:function(){return S.coords;},setCoords:function(v){setCoords(v,true);},analysis:function(){return G&&G.analysis;}});
 })();
 </script>
 

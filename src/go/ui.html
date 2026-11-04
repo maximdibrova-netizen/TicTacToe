@@ -188,8 +188,9 @@ onmessage = function (e) {
   var NAME = ['', 'Чёрные', 'Белые'], NAME_GEN = ['', 'чёрных', 'белых'];
   var ICON_SND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>';
   var ICON_MUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></svg>';
-  var S = { mode: 'bot', level: 1, side: 1, size: 9, custom: 11, sound: true, evalOn: true, coords: true };
+  var S = { mode: 'bot', level: 1, side: 1, size: 9, custom: 11, sound: true, evalOn: false, coords: false };
   try { var sv = JSON.parse(localStorage.getItem('go-set') || 'null'); if (sv) Object.assign(S, sv); } catch (e) {}
+  BoardView.defaults(S,saveS);
   if (!ONLINE && S.mode === 'net') S.mode = 'bot';
   function saveS() { try { localStorage.setItem('go-set', JSON.stringify(S)); } catch (e) {} }
   function boardN() { return S.size === 'c' ? S.custom : +S.size; }
@@ -329,6 +330,7 @@ onmessage = function (e) {
   window.addEventListener('resize', layout);
   function geom() { var N = G.N, m = S.coords ? 1.05 : .62; return { N: N, m: m, size: N - 1 + 2 * m }; }
   function render() {
+    BoardView.refresh('go');
     if(CONT)CONT.refresh();
     if (GC) GC.sync();
     if (!G) return;
@@ -413,6 +415,7 @@ onmessage = function (e) {
   function pointAt(e) {
     var svg = $('board'), rc = svg.getBoundingClientRect(), g = geom();
     var x = (e.clientX - rc.left) / rc.width * g.size - g.m, y = (e.clientY - rc.top) / rc.height * g.size - g.m;
+    if(BoardView.isFlipped('go')){x=g.N-1-x;y=g.N-1-y;}
     var c = Math.round(x), r = Math.round(y);
     if (c < 0 || r < 0 || c >= g.N || r >= g.N || Math.abs(x - c) > .48 || Math.abs(y - r) > .48) return -1;
     return r * g.N + c;
@@ -508,7 +511,7 @@ onmessage = function (e) {
   function setCoords(on, fromNet) {
     S.coords = !!on; saveS(); renderMenu();
     if (G) { layout(); render(); }
-    if (!fromNet && net()) Net2P.send({ t: 'coords', on: S.coords });
+
   }
   $('coordBtn').onclick = function () { setCoords(!S.coords, false); toast(S.coords ? 'Координаты включены' : 'Координаты скрыты'); };
   document.addEventListener('keydown', function (e) {
@@ -576,7 +579,7 @@ onmessage = function (e) {
   $('lbCancel').onclick = toMenu;
   var lastJoin = null;
   $('lbRetry').onclick = function () { if (lastJoin) joinGame(lastJoin); else hostGame(); };
-  function syncMsg() { return { t: 'sync', hostSide: hostSide, N: G.N, komi: G.s.komi, moves: moves(), dead: G.dead ? Array.from(G.dead) : null, coords: S.coords }; }
+  function syncMsg() { return { t: 'sync', hostSide: hostSide, N: G.N, komi: G.s.komi, moves: moves(), dead: G.dead ? Array.from(G.dead) : null }; }
   function hostGame() {
     lastJoin = null; hostSide = 0; hostN = pendingContinuation?pendingContinuation.N:boardN();
     lobby('Создаю игру', 'Подключаюсь к серверу связи…');
@@ -591,7 +594,7 @@ onmessage = function (e) {
   }
   function hostStart(swap) {
     if (!hostSide) hostSide = S.side || (Math.random() < .5 ? 1 : 2); else if (swap) hostSide = 3 - hostSide;
-    var seed=pendingContinuation,komi=seed?seed.komi:7.5;Net2P.send({ t: 'start', hostSide: hostSide, N: hostN, komi:komi, seed:seed, coords: S.coords });
+    var seed=pendingContinuation,komi=seed?seed.komi:7.5;Net2P.send({ t: 'start', hostSide: hostSide, N: hostN, komi:komi, seed:seed });
     var k = {}; k[hostSide] = 'me'; k[3 - hostSide] = 'net'; newGame(k, hostN,komi,seed||{});
     toast('Ты играешь ' + (hostSide === 1 ? 'чёрными' : 'белыми'));
   }
@@ -604,7 +607,7 @@ onmessage = function (e) {
     } else if (d.t === 'undoReq') startVote('friend');
     else if (d.t === 'undoVote') endVote(!!d.ok, d.ok ? '' : 'no');
     else if (d.t === 'needsync') { if (G) Net2P.send(syncMsg()); }
-    else if (d.t === 'coords') setCoords(d.on, true);
+    else if (d.t === 'coords') {}
     else if (d.t === 'deadTap') { if (G && G.s.over && G.dead) { flipGroup(d.i); Net2P.send({ t: 'dead', dead: Array.from(G.dead), n: G.line.length - 1, quiet: true }); } }
   }
   function joinGame(code) {
@@ -618,7 +621,7 @@ onmessage = function (e) {
     });
   }
   function guestKinds(hs) { var k = {}; k[hs] = 'net'; k[3 - hs] = 'me'; return k; }
-  function guestCoords(hostOn) { if (hostOn) setCoords(true, true); else if (S.coords) Net2P.send({ t: 'coords', on: true }); }
+  function guestCoords(hostOn) {}
   function guestData(d) {
     if (GC && GC.receive(d)) return;
     if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
@@ -630,7 +633,7 @@ onmessage = function (e) {
     else if (!G) return;
     else if (d.t === 'move') { G.netPending = false; if (d.n === G.line.length - 1) apply(d.mv); else if (d.n > G.line.length - 1) Net2P.send({ t: 'needsync' }); }
     else if (d.t === 'nack') { G.netPending = false; render(); }
-    else if (d.t === 'coords') setCoords(d.on, true);
+    else if (d.t === 'coords') {}
     else if (d.t === 'dead') { if (d.n === G.line.length - 1 && G.s.over) { G.dead = Uint8Array.from(d.dead); RV.refresh(); render(); if (!d.quiet) showEnd(); } }
     else if (d.t === 'undoAsk') { G.undoVote = { by: 'friend' }; showAsk(d.back); render(); }
     else if (d.t === 'undoWait') { G.undoVote = { by: 'me' }; render(); toast('Спрашиваю у друга…'); }
@@ -697,5 +700,7 @@ onmessage = function (e) {
 
   if (ONLINE && Net2P.hashCode()) { S.mode = 'net'; joinGame(Net2P.hashCode()); }
   renderMenu();
+
+  BoardView.attach({id:'go',ref:function(){return G;},boards:['board'],autoFlip:function(){return mySide()===2;},coords:function(){return S.coords;},setCoords:function(v){setCoords(v,true);},analysis:function(){return G&&G.analysis;}});
 })();
 </script>

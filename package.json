@@ -4,6 +4,8 @@
   "scripts": {
     "test": "node --test tests/*.test.cjs",
     "test:abalone": "node tests/abalone-ui.cjs",
+    "test:view": "node tests/local-view-ui.cjs",
+    "test:updates": "node tests/game-update-ui.cjs",
     "test:continue": "node tests/continue-ui.cjs",
     "test:checkers": "node tests/checkers-ui.cjs",
     "test:overlays": "node tests/chess-overlays.cjs",

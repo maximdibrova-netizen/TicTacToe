@@ -8,3 +8,7 @@
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
 @media(min-width:700px) and (max-height:520px){#game{gap:6px}.match-head{font-size:10px}.player{padding:5px 9px}.marble{width:22px;height:22px}#status{min-height:20px;font-size:12px}#abMain{grid-template-columns:minmax(0,1fr) 240px;max-width:940px;gap:12px}#sidePanel{display:flex}#board{max-height:calc(100dvh - 170px);min-height:180px}.control-card .hint{font-size:10px}.direction-pad{grid-template-columns:repeat(3,34px);grid-template-rows:repeat(3,30px)}}
+
+#sidePanel>.control-card:first-child{display:none}body:not(.ab-analysis) #sidePanel{display:none}body:not(.ab-analysis) #abMain{display:block;width:min(100%,680px)}body:not(.ab-analysis) #hintBtn{display:none}.ab-axis{pointer-events:none}#board .marble-svg{will-change:transform}
+
+body:not(.ab-analysis):not(.view-no-history) #sidePanel{display:block;margin-top:12px}body:not(.ab-analysis) #enginePanel{display:none!important}
