@@ -1,0 +1,34 @@
+<title>Абалон</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@500;700;800&display=swap">
+<style>/*ABALONE_CSS*/</style>
+<section id="menu" class="screen">
+ <div class="col">
+  <header><span class="eyebrow">Стратегия на шести направлениях</span><h1>Абалон</h1><p class="sub">Выбей 6 шаров соперника. Чёрные начинают.</p></header>
+  <div class="card setup-card"><div class="section-head"><h2>Расстановка</h2><output id="setupCount">1 / 10</output></div><svg id="setupPreview" viewBox="0 0 600 520" aria-label="Предпросмотр расстановки"></svg><div class="setup-label"><button id="setupPrev" aria-label="Предыдущая расстановка">←</button><strong id="setupName">Стандартная</strong><button id="setupNext" aria-label="Следующая расстановка">→</button></div><input id="setupSlider" type="range" min="0" max="9" step="1" value="0" aria-label="Начальная расстановка"><p class="hint">Первая — классическая. Остальные девять — дополнительные симметричные расстановки, по 14 шаров каждого цвета.</p></div>
+  <div class="card"><h2>С кем играть</h2><div class="seg" id="modeSeg"><button id="m-bot" data-v="bot">С ботом</button><button id="m-duo" data-v="duo">Вдвоём</button><button id="m-net" data-v="net">Онлайн</button></div></div>
+  <div class="card" id="levelCard"><h2>Сложность бота</h2><div class="seg" id="levelSeg"></div></div>
+  <div class="card" id="sideCard"><h2>Я играю</h2><div class="seg" id="sideSeg" style="--cols:2"><button data-v="1">Чёрными</button><button data-v="2">Белыми</button></div></div>
+  <div class="card"><h2>Оценка и подсказки</h2><div class="seg" id="evalSeg" style="--cols:2"><button data-v="1">С оценкой</button><button data-v="0">Без оценки</button></div><p class="hint">Онлайн подсказки доступны после партии. Выбор оценки фиксируется перед началом.</p></div>
+  <div class="card" id="netCard" hidden><h2>Онлайн с другом</h2><div class="seg" style="--cols:2"><button id="netCreate">Создать игру</button><button id="netJoinBtn">Войти по коду</button></div><div class="join" id="joinRow" hidden><input id="joinCode" maxlength="5" placeholder="КОД" aria-label="Код игры" autocomplete="off" spellcheck="false"><button id="joinGo">Войти</button></div><p class="hint">Хозяин выбирает расстановку и время. Другу достаточно ссылки или кода.</p></div>
+  <button class="play" id="playBtn">Играть</button><button class="secondary" id="analyzeBtn">Анализ позиции</button>
+  <details class="card rules"><summary>Как играть</summary><ol><li>Выбери один шар или прямую непрерывную группу из двух или трёх своих шаров.</li><li>За ход группа сдвигается на одну лунку в одном из шести направлений. При боковом сдвиге все лунки должны быть свободны.</li><li>Вдоль линии можно толкать меньшую группу соперника: <b>2 против 1, 3 против 1 или 3 против 2</b>. Толкать необязательно.</li><li>За шарами соперника должно быть свободное место или край доски. Свои шары за край выводить нельзя.</li><li>Выбил шесть шаров соперника — победил. Чёрные всегда ходят первыми.</li></ol><a href="https://foxmind.co.il/wp-content/uploads/2021/10/ABALONE_CLASSIC_RULES_EN-FM-p.pdf" target="_blank" rel="noopener">Правила издателя ↗</a></details>
+  <p class="hint version">Версия от /*VER*/</p>
+ </div>
+</section>
+<section id="game" class="screen" hidden>
+ <div class="match-head"><span class="eyebrow" id="setupTitle"></span><span id="modeTitle"></span></div>
+ <div class="players"><div id="plBlack" class="player"><i class="marble black"></i><div><strong id="nameBlack">Чёрные</strong><span id="scoreBlack">выбито 0 / 6</span></div><div class="capture-rack" id="rackBlack"></div></div><div id="plWhite" class="player"><i class="marble white"></i><div><strong id="nameWhite">Белые</strong><span id="scoreWhite">выбито 0 / 6</span></div><div class="capture-rack" id="rackWhite"></div></div></div>
+ <div id="status" role="status"></div>
+ <div id="abMain"><div id="boardColumn"><svg id="board" viewBox="0 0 600 520" aria-label="Доска Абалона"></svg><div id="rvMount"></div><div class="toolbar"><button id="homeBtn">⌂ <span>Меню</span></button><button id="againBtn">↻ <span>Заново</span></button><button id="undoBtn">↶ <span>Отменить</span></button><button id="hintBtn">✦ <span>Подсказка</span></button></div></div>
+ <aside id="sidePanel"><div class="control-card"><div class="section-head"><h2>Твой ход</h2><button id="clearSelection" aria-label="Снять выбор">Сбросить</button></div><p id="selectionText">Выбери 1–3 шара в одной линии</p><div class="direction-pad" role="group" aria-label="Направление хода"><button id="dir4" data-dir="4" aria-label="Сдвинуть вверх-влево">↖</button><button id="dir5" data-dir="5" aria-label="Сдвинуть вверх-вправо">↗</button><button id="dir3" data-dir="3" aria-label="Сдвинуть влево">←</button><span id="selectionCount">0</span><button id="dir0" data-dir="0" aria-label="Сдвинуть вправо">→</button><button id="dir2" data-dir="2" aria-label="Сдвинуть вниз-влево">↙</button><button id="dir1" data-dir="1" aria-label="Сдвинуть вниз-вправо">↘</button></div><p class="hint">Касайся шаров и направления или перетаскивай выбранную группу.</p></div>
+ <div id="enginePanel" class="control-card"><div class="section-head"><h2>Движок</h2><strong id="engineScore">…</strong></div><p id="engineNote">Анализирую позицию…</p><button id="bestMove" disabled>Лучший ход…</button><p class="hint">Плюс — преимущество чёрных. Оценка встроенного движка, в условных единицах.</p></div>
+ <div class="notation-card"><h2>Нотация</h2><div id="notation"></div></div></aside></div>
+</section>
+<div class="ov" id="endOv" hidden><div class="dlg"><h2 id="endTitle"></h2><p id="endText"></p><div class="btns"><button id="endLook">Анализ</button><button id="endAgain">Ещё раз</button><button id="endMenu" class="alt">В меню</button></div></div></div>
+<div class="ov" id="lobbyOv" hidden><div class="dlg"><h2 id="lbTitle"></h2><p id="lbText"></p><div id="lbCode" class="code" hidden></div><div id="lbLinkRow" class="join" hidden><input id="lbLink" readonly aria-label="Ссылка для друга"><button id="lbCopy">Копировать</button></div><p id="lbErr" role="alert" hidden></p><div class="btns"><button id="lbRetry" hidden>Повторить</button><button id="lbCancel" class="alt">Отмена</button></div></div></div>
+<div class="ov" id="askOv" hidden><div class="dlg"><h2>Вернуть ход?</h2><p id="askText"></p><div class="btns"><button id="askYes">Согласен</button><button id="askNo" class="alt">Нет</button></div></div></div>
+<div id="toast" class="toast" role="status" hidden></div>
+<script>/*CLOCK*/</script><script>/*NET*/</script><script>/*REVIEW*/</script><script id="core">/*CORE*/</script>
+<script>/*ABALONE_APP*/</script>
