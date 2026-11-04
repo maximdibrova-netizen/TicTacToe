@@ -40,6 +40,7 @@ var LavaLink = (function () {
     var seat=n.seats.findIndex(function(s){return s&&s.online&&s.conn===conn;});if(seat<0)return;
     n.seats[seat].seen=Date.now();
     if(d.t==='pong')return;
+    if(d.t==='msg'){if(n.state&&n.handlers.msg)n.handlers.msg(d.data,seat);return;}
     if(d.t==='seat'&&!n.state){
       var to=d.seat;
       if(Number.isInteger(to)&&to>=0&&to<n.count&&n.cfg.roles[to]==='net'&&to!==seat&&(!n.seats[to]||!n.seats[to].online)){
@@ -70,6 +71,7 @@ var LavaLink = (function () {
       conn.on('data',function(d){
         if(session!==n||!d||typeof d!=='object')return;n.seen=Date.now();
         if(d.t==='ping'){send(conn,{t:'pong'});return;}
+        if(d.t==='msg'){if(n.handlers.msg&&d.data&&typeof d.data==='object')n.handlers.msg(d.data,-1);return;}
         if(d.t==='error'){n.error=d.message;n.ready=false;clearTimeout(timer);notify(n);return;}
         if(d.t==='state' && Number.isInteger(d.count)&&d.count>=2&&d.count<=4 && Number.isInteger(d.seat)&&d.seat>=0&&d.seat<d.count&&validConfig(d.cfg)&&d.cfg.roles.length===d.count&&d.cfg.roles[d.seat]==='net' && Array.isArray(d.online)&&d.online.length===d.count && Number.isInteger(d.round) && (d.state===null || (Lava.valid(d.state)&&d.state.players.length===d.count))){
           clearTimeout(timer);n.ready=true;n.error='';n.count=d.count;n.seat=d.seat;n.cfg=d.cfg;n.online=d.online;n.round=d.round;n.state=d.state;notify(n);
@@ -83,8 +85,12 @@ var LavaLink = (function () {
   function start(s){var n=session;if(!n||n.role!=='host'||!ready()||!n.online.every(Boolean)||!Lava.valid(s)||s.players.length!==n.count||s.mapId!==n.cfg.mapId||s.players.some(function(p,i){return Lava.corner(s,i)!==n.cfg.corners[i];}))return false;n.round++;n.state=s;publish(n);return true;}
   function update(s){var n=session;if(n&&n.role==='host'){n.state=s;publish(n);}}
   function act(dir){var n=session;if(!n||!n.state||!ready()||(n.role==='host'?n.cfg.roles[n.state.turn]!=='human':n.state.turn!==n.seat))return false;if(n.role==='host'){n.handlers.move(dir,n.state.turn);return true;}return send(n.conn,{t:'move',dir:dir,ply:n.state.ply,round:n.round});}
+  // служебные сообщения (просьба вернуть ход и ответы): гость → хозяину, хозяин → гостю или всем
+  function tell(data){var n=session;return !!n&&n.role==='guest'&&n.ready&&send(n.conn,{t:'msg',data:data});}
+  function tellSeat(seat,data){var n=session,s=n&&n.role==='host'&&n.seats[seat];return !!s&&s.online&&send(s.conn,{t:'msg',data:data});}
+  function tellAll(data){var n=session;if(n&&n.role==='host')n.seats.forEach(function(s){if(s&&s.online)send(s.conn,{t:'msg',data:data});});}
   function chooseSeat(seat){var n=session;return !!n&&n.role==='guest'&&!n.state&&n.ready&&send(n.conn,{t:'seat',seat:seat});}
   function close(){var n=session;session=null;if(!n)return;clearTimeout(n.timer);try{if(n.peer)n.peer.destroy();}catch(e){}}
   setInterval(function(){var n=session;if(!n)return;var now=Date.now();if(n.role==='host')n.seats.forEach(function(s){if(!s||!s.online)return;if(now-s.seen>9000){drop(n,s.conn);try{s.conn.close();}catch(e){}}else send(s.conn,{t:'ping'});});else if(n.ready&&now-n.seen>10000){n.ready=false;n.error='Связь потеряна. Нажми «Переподключиться».';notify(n);}},2000);
-  return {host:host,chooseSeat:chooseSeat,join:join,start:start,update:update,act:act,close:close,ready:ready,clean:clean,current:function(){return session;}};
+  return {tell:tell,tellSeat:tellSeat,tellAll:tellAll,host:host,chooseSeat:chooseSeat,join:join,start:start,update:update,act:act,close:close,ready:ready,clean:clean,current:function(){return session;}};
 })();

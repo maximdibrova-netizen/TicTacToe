@@ -54,9 +54,30 @@ var Lava = (function () {
   function create(input) {
     var cfg = setup(input), m = map(cfg.mapId), tiles = m.tiles ? m.tiles.slice() : randomTiles();
     cfg.corners.forEach(function (c) { if (tiles[START[c]] < 2) tiles[START[c]] = 2; });
-    return { v: 3, size: SIZE, mapId: m.id, tiles: tiles,
-      players: cfg.corners.map(function (c) { return { pos: START[c], corner: c, back: -1, alive: true }; }),
-      turn: cfg.first, ply: 0, over: false, winner: null, last: null };
+    var players = cfg.corners.map(function (c) { return { pos: START[c], corner: c, back: -1, alive: true }; });
+    // start + log — вся партия: из них восстанавливается любая позиция (перемотка, возврат хода, онлайн)
+    return { v: 3, size: SIZE, mapId: m.id, tiles: tiles, players: players,
+      turn: cfg.first, ply: 0, over: false, winner: null, last: null,
+      start: { tiles: tiles.slice(), turn: cfg.first, corners: cfg.corners.slice() }, log: [] };
+  }
+  function initial(s) {
+    var st = s.start;
+    return { v: 3, size: SIZE, mapId: s.mapId, tiles: st.tiles.slice(),
+      players: st.corners.map(function (c) { return { pos: START[c], corner: c, back: -1, alive: true }; }),
+      turn: st.turn, ply: 0, over: false, winner: null, last: null, start: st, log: [] };
+  }
+  // позиция после ходов path от начала партии (null — путь невозможен)
+  function replay(s, path) {
+    var t = initial(s);
+    for (var i = 0; i < path.length && t; i++) t = apply(t, path[i]);
+    return t;
+  }
+  function rewind(s, k) { return replay(s, s.log.slice(0, Math.max(0, Math.min(k, s.log.length)))); }
+  // все позиции партии: [начальная, после 1-го хода, ...]
+  function history(s) {
+    var out = [initial(s)];
+    for (var i = 0; i < s.log.length; i++) { var t = apply(out[i], s.log[i]); if (!t) break; out.push(t); }
+    return out;
   }
   function corner(s, seat) { return s.players[seat].corner; }
   function rc(i) { return [Math.floor(i / SIZE), i % SIZE]; }
@@ -68,7 +89,7 @@ var Lava = (function () {
   function clone(s) {
     return { v: 3, size: s.size, mapId: s.mapId, tiles: s.tiles.slice(),
       players: s.players.map(function (p) { return { pos: p.pos, corner: p.corner, back: p.back, alive: p.alive }; }),
-      turn: s.turn, ply: s.ply, over: s.over, winner: s.winner, last: null };
+      turn: s.turn, ply: s.ply, over: s.over, winner: s.winner, last: null, start: s.start, log: s.log };
   }
   function decode(m) { return m === 0 ? { d: -1, n: 0 } : { d: Math.floor(m / 10), n: m % 10 }; }
   function code(d, n) { return n === 0 ? 0 : d * 10 + n; }
@@ -107,7 +128,7 @@ var Lava = (function () {
       }
     }
     ev.to = me.pos; ev.left = n.tiles[from];
-    n.ply++; n.last = ev;
+    n.ply++; n.last = ev; n.log = (s.log || []).concat([m]);
     var alive = [];
     n.players.forEach(function (x, i) { if (x.alive) alive.push(i); });
     if (alive.length <= 1) { n.over = true; n.winner = alive.length ? alive[0] : null; n.turn = -1; return n; }
@@ -173,6 +194,9 @@ var Lava = (function () {
     if (!Array.isArray(s.tiles) || s.tiles.length !== 36 || !s.tiles.every(function (t) { return t === 0 || t === 1 || t === 2 || t === 3; })) return false;
     if (!Array.isArray(s.players) || s.players.length < 2 || s.players.length > 4) return false;
     if (typeof s.ply !== 'number' || s.ply % 1 || s.ply < 0 || s.ply > 400 || typeof s.over !== 'boolean') return false;
+    var st = s.start;
+    if (!st || !Array.isArray(st.tiles) || st.tiles.length !== 36 || !Array.isArray(st.corners) || st.corners.length !== s.players.length || typeof st.turn !== 'number') return false;
+    if (!Array.isArray(s.log) || s.log.length !== s.ply || !s.log.every(function (m) { return typeof m === 'number' && m >= 0 && m < 60 && m % 1 === 0; })) return false;
     var pos = {}, cs = {}, alive = 0, prev = -1;
     for (var i = 0; i < s.players.length; i++) {
       var p = s.players[i];
@@ -184,7 +208,7 @@ var Lava = (function () {
     if (s.over) return s.turn === -1 && alive <= 1 && (alive === 0 ? s.winner === null : typeof s.winner === 'number' && !!s.players[s.winner] && s.players[s.winner].alive);
     return alive >= 2 && typeof s.turn === 'number' && !!s.players[s.turn] && s.players[s.turn].alive && s.winner === null;
   }
-  return { SIZE: SIZE, DIRS: DIRS, MAPS: MAPS, START: START, map: map, setup: setup, create: create, corner: corner,
+  return { initial: initial, replay: replay, rewind: rewind, history: history, SIZE: SIZE, DIRS: DIRS, MAPS: MAPS, START: START, map: map, setup: setup, create: create, corner: corner,
     step: step, rc: rc, who: who, code: code, decode: decode, moves: moves, apply: apply, play: play, bot: bot, valid: valid, startCells: function () { return START.slice(); } };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = Lava;

@@ -104,15 +104,8 @@ button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid
 .tile.t0{background:transparent;box-shadow:inset 0 0 calc(var(--B)*.025) calc(var(--B)*.008) rgba(0,0,0,.75)}
 .mark{position:absolute;width:calc(var(--B)/6);height:calc(var(--B)/6);border:0;padding:0;background:transparent;display:grid;place-items:center;cursor:default}
 .mark.go,.mark.stay{cursor:pointer}
-.mark.go::after{content:"";width:22%;height:22%;border-radius:50%;background:var(--mc);opacity:.75;box-shadow:0 0 calc(var(--B)*.02) var(--mc);transition:transform .12s}
-.mark.go.push::after,.mark.go.bounce::after{width:78%;height:78%;background:transparent;opacity:1;border-radius:22%;box-shadow:inset 0 0 0 calc(var(--B)*.007) var(--mc),0 0 calc(var(--B)*.02) var(--mc)}
-.mark.go.bad::after{background:#1a0805;box-shadow:inset 0 0 0 calc(var(--B)*.006) #ff4a1a,0 0 calc(var(--B)*.02) #ff4a1a}
-.mark.go.kill::after{box-shadow:inset 0 0 0 calc(var(--B)*.008) #ffd34d,0 0 calc(var(--B)*.03) #ff8a2e}
-.mark.go:hover::after{transform:scale(1.25)}
-.mark.stay::after{content:"";width:92%;height:92%;border-radius:24%;box-shadow:inset 0 0 0 calc(var(--B)*.005) rgba(255,255,255,.0);transition:box-shadow .15s}
+.mark.stay::after{content:"";width:92%;height:92%;border-radius:24%;transition:box-shadow .15s}
 .mark.stay.armed::after{box-shadow:inset 0 0 0 calc(var(--B)*.007) #fff,0 0 calc(var(--B)*.03) rgba(255,255,255,.6)}
-.mark.stay.armed.bad::after{box-shadow:inset 0 0 0 calc(var(--B)*.007) #ff4a1a,0 0 calc(var(--B)*.03) #ff4a1a}
-.mark.hover::after{transform:scale(1.35)}
 .pc{position:absolute;left:0;top:0;width:calc(var(--B)/6);height:calc(var(--B)/6);will-change:transform}
 .pc .gem{position:absolute;left:21%;top:21%;width:58%;height:58%;filter:drop-shadow(0 calc(var(--B)*.006) calc(var(--B)*.008) rgba(0,0,0,.55))}
 .pc .ar{position:absolute;width:0;height:0;border:calc(var(--B)*.011) solid transparent;opacity:0;transition:opacity .2s}
@@ -129,6 +122,11 @@ button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid
 #ghost .gem{width:100%;height:100%}
 .bit{position:absolute;left:0;top:0;pointer-events:none;will-change:transform,opacity}
 
+#rvMount{width:min(100%,420px);padding:6px 12px 0;--rv-accent:#ff9a3c;--rv-btn:rgba(255,255,255,.08)}
+#rvMount .rv-nav button{background:linear-gradient(180deg,#3a2c27,#271d1a)}
+#rvMount .rv-nav .back{background:linear-gradient(180deg,#ff9a3c,#e2451a);color:#fff}
+#status .rv-tag{background:rgba(255,154,60,.18);color:#ffc58a}
+#status .rv-sub{color:var(--mute)}
 .g-bar{display:flex;gap:8px;justify-content:center;padding:8px 10px 0;flex-wrap:nowrap}
 .tb{border:0;height:46px;min-width:46px;border-radius:14px;background:linear-gradient(180deg,#3a2c27,#271d1a);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 12px rgba(0,0,0,.4);display:grid;place-items:center;transition:transform .1s,background .15s}
 .tb:active{transform:scale(.95)}
@@ -157,6 +155,6 @@ dialog p{margin:0 0 10px;color:#d8c8bd}
 .lp.mine{box-shadow:inset 0 0 0 2px var(--hot)}
 .lp button{margin-left:auto;border:0;border-radius:8px;background:var(--hot2);color:#fff;font-weight:800;font-size:12px;padding:5px 8px}
 .lp small{display:block;color:var(--mute);font-size:11px}
-.toast{position:fixed;left:50%;top:calc(var(--hub-h) + env(safe-area-inset-top,0px) + 8px);transform:translateX(-50%);z-index:80;background:rgba(30,20,17,.96);border:1px solid var(--line);border-radius:12px;padding:10px 16px;font-size:14px;max-width:calc(100vw - 30px);text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.5)}
-@media (max-width:420px){.logo h1{font-size:38px}.maps{grid-template-columns:repeat(4,1fr);gap:6px}.maps button{font-size:11px;padding:6px 3px}.seat .nm{font-size:13px}.tb.wide{padding:0 12px}}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 112px);transform:translateX(-50%);z-index:80;background:rgba(30,20,17,.96);border:1px solid var(--line);border-radius:12px;padding:10px 16px;font-size:14px;max-width:calc(100vw - 30px);text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+@media (max-width:440px){.g-bar{gap:6px}.tb{min-width:44px;height:44px}.tb.wide span{display:none}.tb.wide{padding:0 12px}.logo h1{font-size:38px}.maps{grid-template-columns:repeat(4,1fr);gap:6px}.maps button{font-size:11px;padding:6px 3px}.seat .nm{font-size:13px}.tb.wide{padding:0 12px}}
 @media (prefers-reduced-motion:reduce){.ring{animation:none}}

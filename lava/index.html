@@ -171,15 +171,8 @@ button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid
 .tile.t0{background:transparent;box-shadow:inset 0 0 calc(var(--B)*.025) calc(var(--B)*.008) rgba(0,0,0,.75)}
 .mark{position:absolute;width:calc(var(--B)/6);height:calc(var(--B)/6);border:0;padding:0;background:transparent;display:grid;place-items:center;cursor:default}
 .mark.go,.mark.stay{cursor:pointer}
-.mark.go::after{content:"";width:22%;height:22%;border-radius:50%;background:var(--mc);opacity:.75;box-shadow:0 0 calc(var(--B)*.02) var(--mc);transition:transform .12s}
-.mark.go.push::after,.mark.go.bounce::after{width:78%;height:78%;background:transparent;opacity:1;border-radius:22%;box-shadow:inset 0 0 0 calc(var(--B)*.007) var(--mc),0 0 calc(var(--B)*.02) var(--mc)}
-.mark.go.bad::after{background:#1a0805;box-shadow:inset 0 0 0 calc(var(--B)*.006) #ff4a1a,0 0 calc(var(--B)*.02) #ff4a1a}
-.mark.go.kill::after{box-shadow:inset 0 0 0 calc(var(--B)*.008) #ffd34d,0 0 calc(var(--B)*.03) #ff8a2e}
-.mark.go:hover::after{transform:scale(1.25)}
-.mark.stay::after{content:"";width:92%;height:92%;border-radius:24%;box-shadow:inset 0 0 0 calc(var(--B)*.005) rgba(255,255,255,.0);transition:box-shadow .15s}
+.mark.stay::after{content:"";width:92%;height:92%;border-radius:24%;transition:box-shadow .15s}
 .mark.stay.armed::after{box-shadow:inset 0 0 0 calc(var(--B)*.007) #fff,0 0 calc(var(--B)*.03) rgba(255,255,255,.6)}
-.mark.stay.armed.bad::after{box-shadow:inset 0 0 0 calc(var(--B)*.007) #ff4a1a,0 0 calc(var(--B)*.03) #ff4a1a}
-.mark.hover::after{transform:scale(1.35)}
 .pc{position:absolute;left:0;top:0;width:calc(var(--B)/6);height:calc(var(--B)/6);will-change:transform}
 .pc .gem{position:absolute;left:21%;top:21%;width:58%;height:58%;filter:drop-shadow(0 calc(var(--B)*.006) calc(var(--B)*.008) rgba(0,0,0,.55))}
 .pc .ar{position:absolute;width:0;height:0;border:calc(var(--B)*.011) solid transparent;opacity:0;transition:opacity .2s}
@@ -196,6 +189,11 @@ button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid
 #ghost .gem{width:100%;height:100%}
 .bit{position:absolute;left:0;top:0;pointer-events:none;will-change:transform,opacity}
 
+#rvMount{width:min(100%,420px);padding:6px 12px 0;--rv-accent:#ff9a3c;--rv-btn:rgba(255,255,255,.08)}
+#rvMount .rv-nav button{background:linear-gradient(180deg,#3a2c27,#271d1a)}
+#rvMount .rv-nav .back{background:linear-gradient(180deg,#ff9a3c,#e2451a);color:#fff}
+#status .rv-tag{background:rgba(255,154,60,.18);color:#ffc58a}
+#status .rv-sub{color:var(--mute)}
 .g-bar{display:flex;gap:8px;justify-content:center;padding:8px 10px 0;flex-wrap:nowrap}
 .tb{border:0;height:46px;min-width:46px;border-radius:14px;background:linear-gradient(180deg,#3a2c27,#271d1a);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 12px rgba(0,0,0,.4);display:grid;place-items:center;transition:transform .1s,background .15s}
 .tb:active{transform:scale(.95)}
@@ -224,8 +222,8 @@ dialog p{margin:0 0 10px;color:#d8c8bd}
 .lp.mine{box-shadow:inset 0 0 0 2px var(--hot)}
 .lp button{margin-left:auto;border:0;border-radius:8px;background:var(--hot2);color:#fff;font-weight:800;font-size:12px;padding:5px 8px}
 .lp small{display:block;color:var(--mute);font-size:11px}
-.toast{position:fixed;left:50%;top:calc(var(--hub-h) + env(safe-area-inset-top,0px) + 8px);transform:translateX(-50%);z-index:80;background:rgba(30,20,17,.96);border:1px solid var(--line);border-radius:12px;padding:10px 16px;font-size:14px;max-width:calc(100vw - 30px);text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.5)}
-@media (max-width:420px){.logo h1{font-size:38px}.maps{grid-template-columns:repeat(4,1fr);gap:6px}.maps button{font-size:11px;padding:6px 3px}.seat .nm{font-size:13px}.tb.wide{padding:0 12px}}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 112px);transform:translateX(-50%);z-index:80;background:rgba(30,20,17,.96);border:1px solid var(--line);border-radius:12px;padding:10px 16px;font-size:14px;max-width:calc(100vw - 30px);text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+@media (max-width:440px){.g-bar{gap:6px}.tb{min-width:44px;height:44px}.tb.wide span{display:none}.tb.wide{padding:0 12px}.logo h1{font-size:38px}.maps{grid-template-columns:repeat(4,1fr);gap:6px}.maps button{font-size:11px;padding:6px 3px}.seat .nm{font-size:13px}.tb.wide{padding:0 12px}}
 @media (prefers-reduced-motion:reduce){.ring{animation:none}}
 </style>
 
@@ -264,7 +262,7 @@ dialog p{margin:0 0 10px;color:#d8c8bd}
     </div>
 
     <details class="card rules"><summary><h2>Как играть</h2></summary><div class="rules-body" id="rulesMenu"></div></details>
-    <p class="version">Версия от 04.11.2026 21:29</p>
+    <p class="version">Версия от 04.11.2026 21:54</p>
   </div>
 </section>
 
@@ -275,8 +273,9 @@ dialog p{margin:0 0 10px;color:#d8c8bd}
     <div id="boardBox"><div id="board" aria-label="Игровое поле"><div class="tiles" id="tiles"></div><div class="marks" id="marks"></div><div class="fx" id="fx"></div><div class="pieces" id="pieces"></div></div></div>
     <div class="seat" data-c="3" id="seat3"></div><div class="seat" data-c="2" id="seat2"></div>
   </div>
+  <div id="rvMount"></div>
   <div id="netWarning" hidden><span id="netWarningText"></span><button class="ghost sm" id="reconnectBtn" hidden>Переподключиться</button></div>
-  <div class="g-bar"><button class="tb" id="homeBtn" aria-label="В меню" title="В меню"></button><button class="tb" id="againBtn" aria-label="Новая партия" title="Новая партия"></button><button class="tb wide" id="stayBtn" title="Прыжок на месте"></button><button class="tb" id="soundBtn" aria-label="Звук" title="Звук"></button><button class="tb" id="gameRulesBtn" aria-label="Правила" title="Правила"></button></div>
+  <div class="g-bar"><button class="tb" id="homeBtn" aria-label="В меню" title="В меню"></button><button class="tb" id="undoBtn" aria-label="Вернуть ход" title="Вернуть ход"></button><button class="tb" id="againBtn" aria-label="Новая партия" title="Новая партия"></button><button class="tb wide" id="stayBtn" title="Прыжок на месте"></button><button class="tb" id="soundBtn" aria-label="Звук" title="Звук"></button><button class="tb" id="gameRulesBtn" aria-label="Правила" title="Правила"></button></div>
 </section>
 
 <dialog id="rulesDialog" aria-labelledby="rulesTitle"><h2 id="rulesTitle">Как играть</h2><div class="rules-body" id="rulesDlg"></div><div class="btns"><button id="rulesClose">Понятно</button></div></dialog>
@@ -284,6 +283,7 @@ dialog p{margin:0 0 10px;color:#d8c8bd}
 <dialog id="result" aria-labelledby="resultTitle"><div class="win-gem" id="winnerGem"></div><h2 id="resultTitle"></h2><p id="resultText"></p><div class="btns"><button id="resultAgain">Ещё раз</button><button class="alt" id="viewBtn">Посмотреть поле</button><button class="alt" id="endMenu">В меню</button></div></dialog>
 <dialog id="leaveDialog" aria-labelledby="leaveTitle"><h2 id="leaveTitle">Выйти из игры?</h2><p>Если выйдет хозяин, онлайн-партия закончится для всех.</p><div class="btns"><button id="leaveConfirm">Выйти</button><button class="alt" id="leaveCancel">Остаться</button></div></dialog>
 <dialog id="restartDialog" aria-labelledby="restartTitle"><h2 id="restartTitle">Начать заново?</h2><p>Текущая партия закончится. Игроки и поле останутся те же.</p><div class="btns"><button id="restartConfirm">Заново</button><button class="alt" id="restartCancel">Продолжить</button></div></dialog>
+<dialog id="askDialog" aria-labelledby="askTitle"><h2 id="askTitle">Вернуть ход?</h2><p id="askText"></p><div class="btns"><button id="askYes">Да</button><button class="alt" id="askNo">Нет</button></div></dialog>
 <div class="toast" id="toast" hidden role="status"></div>
 <script>// Лава: правила, карты и бот. Общие для интерфейса, ботов и хозяина онлайн-партии.
 //
@@ -341,9 +341,30 @@ var Lava = (function () {
   function create(input) {
     var cfg = setup(input), m = map(cfg.mapId), tiles = m.tiles ? m.tiles.slice() : randomTiles();
     cfg.corners.forEach(function (c) { if (tiles[START[c]] < 2) tiles[START[c]] = 2; });
-    return { v: 3, size: SIZE, mapId: m.id, tiles: tiles,
-      players: cfg.corners.map(function (c) { return { pos: START[c], corner: c, back: -1, alive: true }; }),
-      turn: cfg.first, ply: 0, over: false, winner: null, last: null };
+    var players = cfg.corners.map(function (c) { return { pos: START[c], corner: c, back: -1, alive: true }; });
+    // start + log — вся партия: из них восстанавливается любая позиция (перемотка, возврат хода, онлайн)
+    return { v: 3, size: SIZE, mapId: m.id, tiles: tiles, players: players,
+      turn: cfg.first, ply: 0, over: false, winner: null, last: null,
+      start: { tiles: tiles.slice(), turn: cfg.first, corners: cfg.corners.slice() }, log: [] };
+  }
+  function initial(s) {
+    var st = s.start;
+    return { v: 3, size: SIZE, mapId: s.mapId, tiles: st.tiles.slice(),
+      players: st.corners.map(function (c) { return { pos: START[c], corner: c, back: -1, alive: true }; }),
+      turn: st.turn, ply: 0, over: false, winner: null, last: null, start: st, log: [] };
+  }
+  // позиция после ходов path от начала партии (null — путь невозможен)
+  function replay(s, path) {
+    var t = initial(s);
+    for (var i = 0; i < path.length && t; i++) t = apply(t, path[i]);
+    return t;
+  }
+  function rewind(s, k) { return replay(s, s.log.slice(0, Math.max(0, Math.min(k, s.log.length)))); }
+  // все позиции партии: [начальная, после 1-го хода, ...]
+  function history(s) {
+    var out = [initial(s)];
+    for (var i = 0; i < s.log.length; i++) { var t = apply(out[i], s.log[i]); if (!t) break; out.push(t); }
+    return out;
   }
   function corner(s, seat) { return s.players[seat].corner; }
   function rc(i) { return [Math.floor(i / SIZE), i % SIZE]; }
@@ -355,7 +376,7 @@ var Lava = (function () {
   function clone(s) {
     return { v: 3, size: s.size, mapId: s.mapId, tiles: s.tiles.slice(),
       players: s.players.map(function (p) { return { pos: p.pos, corner: p.corner, back: p.back, alive: p.alive }; }),
-      turn: s.turn, ply: s.ply, over: s.over, winner: s.winner, last: null };
+      turn: s.turn, ply: s.ply, over: s.over, winner: s.winner, last: null, start: s.start, log: s.log };
   }
   function decode(m) { return m === 0 ? { d: -1, n: 0 } : { d: Math.floor(m / 10), n: m % 10 }; }
   function code(d, n) { return n === 0 ? 0 : d * 10 + n; }
@@ -394,7 +415,7 @@ var Lava = (function () {
       }
     }
     ev.to = me.pos; ev.left = n.tiles[from];
-    n.ply++; n.last = ev;
+    n.ply++; n.last = ev; n.log = (s.log || []).concat([m]);
     var alive = [];
     n.players.forEach(function (x, i) { if (x.alive) alive.push(i); });
     if (alive.length <= 1) { n.over = true; n.winner = alive.length ? alive[0] : null; n.turn = -1; return n; }
@@ -460,6 +481,9 @@ var Lava = (function () {
     if (!Array.isArray(s.tiles) || s.tiles.length !== 36 || !s.tiles.every(function (t) { return t === 0 || t === 1 || t === 2 || t === 3; })) return false;
     if (!Array.isArray(s.players) || s.players.length < 2 || s.players.length > 4) return false;
     if (typeof s.ply !== 'number' || s.ply % 1 || s.ply < 0 || s.ply > 400 || typeof s.over !== 'boolean') return false;
+    var st = s.start;
+    if (!st || !Array.isArray(st.tiles) || st.tiles.length !== 36 || !Array.isArray(st.corners) || st.corners.length !== s.players.length || typeof st.turn !== 'number') return false;
+    if (!Array.isArray(s.log) || s.log.length !== s.ply || !s.log.every(function (m) { return typeof m === 'number' && m >= 0 && m < 60 && m % 1 === 0; })) return false;
     var pos = {}, cs = {}, alive = 0, prev = -1;
     for (var i = 0; i < s.players.length; i++) {
       var p = s.players[i];
@@ -471,7 +495,7 @@ var Lava = (function () {
     if (s.over) return s.turn === -1 && alive <= 1 && (alive === 0 ? s.winner === null : typeof s.winner === 'number' && !!s.players[s.winner] && s.players[s.winner].alive);
     return alive >= 2 && typeof s.turn === 'number' && !!s.players[s.turn] && s.players[s.turn].alive && s.winner === null;
   }
-  return { SIZE: SIZE, DIRS: DIRS, MAPS: MAPS, START: START, map: map, setup: setup, create: create, corner: corner,
+  return { initial: initial, replay: replay, rewind: rewind, history: history, SIZE: SIZE, DIRS: DIRS, MAPS: MAPS, START: START, map: map, setup: setup, create: create, corner: corner,
     step: step, rc: rc, who: who, code: code, decode: decode, moves: moves, apply: apply, play: play, bot: bot, valid: valid, startCells: function () { return START.slice(); } };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = Lava;
@@ -518,6 +542,7 @@ var LavaLink = (function () {
     var seat=n.seats.findIndex(function(s){return s&&s.online&&s.conn===conn;});if(seat<0)return;
     n.seats[seat].seen=Date.now();
     if(d.t==='pong')return;
+    if(d.t==='msg'){if(n.state&&n.handlers.msg)n.handlers.msg(d.data,seat);return;}
     if(d.t==='seat'&&!n.state){
       var to=d.seat;
       if(Number.isInteger(to)&&to>=0&&to<n.count&&n.cfg.roles[to]==='net'&&to!==seat&&(!n.seats[to]||!n.seats[to].online)){
@@ -548,6 +573,7 @@ var LavaLink = (function () {
       conn.on('data',function(d){
         if(session!==n||!d||typeof d!=='object')return;n.seen=Date.now();
         if(d.t==='ping'){send(conn,{t:'pong'});return;}
+        if(d.t==='msg'){if(n.handlers.msg&&d.data&&typeof d.data==='object')n.handlers.msg(d.data,-1);return;}
         if(d.t==='error'){n.error=d.message;n.ready=false;clearTimeout(timer);notify(n);return;}
         if(d.t==='state' && Number.isInteger(d.count)&&d.count>=2&&d.count<=4 && Number.isInteger(d.seat)&&d.seat>=0&&d.seat<d.count&&validConfig(d.cfg)&&d.cfg.roles.length===d.count&&d.cfg.roles[d.seat]==='net' && Array.isArray(d.online)&&d.online.length===d.count && Number.isInteger(d.round) && (d.state===null || (Lava.valid(d.state)&&d.state.players.length===d.count))){
           clearTimeout(timer);n.ready=true;n.error='';n.count=d.count;n.seat=d.seat;n.cfg=d.cfg;n.online=d.online;n.round=d.round;n.state=d.state;notify(n);
@@ -561,10 +587,14 @@ var LavaLink = (function () {
   function start(s){var n=session;if(!n||n.role!=='host'||!ready()||!n.online.every(Boolean)||!Lava.valid(s)||s.players.length!==n.count||s.mapId!==n.cfg.mapId||s.players.some(function(p,i){return Lava.corner(s,i)!==n.cfg.corners[i];}))return false;n.round++;n.state=s;publish(n);return true;}
   function update(s){var n=session;if(n&&n.role==='host'){n.state=s;publish(n);}}
   function act(dir){var n=session;if(!n||!n.state||!ready()||(n.role==='host'?n.cfg.roles[n.state.turn]!=='human':n.state.turn!==n.seat))return false;if(n.role==='host'){n.handlers.move(dir,n.state.turn);return true;}return send(n.conn,{t:'move',dir:dir,ply:n.state.ply,round:n.round});}
+  // служебные сообщения (просьба вернуть ход и ответы): гость → хозяину, хозяин → гостю или всем
+  function tell(data){var n=session;return !!n&&n.role==='guest'&&n.ready&&send(n.conn,{t:'msg',data:data});}
+  function tellSeat(seat,data){var n=session,s=n&&n.role==='host'&&n.seats[seat];return !!s&&s.online&&send(s.conn,{t:'msg',data:data});}
+  function tellAll(data){var n=session;if(n&&n.role==='host')n.seats.forEach(function(s){if(s&&s.online)send(s.conn,{t:'msg',data:data});});}
   function chooseSeat(seat){var n=session;return !!n&&n.role==='guest'&&!n.state&&n.ready&&send(n.conn,{t:'seat',seat:seat});}
   function close(){var n=session;session=null;if(!n)return;clearTimeout(n.timer);try{if(n.peer)n.peer.destroy();}catch(e){}}
   setInterval(function(){var n=session;if(!n)return;var now=Date.now();if(n.role==='host')n.seats.forEach(function(s){if(!s||!s.online)return;if(now-s.seen>9000){drop(n,s.conn);try{s.conn.close();}catch(e){}}else send(s.conn,{t:'ping'});});else if(n.ready&&now-n.seen>10000){n.ready=false;n.error='Связь потеряна. Нажми «Переподключиться».';notify(n);}},2000);
-  return {host:host,chooseSeat:chooseSeat,join:join,start:start,update:update,act:act,close:close,ready:ready,clean:clean,current:function(){return session;}};
+  return {tell:tell,tellSeat:tellSeat,tellAll:tellAll,host:host,chooseSeat:chooseSeat,join:join,start:start,update:update,act:act,close:close,ready:ready,clean:clean,current:function(){return session;}};
 })();
 </script>
 <script>// Лава: рисунки — самоцветы, лава под плитками, рамка поля, иконки.
@@ -657,11 +687,265 @@ var LavaArt = (function () {
     soundOff: '<path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z"/><path d="m16 9.5 5 5m0-5-5 5"/>',
     play: '<path d="M8 5.5v13l10-6.5z" fill="currentColor"/>',
     stay: '<path d="M12 20V9"/><path d="m7.5 13 4.5-4.5 4.5 4.5"/><path d="M5 4h14"/>',
-    flag: '<path d="M6 21V4h11l-2 4 2 4H6"/>'
+    flag: '<path d="M6 21V4h11l-2 4 2 4H6"/>',
+    undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'
   };
   function icon(n) { return '<svg viewBox="0 0 24 24" class="ic" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + I[n] + '</svg>'; }
   return { colors: colors, gem: gem, board: board, holes: holes, mini: mini, icon: icon };
 })();
+</script>
+<script>// ===== Разбор партии: история ходов, оценка движка, график, варианты =====
+// Общий модуль для игр на двоих. Игра даёт описание (o), модуль хранит, какую позицию сейчас показывать.
+//   o.mount        — элемент, куда вставить панель (полоса оценки, график, кнопки ⏮ ◀ ▶ ⏭)
+//   o.status       — элемент строки состояния (в режиме просмотра модуль пишет туда сам)
+//   o.line()       — основная партия: [{ s: позиция, mv: ход или null, by: кто ходил }], [0] — начальная
+//   o.play(s, mv)  — новая позиция после хода (исходную не трогать) или null, если ход невозможен
+//   o.over(s)      — партия в позиции закончена?   o.toMove(s) — чья очередь
+//   o.me()         — с чьей стороны считать шансы  o.side(x) — название стороны («Белые»)
+//   o.moveText(e, prev) — запись хода («e3–f4»)     o.overText(s) — итог («Белые победили»)
+//   o.engine()     — можно ли сейчас показывать движок (не онлайн-партия или партия окончена)
+//   o.evalOn()     — показывать оценку во время своей партии (настройка)
+//   o.analyze(s, cb) — оценка: cb({ p: шанс на победу того, чей ход (0..1), best: лучший ход, text?: подпись })
+//   o.redraw()     — перерисовать доску (игра берёт позицию из rv.display())
+//   o.relayout()   — панель поменяла высоту
+//   o.extra(e, prev) — необязательно: доп. текст к ходу в просмотре (например, «шанс попадания 12%»)
+//   o.noBar        — без полосы оценки и графика (только история, варианты и подсказка)
+//   o.canVary()    — необязательно: можно ли сейчас играть варианты (например, только после конца партии)
+var Review = function (o) {
+  var css = '.rv{width:100%;display:flex;flex-direction:column;gap:6px;font-family:inherit}' +
+    '.rv-bar{position:relative;height:20px;border-radius:7px;overflow:hidden;background:var(--rv-them,#3b3b46);box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}' +
+    '.rv-fill{position:absolute;left:0;top:0;bottom:0;width:50%;background:var(--rv-me,#e8e2d0);transition:width .35s}' +
+    '.rv-txt{position:absolute;inset:0;display:grid;place-items:center;font:800 12px/1 var(--body,system-ui);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.8),0 0 4px rgba(0,0,0,.6);font-variant-numeric:tabular-nums}' +
+    '.rv-txt.pend{opacity:.6}' +
+    '.rv-graph{height:36px;border-radius:7px;background:rgba(0,0,0,.22);cursor:pointer;display:block;width:100%}' +
+    '.rv-graph .mid{stroke:rgba(255,255,255,.18);stroke-width:1}.rv-graph .ln{fill:none;stroke:rgba(255,255,255,.85);stroke-width:1.5}' +
+    '.rv-graph .cur{stroke:var(--rv-accent,#f2c14e);stroke-width:2}.rv-graph .mk{stroke:#111;stroke-width:1}' +
+    '.rv-graph .mk.b{fill:#ff4d4d}.rv-graph .mk.m{fill:#ff9b3d}.rv-graph .mk.i{fill:#ffe14d}' +
+    '.rv-nav{display:flex;align-items:center;justify-content:center;gap:6px}' +
+    '.rv-nav button{border:0;border-radius:9px;width:40px;height:32px;background:var(--rv-btn,rgba(255,255,255,.1));color:inherit;display:grid;place-items:center;cursor:pointer}' +
+    '.rv-nav button:disabled{opacity:.3;cursor:default}.rv-nav button svg{width:18px;height:18px}' +
+    '.rv-nav .cnt{min-width:64px;flex:0 1 auto;white-space:nowrap;text-align:center;font:800 12.5px/1 var(--body,system-ui);opacity:.85;font-variant-numeric:tabular-nums}' +
+    '.rv-nav .back{width:auto;padding:0 10px;white-space:nowrap;font:800 12.5px/1 var(--body,system-ui);background:var(--rv-accent,#f2c14e);color:#1d1408}' +
+    '.rv-tag{display:inline-block;font:800 10.5px/1 var(--body,system-ui);letter-spacing:.06em;text-transform:uppercase;padding:4px 6px;border-radius:6px;background:rgba(255,255,255,.14);margin-right:6px;vertical-align:2px}' +
+    '.rv-tag.var{background:var(--rv-accent,#f2c14e);color:#1d1408}' +
+    '.rv-vd{display:inline-block;font:800 11.5px/1 var(--body,system-ui);padding:4px 6px;border-radius:6px;margin-left:6px;color:#1d1408;vertical-align:1px}' +
+    '.rv-vd.b{background:#ff6b6b}.rv-vd.m{background:#ffa552}.rv-vd.i{background:#ffe066}.rv-vd.g{background:#7fd36b}' +
+    '.rv-sub{display:block;font:700 12px/1.3 var(--body,system-ui);opacity:.75;margin-top:3px}';
+  if (!document.getElementById('rv-css')) { var st = document.createElement('style'); st.id = 'rv-css'; st.textContent = css; document.head.appendChild(st); }
+
+  var I = {
+    first: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5v14M18 6l-7 6 7 6"/></svg>',
+    prev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>',
+    next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
+    last: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 5v14M6 6l7 6-7 6"/></svg>'
+  };
+  var root = document.createElement('div'); root.className = 'rv';
+  root.innerHTML = (o.noBar ? '' : '<div class="rv-bar" hidden><div class="rv-fill"></div><span class="rv-txt"></span></div><svg class="rv-graph" hidden></svg>') +
+    '<div class="rv-nav"><button data-a="first" aria-label="К началу партии">' + I.first + '</button><button data-a="prev" aria-label="Ход назад">' + I.prev + '</button>' +
+    '<span class="cnt"></span><button data-a="next" aria-label="Ход вперёд">' + I.next + '</button><button data-a="last" aria-label="К последнему ходу">' + I.last + '</button>' +
+    '<button class="back" data-a="main" hidden aria-label="Вернуться к партии">↩ партия</button></div>';
+  o.mount.appendChild(root);
+  var q = function (s) { return root.querySelector(s); };
+  var bar = q('.rv-bar'), fill = q('.rv-fill'), txt = q('.rv-txt'), graph = q('.rv-graph'), cnt = q('.cnt');
+  Array.prototype.forEach.call(root.querySelectorAll('[data-a]'), function (b) {
+    b.onclick = function () { var a = b.dataset.a; if (a === 'main') exitVar(); else step(a === 'first' ? 'first' : a === 'last' ? 'last' : a === 'prev' ? -1 : 1); };
+  });
+
+  // view: -1 — живая партия; k — позиция k основной партии. V — вариант: { base, list: [{ s, mv, by }], idx }
+  var view = -1, V = null, hint = null, hintTok = 0, cache = new WeakMap(), busy = false, queue = [], marks = [], shown = false;
+
+  function line() { return o.line(); }
+  function lastIdx() { return line().length - 1; }
+  function engine() { return !!o.engine() && (o.evalOn() || liveOver()); }
+  function liveOver() { var L = line(); return o.over(L[L.length - 1].s); }
+  function evalVisible() { return !o.noBar && engine() && (o.evalOn() || liveOver()); }
+  function cur() {
+    var L = line();
+    if (V) { if (V.idx < 0) return { s: L[V.base].s, e: L[V.base], prev: V.base > 0 ? L[V.base - 1].s : null, k: V.base }; var e = V.list[V.idx]; return { s: e.s, e: e, prev: V.idx > 0 ? V.list[V.idx - 1].s : L[V.base].s, k: V.base }; }
+    var k = view < 0 ? L.length - 1 : view;
+    return { s: L[k].s, e: L[k], prev: k > 0 ? L[k - 1].s : null, k: k };
+  }
+
+  // ---------- оценка ----------
+  function pctFor(s, r) { return 100 * (o.toMove(s) === o.me() ? r.p : 1 - r.p); }
+  function want(s, urgent) { if (!s || cache.has(s)) return; if (urgent) queue.unshift(s); else queue.push(s); }
+  function pump() {
+    if (busy || !engine()) return;
+    var s = null;
+    while (queue.length) { var c = queue.shift(); if (!cache.has(c)) { s = c; break; } }
+    if (!s) return;
+    if (o.over(s)) { var oe = o.overEval ? o.overEval(s) : { p: .5 }; if (oe) cache.set(s, oe); pump(); return; }   // итог ещё не посчитан — спросим позже
+    busy = true;
+    o.analyze(s, function (r) { busy = false; if (r) cache.set(s, r); paint(); pump(); });
+  }
+  function fillQueue() {
+    if (o.noBar || !engine()) return;
+    var c = cur(); want(c.s, true); if (c.prev) want(c.prev, true);
+    if (evalVisible()) { var L = line(); for (var k = 0; k < L.length; k++) want(L[k].s); }
+    pump();
+  }
+  function pctOf(s) { var r = s && cache.get(s); return r ? pctFor(s, r) : null; }
+  // ход «моей» стороны, после которого мои шансы заметно упали
+  function verdict(prevS, e) {
+    if (!prevS || !e || e.mv == null || e.by !== o.me()) return null;
+    var a = pctOf(prevS), b = pctOf(e.s);
+    if (a == null || b == null || a > 97.5 || a < 2.5) return null;
+    var d = Math.round(a - b);
+    if (d >= 25) return { c: 'b', t: 'грубая ошибка', d: d };
+    if (d >= 12) return { c: 'm', t: 'ошибка', d: d };
+    if (d >= 6) return { c: 'i', t: 'неточность', d: d };
+    return null;
+  }
+
+  // ---------- отрисовка панели ----------
+  function paint() {
+    var vis = evalVisible();
+    if (bar) { if (bar.hidden === vis) { bar.hidden = !vis; graph.hidden = !vis; if (o.relayout) o.relayout(); } }
+    var c = cur(), L = line(), last = L.length - 1;
+    if (vis && bar) {
+      var r = cache.get(c.s), s = c.s;
+      var me = o.me(), meName = o.meName ? o.meName() : o.side(me);
+      if (!r) { var j = V ? -1 : c.k; while (!r && j > 0) r = cache.get(L[--j].s), s = L[j].s; }
+      if (!r) { fill.style.width = '50%'; txt.textContent = meName + ' …'; txt.classList.add('pend'); }
+      else {
+        var pc = pctFor(s, r); fill.style.width = pc + '%';
+        txt.textContent = r.text ? r.text : (pc >= 99.5 ? meName + ': выигрыш' : pc <= .5 ? meName + ': проигрыш' : meName + ' ' + Math.round(pc) + '%');
+        txt.classList.toggle('pend', s !== c.s);
+      }
+      drawGraph();
+    }
+    var at = V ? V.base : (view < 0 ? last : view);
+    q('[data-a="first"]').disabled = q('[data-a="prev"]').disabled = !V && at <= 0;
+    q('[data-a="next"]').disabled = V ? V.idx >= V.list.length - 1 : view < 0;
+    q('[data-a="last"]').disabled = V ? V.idx >= V.list.length - 1 : view < 0;
+    q('[data-a="main"]').hidden = !V;
+    cnt.textContent = V ? 'вариант ' + (V.idx + 1) + ' / ' + V.list.length : (at === 0 ? 'старт' : 'ход ' + at) + ' / ' + last;
+    if (view >= 0 || V) o.status.innerHTML = statusHtml();
+  }
+  function drawGraph() {
+    var w = graph.clientWidth, h = graph.clientHeight; if (!w || !h) return;
+    var L = line(), last = L.length - 1, n = Math.max(last, 1);
+    var X = function (i) { return 4 + (w - 8) * i / n; }, Y = function (p) { return 3 + (h - 6) * (1 - p / 100); };
+    var pts = [];
+    for (var i = 0; i <= last; i++) { var p = pctOf(L[i].s); if (p != null) pts.push([X(i), Y(p)]); }
+    var out = '<defs><clipPath id="rvTop"><rect x="0" y="0" width="' + w + '" height="' + (h / 2) + '"/></clipPath><clipPath id="rvBot"><rect x="0" y="' + (h / 2) + '" width="' + w + '" height="' + (h / 2) + '"/></clipPath></defs>' +
+      '<line class="mid" x1="0" x2="' + w + '" y1="' + h / 2 + '" y2="' + h / 2 + '"/>';
+    if (pts.length > 1) {
+      var ln = pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
+      var area = pts[0][0].toFixed(1) + ',' + h / 2 + ' ' + ln + ' ' + pts[pts.length - 1][0].toFixed(1) + ',' + h / 2;
+      out += '<polygon clip-path="url(#rvTop)" points="' + area + '" fill="var(--rv-me,#e8e2d0)" opacity=".55"/><polygon clip-path="url(#rvBot)" points="' + area + '" fill="var(--rv-them,#3b3b46)" opacity=".9"/><polyline class="ln" points="' + ln + '"/>';
+    }
+    var at = V ? V.base : (view < 0 ? last : view);
+    out += '<line class="cur" x1="' + X(at) + '" x2="' + X(at) + '" y1="0" y2="' + h + '"/>';
+    marks = [];
+    for (i = 1; i <= last; i++) { var vd = verdict(L[i - 1].s, L[i]); if (vd) { out += '<circle class="mk ' + vd.c + '" cx="' + X(i).toFixed(1) + '" cy="' + Y(pctOf(L[i].s)).toFixed(1) + '" r="' + (vd.c === 'b' ? 5 : 4) + '"/>'; marks.push([X(i), i]); } }
+    graph.setAttribute('viewBox', '0 0 ' + w + ' ' + h); graph.innerHTML = out;
+  }
+  if (graph) graph.addEventListener('click', function (e) {
+    var rc = graph.getBoundingClientRect(), x = e.clientX - rc.left, L = line(), n = Math.max(L.length - 1, 1);
+    var mk = marks.filter(function (m) { return Math.abs(m[0] - x) <= 10; }).sort(function (a, b) { return Math.abs(a[0] - x) - Math.abs(b[0] - x); })[0];
+    if (mk) { go(mk[1] - 1); showHint(); return; }
+    go(Math.max(0, Math.min(L.length - 1, Math.round((x - 4) / (rc.width - 8) * n))));
+  });
+
+  function statusHtml() {
+    var c = cur(), e = c.e, tag = V ? '<span class="rv-tag var">Вариант</span>' : '<span class="rv-tag">Просмотр</span>';
+    var L = line(), at = V ? V.base + V.idx + 1 : c.k, body;
+    if (!V && c.k === 0) body = 'Начало партии';
+    else if (V && V.idx < 0) body = 'Позиция после хода ' + V.base + ' — сделай ход';
+    else body = 'Ход ' + at + ': ' + o.side(e.by) + ' ' + o.moveText(e, c.prev);
+    var vd = verdict(c.prev, e), h = tag + body + (vd ? '<span class="rv-vd ' + vd.c + '">' + vd.t + ' −' + vd.d + '%</span>' : '');
+    var ex = o.extra && e && e.mv != null && e.mv !== undefined && (V ? V.idx >= 0 : c.k > 0) ? o.extra(e, c.prev) : '';
+    if (o.over(c.s)) ex = (ex ? ex + ' · ' : '') + o.overText(c.s);
+    else if (canPlay()) ex = (ex ? ex + ' · ' : '') + 'можно сходить и посмотреть, что будет';
+    return h + (ex ? '<span class="rv-sub">' + ex + '</span>' : '');
+  }
+
+  // ---------- навигация ----------
+  function go(k) {
+    var last = lastIdx(); V = null; clearHint();
+    view = k >= last || k < 0 ? -1 : k;
+    shown = view >= 0;
+    fillQueue(); paint(); o.redraw();
+  }
+  function step(d) {
+    if (V) {
+      if (d === 'first') { go(0); return; }
+      if (d === -1 && V.idx < 0) { go(Math.max(0, V.base - 1)); return; }
+      if (d === 'last') V.idx = V.list.length - 1; else V.idx = Math.max(-1, Math.min(V.list.length - 1, V.idx + d));
+      clearHint(); fillQueue(); paint(); o.redraw(); return;
+    }
+    var last = lastIdx(), at = view < 0 ? last : view;
+    if (d === 'first') go(0); else if (d === 'last') go(-1); else go(Math.max(0, Math.min(last, at + d)));
+  }
+  function exitVar() { if (!V) return; var b = V.base; V = null; go(b); }
+  function canPlay() { return engine() && (view >= 0 || !!V) && !o.over(cur().s) && (!o.canVary || o.canVary()); }
+  function play(mv) {
+    if (!canPlay()) return false;
+    var c = cur(), ns = o.play(c.s, mv); if (!ns) return false;
+    var by = o.byOf ? o.byOf(c.s, mv) : o.toMove(c.s), L = line();
+    if (!V) V = { base: view < 0 ? L.length - 1 : view, list: [], idx: -1 };
+    // если этот ход есть в основной партии — просто идём по ней
+    if (V.idx < 0 && V.base + 1 < L.length && o.same && o.same(L[V.base + 1].mv, mv)) { var nb = V.base + 1; V = null; go(nb); return true; }
+    V.list.length = V.idx + 1; V.list.push({ s: ns, mv: mv, by: by }); V.idx++;
+    view = V.base; clearHint(); fillQueue(); paint(); o.redraw();
+    return true;
+  }
+
+  // ---------- подсказка ----------
+  function clearHint() { hintTok++; hint = null; }
+  function showHint(cb) {
+    if (!engine()) return false;
+    var c = cur(); if (o.over(c.s)) return false;
+    var my = ++hintTok, s = c.s;
+    var done = function (r) { if (my !== hintTok || cur().s !== s) return; hint = r && r.best != null ? r.best : null; o.redraw(); if (cb) cb(hint); };
+    var r = cache.get(s);
+    if (r && r.best != null) { done(r); return true; }
+    if (o.hint) o.hint(s, done); else o.analyze(s, function (r2) { if (r2) cache.set(s, r2); paint(); done(r2); });
+    return true;
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (!o.active || !o.active() || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA/.test((e.target || {}).tagName || '')) return;
+    var k = e.key;
+    if (k === 'ArrowLeft') step(-1); else if (k === 'ArrowRight') step(1); else if (k === 'Home') step('first'); else if (k === 'End') step('last'); else return;
+    e.preventDefault();
+  });
+  window.addEventListener('resize', function () { if (graph && !graph.hidden) drawGraph(); });
+
+  return {
+    el: root,
+    // что показывать на доске: { mode: 'live'|'view'|'var', s, e (ход, который привёл сюда), hint }
+    display: function () { var c = cur(); return { mode: V ? 'var' : view >= 0 ? 'view' : 'live', s: c.s, e: c.e, prev: c.prev, hint: hint, k: c.k }; },
+    viewing: function () { return view >= 0 || !!V; },
+    inVar: function () { return !!V; },
+    canPlay: canPlay,
+    play: play,
+    go: go, step: step, exitVar: exitVar,
+    hint: showHint, clearHint: function () { clearHint(); },
+    // после изменения основной партии (новый ход, отмена, новая партия)
+    sync: function () {
+      var last = lastIdx();
+      if (view > last) view = -1;
+      if (V && V.base > last) V = null;
+      if (view === last && !V) view = -1;
+      if (view < 0 && !V) clearHint();
+      fillQueue(); paint();
+    },
+    reset: function () { view = -1; V = null; clearHint(); queue = []; cache = new WeakMap(); fillQueue(); paint(); },
+    refresh: function () { fillQueue(); paint(); },
+    // путь от начала до показанной позиции (для «играть с этой позиции»)
+    pathHere: function () {
+      var L = line(), out = [], base = V ? V.base : (view < 0 ? L.length - 1 : view);
+      for (var k = 1; k <= base; k++) out.push(L[k].mv);
+      if (V) for (k = 0; k <= V.idx; k++) out.push(V.list[k].mv);
+      return out;
+    },
+    evalVisible: evalVisible,
+    evalOf: function (s) { return cache.get(s); },
+    statusHtml: statusHtml
+  };
+};
 </script>
 <script>(function () {
   'use strict';
@@ -679,6 +963,7 @@ var LavaArt = (function () {
   if (window.IN_ROOM) S.roles = PRESETS.net.slice();
   var state = null, roles = [], gameSetup = null, epoch = 0, netRound = 0, shownResult = '';
   var busy = false, pending = false, botTimer = 0, pendTimer = 0, toastTimer = 0, resultTimer = 0;
+  var VOTE = null, askFor = null, undoWait = false, rv = null, HC = { key: null, line: null };
   var armed = -1, B = 480, pieces = [], tileEls = [], markEls = [], holesKey = '', audio = null;
   function savePrefs() { try { localStorage.setItem(PREFS, JSON.stringify(S)); } catch (e) {} }
   function toast(msg) { $('toast').textContent = msg; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { $('toast').hidden = true; }, 3200); }
@@ -691,10 +976,10 @@ var LavaArt = (function () {
     '<li>Прыгнул на соперника — <b>толкаешь</b> его (и всех, кто стоит за ним вплотную) на клетку дальше. Попал в лаву — сгорел. Если за ним стена, толчок не проходит: ты отскакиваешь на клетку перед ним.</li>' +
     '<li>Сгорел — выбыл. <b>Побеждает последний</b>, кто остался на плитках.</li></ol>' +
     '<div class="legend"><span><i style="background:#f3ece5"></i>3 прыжка</span><span><i style="background:#b9a99c"></i>2</span><span><i style="background:#6e5c52"></i>1</span><span><i style="background:radial-gradient(#ffb648,#ff4d00 60%,#120806)"></i>лава</span></div>' +
-    '<p class="hint">Нажми на подсвеченную клетку или перетащи фишку. Прыжок на месте — дважды нажать на свою фишку или кнопку «На месте». Клавиши: стрелки — на соседнюю клетку, пробел — на месте.</p>';
+    '<p class="hint">Нажми на клетку, куда прыгаешь, или перетащи фишку. Прыжок на месте — дважды нажать на свою фишку или кнопку «На месте» (пробел). Ход можно вернуть; с ботом — сразу, с другом — если он согласится. Стрелки ◀ ▶ под полем — перемотка партии.</p>';
   $('rulesMenu').innerHTML = RULES; $('rulesDlg').innerHTML = RULES;
   $('logoGem').innerHTML = A.gem(3, { id: 'logo' });
-  $('homeBtn').innerHTML = A.icon('home'); $('againBtn').innerHTML = A.icon('restart'); $('gameRulesBtn').innerHTML = A.icon('help');
+  $('homeBtn').innerHTML = A.icon('home'); $('undoBtn').innerHTML = A.icon('undo'); $('againBtn').innerHTML = A.icon('restart'); $('gameRulesBtn').innerHTML = A.icon('help');
   $('stayBtn').innerHTML = A.icon('stay') + '<span>На месте</span>';
 
   // ---------- звук ----------
@@ -798,7 +1083,7 @@ var LavaArt = (function () {
   function layout() {
     if ($('game').hidden) return;
     var vw = window.innerWidth, vh = window.innerHeight, hub = window.hubH ? window.hubH() : 0;
-    var top = $('game').querySelector('.g-top').offsetHeight || 54, bar = 62, wide = vw >= 700 && vw > vh * 1.15, gem, b;
+    var top = $('game').querySelector('.g-top').offsetHeight || 54, bar = 62 + ($('rvMount').offsetHeight || 38), wide = vw >= 700 && vw > vh * 1.15, gem, b;
     if (wide) {
       gem = Math.max(50, Math.min(84, vh * .1));
       b = Math.min(vh - hub - top - bar - 26, vw - 2 * (gem + 70) - 40);
@@ -810,7 +1095,7 @@ var LavaArt = (function () {
     document.documentElement.style.setProperty('--B', B + 'px');
     document.documentElement.style.setProperty('--gem', Math.round(gem) + 'px');
     $('arena').classList.toggle('wide', wide);
-    if (state && !busy) placePieces();
+    if (state && !busy && tileEls.length) render();
   }
   window.addEventListener('resize', layout);
   function xy(i) { var cs = B / 6; return [(i % 6) * cs, Math.floor(i / 6) * cs]; }
@@ -849,8 +1134,8 @@ var LavaArt = (function () {
     var key = tiles.map(function (t) { return t ? 1 : 0; }).join('');
     if (key !== holesKey) { holesKey = key; var cp = document.getElementById('lvHoles'); if (cp) cp.innerHTML = A.holes(tiles); }
   }
-  function placePieces() {
-    state.players.forEach(function (p, seat) {
+  function placePieces(S0) {
+    (S0 || state).players.forEach(function (p, seat) {
       var el = pieces[seat]; if (!el) return;
       el.getAnimations().forEach(function (a) { a.cancel(); });
       el.classList.toggle('gone', !p.alive);
@@ -873,54 +1158,53 @@ var LavaArt = (function () {
     return roles[seat] === 'human' && !net() ? C[state.players[seat].corner].name : 'Друг';
   }
   function canAct() {
-    if (!state || state.over || busy || pending) return false;
+    if (!state || state.over || busy || pending || (rv && rv.viewing())) return false;
     var n = net();
     if (!n) return roles[state.turn] === 'human';
     return LavaLink.ready() && (n.role === 'host' ? roles[state.turn] === 'human' : state.turn === n.seat);
   }
 
   // ---------- отрисовка ----------
+  function viewing() { return !!rv && rv.viewing(); }
   function render() {
     if (!state) return;
-    var can = canAct(), turn = state.turn, n = net();
-    if (!busy) { paintTiles(state.tiles); placePieces(); }
-    if (armed !== state.ply) armed = -1;
-    // стрелки и кольцо
-    state.players.forEach(function (p, seat) {
+    var V = viewing(), S0 = V ? rv.display().s : state, vary = V && rv.canPlay();
+    var can = canAct(), turn = S0.turn, n = net();
+    if (!busy) { paintTiles(S0.tiles); placePieces(S0); }
+    if (armed !== state.ply || V) armed = -1;
+    // стрелки (куда можно прыгнуть) и кольцо того, чей ход
+    S0.players.forEach(function (p, seat) {
       var el = pieces[seat]; if (!el) return;
       var dirs = [false, false, false, false];
-      if (p.alive && !state.over) L.moves(state, seat).forEach(function (m) { if (m.n > 0) dirs[m.d] = true; });
+      if (p.alive && !S0.over) L.moves(S0, seat).forEach(function (m) { if (m.n > 0) dirs[m.d] = true; });
       for (var d = 0; d < 4; d++) el.querySelector('.a' + d).classList.toggle('on', dirs[d] && !busy);
-      el.classList.toggle('on', !state.over && seat === turn && !busy);
+      el.classList.toggle('on', !S0.over && seat === turn && !busy);
     });
-    // подсветка ходов
+    // клетки, куда можно прыгнуть (без подсветки — только для нажатий)
     markEls.forEach(function (m) { m.className = 'mark'; m.removeAttribute('data-m'); m.removeAttribute('aria-label'); m.tabIndex = -1; });
-    if (can) {
-      var col = C[state.players[turn].corner].light;
-      L.moves(state, turn).forEach(function (mv) {
+    if (can || vary) {
+      L.moves(S0, turn).forEach(function (mv) {
         var m = markEls[mv.m === 0 ? mv.to : mv.land];
-        m.dataset.m = mv.m; m.style.setProperty('--mc', col); m.tabIndex = 0;
-        if (mv.m === 0) { m.className = 'mark stay' + (mv.fatal ? ' bad' : '') + (armed === state.ply ? ' armed' : ''); m.setAttribute('aria-label', 'Прыжок на месте' + (mv.fatal ? ' — сгоришь' : '')); }
-        else {
-          m.className = 'mark go ' + mv.kind + (mv.fatal ? ' bad' : '') + (mv.kills.length ? ' kill' : '');
-          m.setAttribute('aria-label', 'Прыжок ' + L.DIRS[mv.d].label + ' на ' + mv.n + (mv.kind === 'push' ? ', толкнуть' : '') + (mv.fatal ? ', сгоришь' : ''));
-        }
+        m.dataset.m = mv.m; m.tabIndex = 0;
+        if (mv.m === 0) { m.className = 'mark stay' + (armed === state.ply && !V ? ' armed' : ''); m.setAttribute('aria-label', 'Прыжок на месте'); }
+        else { m.className = 'mark go'; m.setAttribute('aria-label', 'Прыжок ' + L.DIRS[mv.d].label + ' на ' + mv.n); }
       });
     }
     // игроки по углам
     [0, 1, 2, 3].forEach(function (c) {
       var seat = seatOf(c), el = $('seat' + c); if (seat < 0) return;
-      var p = state.players[seat], nm = label(seat), cn = C[c].name;
+      var p = S0.players[seat], nm = label(seat), cn = C[c].name;
       el.querySelector('.nm').textContent = nm;
       el.querySelector('.nm').style.color = C[c].light;
-      var st = !p.alive ? 'сгорел' : state.over && state.winner === seat ? 'победил!' : n && roles[seat] === 'net' && !n.online[seat] ? 'нет связи' : nm === cn ? '' : cn.toLowerCase();
+      var st = !p.alive ? 'сгорел' : S0.over && S0.winner === seat ? 'победил!' : n && roles[seat] === 'net' && !n.online[seat] ? 'нет связи' : nm === cn ? '' : cn.toLowerCase();
       el.querySelector('.st').textContent = st;
-      el.classList.toggle('on', !state.over && seat === turn);
+      el.classList.toggle('on', !S0.over && seat === turn);
       el.classList.toggle('dead', !p.alive);
     });
-    // заголовок
+    // заголовок (в просмотре строку состояния пишет модуль перемотки)
     var tn = $('turnName'), stt = $('status');
-    if (state.over) {
+    if (V) { tn.textContent = rv.inVar() ? 'Вариант' : 'Просмотр партии'; tn.style.color = '#ffc58a'; }
+    else if (state.over) {
       var w = state.winner;
       tn.textContent = w === null ? 'Все сгорели' : mine(w) && !humansLocal() ? 'Победа!' : C[state.players[w].corner].name + ' победил' + (roles[w] === 'bot' ? ' (бот)' : '');
       tn.style.color = w === null ? '' : C[state.players[w].corner].light;
@@ -929,20 +1213,23 @@ var LavaArt = (function () {
       var c = state.players[turn].corner, p0 = state.players[turn];
       tn.style.color = C[c].light;
       tn.textContent = roles[turn] === 'bot' ? 'Ходит бот · ' + C[c].who : mine(turn) ? (humansLocal() ? 'Ходит ' + C[c].who : 'Твой ход') : 'Ходит друг · ' + C[c].who;
-      stt.textContent = n && !LavaLink.ready() ? 'Ждём связи…' : pending ? 'Отправляем ход…' : can ? (p0.back >= 0 ? 'Назад ' + L.DIRS[p0.back].label + ' нельзя · прыжок на месте снимет запрет' : 'Прыгай по прямой на любую плитку') : '';
+      stt.textContent = n && !LavaLink.ready() ? 'Ждём связи…' : VOTE || undoWait ? 'Ждём ответа про возврат хода…' : pending ? 'Отправляем ход…' : can ? (p0.back >= 0 ? 'Назад ' + L.DIRS[p0.back].label + ' нельзя · прыжок на месте снимет запрет' : 'Прыгай по прямой на любую плитку') : '';
     }
-    $('stayBtn').disabled = !can; $('stayBtn').classList.toggle('armed', armed === state.ply && can);
+    $('stayBtn').disabled = !(can || vary); $('stayBtn').classList.toggle('armed', armed === state.ply && can);
+    var u = undoMode();
+    $('undoBtn').disabled = !u; $('undoBtn').title = u === 'here' ? 'Играть с этой позиции' : u === 'ask' ? 'Попросить вернуть ход' : 'Вернуть ход';
+    $('undoBtn').setAttribute('aria-label', $('undoBtn').title);
     $('soundBtn').innerHTML = A.icon(S.sound ? 'soundOn' : 'soundOff'); $('soundBtn').setAttribute('aria-pressed', String(S.sound));
     $('againBtn').disabled = !!n && (n.role !== 'host' || !state.over);
     $('netWarning').hidden = !n || LavaLink.ready(); $('netWarningText').textContent = n ? (n.error || 'Ждём игрока, у которого пропала связь. Его место сохранено.') : '';
     $('reconnectBtn').hidden = !n || n.role !== 'guest';
-    if (state.over && !busy) {
+    if (state.over && !busy && !V) {
       var key = netRound + ':' + state.ply + ':' + state.winner;
       if (shownResult !== key) { shownResult = key; clearTimeout(resultTimer); resultTimer = setTimeout(showResult, 700); }
     }
   }
   function showResult() {
-    if (!state || !state.over || $('game').hidden) return;
+    if (!state || !state.over || $('game').hidden || viewing()) return;
     var w = state.winner, n = net();
     $('winnerGem').innerHTML = w === null ? '' : A.gem(state.players[w].corner, { id: 'w' });
     $('resultTitle').textContent = w === null ? 'Все сгорели' : mine(w) && !humansLocal() ? 'Ты победил!' : C[state.players[w].corner].name + ' победил' + (roles[w] === 'bot' ? ' (бот)' : '');
@@ -986,7 +1273,7 @@ var LavaArt = (function () {
   // анимация хода; done — когда всё закончилось
   function animate(old, nw, done) {
     var e = nw.last, my = epoch;
-    if (!e || !pieces[e.seat]) { done(); return; }
+    if (!e || !pieces[e.seat] || viewing()) { done(); return; }
     busy = true; render();
     paintTiles(old.tiles);
     old.players.forEach(function (p, seat) { var el = pieces[seat]; el.getAnimations().forEach(function (a) { a.cancel(); }); el.classList.toggle('gone', !p.alive); el.style.transform = tf(p.pos); });
@@ -1040,11 +1327,12 @@ var LavaArt = (function () {
     if (!state || state.turn !== seat || busy) return;
     var next = L.apply(state, m); if (!next) return;
     var old = state; state = next; pending = false; busy = true; armed = -1;
-    saveGame();
-    if (net()) LavaLink.update(state);
+    saveGame(); if (rv) rv.sync();
+    if (net()) { LavaLink.update(state); if (VOTE) finishVote(false); }
     animate(old, state, after);
   }
   function act(m) {
+    if (viewing()) { if (rv.canPlay()) rv.play(m); return; }
     if (!canAct() || !L.moves(state, state.turn).some(function (x) { return x.m === m; })) return;
     var n = net();
     if (!n) { commit(m, state.turn); return; }
@@ -1054,6 +1342,7 @@ var LavaArt = (function () {
     clearTimeout(pendTimer); pendTimer = setTimeout(function () { pending = false; render(); }, 4000);
   }
   function stayTap() {
+    if (viewing()) { if (rv.canPlay()) rv.play(0); return; }
     if (!canAct()) return;
     var mv = L.moves(state, state.turn).filter(function (x) { return x.m === 0; })[0];
     if (armed === state.ply) { armed = -1; act(0); return; }
@@ -1063,7 +1352,7 @@ var LavaArt = (function () {
   function schedule() {
     clearTimeout(botTimer);
     var n = net();
-    if (!state || state.over || busy || $('game').hidden || roles[state.turn] !== 'bot' || n && (n.role !== 'host' || !LavaLink.ready())) return;
+    if (!state || state.over || busy || VOTE || $('game').hidden || roles[state.turn] !== 'bot' || n && (n.role !== 'host' || !LavaLink.ready())) return;
     var my = epoch, seat = state.turn;
     botTimer = setTimeout(function () {
       if (my !== epoch || !state || state.turn !== seat || busy || net() && !LavaLink.ready()) return;
@@ -1111,13 +1400,138 @@ var LavaArt = (function () {
   $('stayBtn').onclick = stayTap;
   document.addEventListener('keydown', function (e) {
     if ($('game').hidden || document.querySelector('dialog[open]') || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) || e.altKey || e.ctrlKey || e.metaKey || e.repeat) return;
-    var k = { ArrowUp: 0, ArrowRight: 1, ArrowDown: 2, ArrowLeft: 3 }[e.key];
-    if (k !== undefined) { e.preventDefault(); act(k * 10 + 1); }
-    else if (e.key === ' ') { e.preventDefault(); stayTap(); }
+    if (e.key === ' ') { e.preventDefault(); stayTap(); }
   });
 
+  // ---------- перемотка (как в остальных играх) ----------
+  function lineOf() {
+    if (!state) return [{ s: L.create(2), mv: null, by: null }];
+    if (HC.key !== state) { HC.key = state; HC.line = L.history(state).map(function (st) { return { s: st, mv: st.last ? st.last.m : null, by: st.last ? st.last.seat : null }; }); }
+    return HC.line;
+  }
+  function cname(seat) { return state && state.players[seat] ? C[state.players[seat].corner].name : ''; }
+  function moveText(e) {
+    var t = e && e.s && e.s.last; if (!t) return '';
+    var names = function (arr) { return arr.map(function (x) { return cname(x).toLowerCase(); }).join(', '); };
+    if (t.kind === 'stay') return 'прыжок на месте' + (t.fell ? ' — сгорел' : '');
+    var out = L.DIRS[t.d].label + ' на ' + (t.m % 10);
+    if (t.kind === 'push') out += ', толкнул: ' + names(t.pushed.map(function (q) { return q.seat; }));
+    if (t.kind === 'bounce') out += ', отскок от стены';
+    if (t.killed.length) out += ' — сгорел ' + names(t.killed);
+    if (t.fell) out += ' — сгорел сам';
+    return out;
+  }
+  rv = Review({
+    mount: $('rvMount'), status: $('status'), noBar: true,
+    line: lineOf,
+    play: function (s, mv) { return L.apply(s, mv); },
+    over: function (s) { return s.over; }, toMove: function (s) { return s.turn; },
+    me: function () { var k = mySeat(); return k < 0 ? 0 : k; }, side: cname,
+    moveText: moveText,
+    overText: function (s) { return s.winner === null ? 'все сгорели' : cname(s.winner) + ' победил'; },
+    engine: function () { return !!state && (!net() || state.over); }, evalOn: function () { return true; },
+    analyze: function (s, cb) { cb(null); },
+    redraw: function () { render(); }, relayout: function () { layout(); },
+    active: function () { return !$('game').hidden && !document.querySelector('dialog[open]'); },
+    byOf: function (s) { return s.turn; }, same: function (a, b) { return a === b; }
+  });
+
+  // ---------- возврат хода ----------
+  function mySeat() {
+    var n = net();
+    if (!n) return roles.indexOf('human');
+    return n.role === 'host' ? roles.indexOf('human') : n.seat;
+  }
+  // позиция перед последним ходом кого-то из seats (индекс в истории), -1 — нечего возвращать
+  function lastMoveOf(seats) {
+    var h = lineOf();
+    for (var k = h.length - 1; k >= 1; k--) if (seats.indexOf(h[k].by) >= 0) return k - 1;
+    return -1;
+  }
+  function humanSeats() { var out = []; roles.forEach(function (r, i) { if (r === 'human') out.push(i); }); return out; }
+  function undoMode() {
+    if (!state) return '';
+    var n = net();
+    if (!n) return viewing() ? 'here' : lastMoveOf(humanSeats()) >= 0 ? 'undo' : '';
+    return !state.over && !VOTE && !undoWait && LavaLink.ready() && lastMoveOf([mySeat()]) >= 0 ? 'ask' : '';
+  }
+  function setLocal(ns, msg) {
+    stopTimers(); state = ns; armed = -1; shownResult = '';
+    if ($('result').open) $('result').close();
+    rv.reset(); saveGame(); render(); schedule(); if (msg) toast(msg);
+  }
+  $('undoBtn').onclick = function () {
+    var u = undoMode();
+    if (u === 'here') { var ns = L.replay(state, rv.pathHere()); if (ns) setLocal(ns, 'Играем с этой позиции'); }
+    else if (u === 'undo') setLocal(L.rewind(state, lastMoveOf(humanSeats())), 'Ход возвращён');
+    else if (u === 'ask') requestUndo();
+  };
+  document.addEventListener('keydown', function (e) {
+    if (!$('game').hidden && !net() && (e.ctrlKey || e.metaKey) && /^[zZяЯ]$/.test(e.key)) { e.preventDefault(); $('undoBtn').click(); }
+  });
+  // онлайн: просьба идёт через хозяина; вернуть можно, если согласны все люди за столом (боты согласны всегда)
+  function requestUndo() {
+    var n = net(); if (!n) return;
+    undoWait = true;
+    if (n.role === 'host') hostAsk(mySeat()); else { LavaLink.tell({ k: 'undoAsk', ply: state.ply }); toast('Просим вернуть ход…'); }
+    render();
+  }
+  function hostAsk(R) {
+    var t = lastMoveOf([R]);
+    if (VOTE || state.over || t < 0) { sendDone({ k: 'undoDone', ok: false, R: R, by: -1 }); return; }
+    var voters = []; roles.forEach(function (r, i) { if (i !== R && (r === 'human' || r === 'net')) voters.push(i); });
+    VOTE = { R: R, ply: state.ply, target: t, need: voters, yes: {} };
+    clearTimeout(botTimer);
+    if (!voters.length) { finishVote(true); return; }
+    voters.forEach(function (v) { if (v === mySeat()) askVote(R, state.ply); else LavaLink.tellSeat(v, { k: 'undoVote', R: R, ply: state.ply }); });
+    if (R === mySeat()) toast('Ждём ответа…');
+    render();
+  }
+  function vote(seat, ok) {
+    if (!VOTE || VOTE.need.indexOf(seat) < 0) return;
+    if (!ok) { finishVote(false, seat); return; }
+    VOTE.yes[seat] = 1;
+    if (VOTE.need.every(function (v) { return VOTE.yes[v]; })) finishVote(true);
+  }
+  function finishVote(ok, by) {
+    var v = VOTE; if (!v) return; VOTE = null;
+    var res = { k: 'undoDone', ok: !!ok && state.ply === v.ply, R: v.R, by: by === undefined ? -1 : by };
+    if (res.ok) { var ns = L.rewind(state, v.target); stopTimers(); state = ns; rv.sync(); LavaLink.update(ns); }
+    sendDone(res);
+  }
+  function sendDone(res) { LavaLink.tellAll(res); undoDone(res); schedule(); }
+  function undoDone(d) {
+    undoWait = false; askFor = null; if ($('askDialog').open) $('askDialog').close();
+    if (d.R === mySeat()) toast(d.ok ? 'Ход вернули' : 'Не согласились вернуть ход');
+    else if (d.ok) toast(cname(d.R) + ': ход возвращён');
+    render();
+  }
+  function askVote(R, ply) {
+    askFor = { R: R, ply: ply };
+    $('askText').textContent = cname(R) + ' просит вернуть свой последний ход. Согласен?';
+    if (!$('askDialog').open) $('askDialog').showModal();
+  }
+  function answer(ok) {
+    var a = askFor; askFor = null; if ($('askDialog').open) $('askDialog').close(); if (!a) return;
+    var n = net(); if (!n) return;
+    if (n.role === 'host') vote(mySeat(), ok); else LavaLink.tell({ k: 'undoAns', ok: ok, ply: a.ply });
+  }
+  $('askYes').onclick = function () { answer(true); }; $('askNo').onclick = function () { answer(false); };
+  $('askDialog').addEventListener('cancel', function (e) { e.preventDefault(); answer(false); });
+  function onMsg(d, from) {
+    var n = net(); if (!n || !state || !d) return;
+    if (n.role === 'host') {
+      if (d.k === 'undoAsk' && d.ply === state.ply) hostAsk(from);
+      else if (d.k === 'undoAsk') LavaLink.tellSeat(from, { k: 'undoDone', ok: false, R: from, by: -1 });
+      else if (d.k === 'undoAns' && VOTE && d.ply === VOTE.ply) vote(from, !!d.ok);
+    } else {
+      if (d.k === 'undoVote') askVote(d.R, d.ply);
+      else if (d.k === 'undoDone') undoDone(d);
+    }
+  }
+
   // ---------- старт, меню, реванш ----------
-  function stopTimers() { epoch++; busy = false; pending = false; clearTimeout(botTimer); clearTimeout(pendTimer); clearTimeout(resultTimer); }
+  function stopTimers() { epoch++; busy = false; pending = false; undoWait = false; clearTimeout(botTimer); clearTimeout(pendTimer); clearTimeout(resultTimer); }
   function showGame() {
     if ($('game').hidden) { $('menu').hidden = true; $('game').hidden = false; window.scrollTo(0, 0); }
     layout();
@@ -1127,7 +1541,7 @@ var LavaArt = (function () {
     if (saved) { state = saved.state; roles = saved.roles.slice(); gameSetup = saved.setup || null; }
     else { gameSetup = selectedSetup(); roles = gameSetup.roles.slice(); state = L.create(gameSetup); }
     shownResult = ''; if ($('result').open) $('result').close();
-    $('menu').hidden = true; $('game').hidden = false; layout(); buildBoard(); saveGame(); render(); schedule();
+    $('menu').hidden = true; $('game').hidden = false; rv.reset(); buildBoard(); layout(); saveGame(); render(); schedule();
   }
   $('playBtn').onclick = function () {
     var err = setupError(); if (err) { toast(err); return; }
@@ -1154,7 +1568,7 @@ var LavaArt = (function () {
     if (n) { LavaLink.start(L.create(n.cfg)); return; }
     if (!gameSetup) gameSetup = { mapId: state.mapId, corners: state.players.map(function (p) { return p.corner; }), first: 0, roles: roles.slice() };
     var g = { mapId: gameSetup.mapId, corners: gameSetup.corners, first: Math.floor(Math.random() * gameSetup.corners.length) };
-    state = L.create(g); roles = gameSetup.roles.slice(); buildBoard(); saveGame(); render(); schedule();
+    state = L.create(g); roles = gameSetup.roles.slice(); rv.reset(); buildBoard(); saveGame(); render(); schedule();
   }
   $('againBtn').onclick = function () { if (net() || state.over) restart(); else $('restartDialog').showModal(); };
   $('resultAgain').onclick = restart; $('restartConfirm').onclick = restart; $('restartCancel').onclick = function () { $('restartDialog').close(); };
@@ -1191,13 +1605,13 @@ var LavaArt = (function () {
     clearTimeout(pendTimer); pending = false;
     if (fresh) {
       stopTimers(); shownResult = ''; if ($('result').open) $('result').close();
-      state = n.state; $('menu').hidden = true; $('game').hidden = false; layout(); buildBoard(); render(); schedule(); return;
+      state = n.state; VOTE = null; $('menu').hidden = true; $('game').hidden = false; rv.reset(); buildBoard(); layout(); render(); schedule(); return;
     }
-    if (busy) { state = n.state; return; }
-    state = n.state; showGame();
+    if (busy) { state = n.state; rv.sync(); return; }
+    state = n.state; rv.sync(); showGame();
     if (moved) animate(old, state, after); else after();
   }
-  var handlers = { change: netChange, move: function (m, seat) { commit(m, seat); } };
+  var handlers = { change: netChange, move: function (m, seat) { commit(m, seat); }, msg: onMsg };
   function host() {
     var err = setupError(); if (err) { toast(err); return; }
     try { var cfg = selectedSetup(); stopTimers(); state = null; netRound = 0; shownResult = ''; LavaLink.host(cfg, handlers); }

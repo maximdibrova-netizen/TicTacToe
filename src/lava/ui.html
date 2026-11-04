@@ -50,8 +50,9 @@
     <div id="boardBox"><div id="board" aria-label="Игровое поле"><div class="tiles" id="tiles"></div><div class="marks" id="marks"></div><div class="fx" id="fx"></div><div class="pieces" id="pieces"></div></div></div>
     <div class="seat" data-c="3" id="seat3"></div><div class="seat" data-c="2" id="seat2"></div>
   </div>
+  <div id="rvMount"></div>
   <div id="netWarning" hidden><span id="netWarningText"></span><button class="ghost sm" id="reconnectBtn" hidden>Переподключиться</button></div>
-  <div class="g-bar"><button class="tb" id="homeBtn" aria-label="В меню" title="В меню"></button><button class="tb" id="againBtn" aria-label="Новая партия" title="Новая партия"></button><button class="tb wide" id="stayBtn" title="Прыжок на месте"></button><button class="tb" id="soundBtn" aria-label="Звук" title="Звук"></button><button class="tb" id="gameRulesBtn" aria-label="Правила" title="Правила"></button></div>
+  <div class="g-bar"><button class="tb" id="homeBtn" aria-label="В меню" title="В меню"></button><button class="tb" id="undoBtn" aria-label="Вернуть ход" title="Вернуть ход"></button><button class="tb" id="againBtn" aria-label="Новая партия" title="Новая партия"></button><button class="tb wide" id="stayBtn" title="Прыжок на месте"></button><button class="tb" id="soundBtn" aria-label="Звук" title="Звук"></button><button class="tb" id="gameRulesBtn" aria-label="Правила" title="Правила"></button></div>
 </section>
 
 <dialog id="rulesDialog" aria-labelledby="rulesTitle"><h2 id="rulesTitle">Как играть</h2><div class="rules-body" id="rulesDlg"></div><div class="btns"><button id="rulesClose">Понятно</button></div></dialog>
@@ -59,8 +60,10 @@
 <dialog id="result" aria-labelledby="resultTitle"><div class="win-gem" id="winnerGem"></div><h2 id="resultTitle"></h2><p id="resultText"></p><div class="btns"><button id="resultAgain">Ещё раз</button><button class="alt" id="viewBtn">Посмотреть поле</button><button class="alt" id="endMenu">В меню</button></div></dialog>
 <dialog id="leaveDialog" aria-labelledby="leaveTitle"><h2 id="leaveTitle">Выйти из игры?</h2><p>Если выйдет хозяин, онлайн-партия закончится для всех.</p><div class="btns"><button id="leaveConfirm">Выйти</button><button class="alt" id="leaveCancel">Остаться</button></div></dialog>
 <dialog id="restartDialog" aria-labelledby="restartTitle"><h2 id="restartTitle">Начать заново?</h2><p>Текущая партия закончится. Игроки и поле останутся те же.</p><div class="btns"><button id="restartConfirm">Заново</button><button class="alt" id="restartCancel">Продолжить</button></div></dialog>
+<dialog id="askDialog" aria-labelledby="askTitle"><h2 id="askTitle">Вернуть ход?</h2><p id="askText"></p><div class="btns"><button id="askYes">Да</button><button class="alt" id="askNo">Нет</button></div></dialog>
 <div class="toast" id="toast" hidden role="status"></div>
 <script>/*CORE*/</script>
 <script>/*LAVA_NET*/</script>
 <script>/*LAVA_ART*/</script>
+<script>/*REVIEW*/</script>
 <script>/*LAVA_APP*/</script>

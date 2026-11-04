@@ -88,7 +88,8 @@ var LavaArt = (function () {
     soundOff: '<path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z"/><path d="m16 9.5 5 5m0-5-5 5"/>',
     play: '<path d="M8 5.5v13l10-6.5z" fill="currentColor"/>',
     stay: '<path d="M12 20V9"/><path d="m7.5 13 4.5-4.5 4.5 4.5"/><path d="M5 4h14"/>',
-    flag: '<path d="M6 21V4h11l-2 4 2 4H6"/>'
+    flag: '<path d="M6 21V4h11l-2 4 2 4H6"/>',
+    undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'
   };
   function icon(n) { return '<svg viewBox="0 0 24 24" class="ic" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + I[n] + '</svg>'; }
   return { colors: colors, gem: gem, board: board, holes: holes, mini: mini, icon: icon };

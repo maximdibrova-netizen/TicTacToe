@@ -14,6 +14,7 @@
   if (window.IN_ROOM) S.roles = PRESETS.net.slice();
   var state = null, roles = [], gameSetup = null, epoch = 0, netRound = 0, shownResult = '';
   var busy = false, pending = false, botTimer = 0, pendTimer = 0, toastTimer = 0, resultTimer = 0;
+  var VOTE = null, askFor = null, undoWait = false, rv = null, HC = { key: null, line: null };
   var armed = -1, B = 480, pieces = [], tileEls = [], markEls = [], holesKey = '', audio = null;
   function savePrefs() { try { localStorage.setItem(PREFS, JSON.stringify(S)); } catch (e) {} }
   function toast(msg) { $('toast').textContent = msg; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { $('toast').hidden = true; }, 3200); }
@@ -26,10 +27,10 @@
     '<li>Прыгнул на соперника — <b>толкаешь</b> его (и всех, кто стоит за ним вплотную) на клетку дальше. Попал в лаву — сгорел. Если за ним стена, толчок не проходит: ты отскакиваешь на клетку перед ним.</li>' +
     '<li>Сгорел — выбыл. <b>Побеждает последний</b>, кто остался на плитках.</li></ol>' +
     '<div class="legend"><span><i style="background:#f3ece5"></i>3 прыжка</span><span><i style="background:#b9a99c"></i>2</span><span><i style="background:#6e5c52"></i>1</span><span><i style="background:radial-gradient(#ffb648,#ff4d00 60%,#120806)"></i>лава</span></div>' +
-    '<p class="hint">Нажми на подсвеченную клетку или перетащи фишку. Прыжок на месте — дважды нажать на свою фишку или кнопку «На месте». Клавиши: стрелки — на соседнюю клетку, пробел — на месте.</p>';
+    '<p class="hint">Нажми на клетку, куда прыгаешь, или перетащи фишку. Прыжок на месте — дважды нажать на свою фишку или кнопку «На месте» (пробел). Ход можно вернуть; с ботом — сразу, с другом — если он согласится. Стрелки ◀ ▶ под полем — перемотка партии.</p>';
   $('rulesMenu').innerHTML = RULES; $('rulesDlg').innerHTML = RULES;
   $('logoGem').innerHTML = A.gem(3, { id: 'logo' });
-  $('homeBtn').innerHTML = A.icon('home'); $('againBtn').innerHTML = A.icon('restart'); $('gameRulesBtn').innerHTML = A.icon('help');
+  $('homeBtn').innerHTML = A.icon('home'); $('undoBtn').innerHTML = A.icon('undo'); $('againBtn').innerHTML = A.icon('restart'); $('gameRulesBtn').innerHTML = A.icon('help');
   $('stayBtn').innerHTML = A.icon('stay') + '<span>На месте</span>';
 
   // ---------- звук ----------
@@ -133,7 +134,7 @@
   function layout() {
     if ($('game').hidden) return;
     var vw = window.innerWidth, vh = window.innerHeight, hub = window.hubH ? window.hubH() : 0;
-    var top = $('game').querySelector('.g-top').offsetHeight || 54, bar = 62, wide = vw >= 700 && vw > vh * 1.15, gem, b;
+    var top = $('game').querySelector('.g-top').offsetHeight || 54, bar = 62 + ($('rvMount').offsetHeight || 38), wide = vw >= 700 && vw > vh * 1.15, gem, b;
     if (wide) {
       gem = Math.max(50, Math.min(84, vh * .1));
       b = Math.min(vh - hub - top - bar - 26, vw - 2 * (gem + 70) - 40);
@@ -145,7 +146,7 @@
     document.documentElement.style.setProperty('--B', B + 'px');
     document.documentElement.style.setProperty('--gem', Math.round(gem) + 'px');
     $('arena').classList.toggle('wide', wide);
-    if (state && !busy) placePieces();
+    if (state && !busy && tileEls.length) render();
   }
   window.addEventListener('resize', layout);
   function xy(i) { var cs = B / 6; return [(i % 6) * cs, Math.floor(i / 6) * cs]; }
@@ -184,8 +185,8 @@
     var key = tiles.map(function (t) { return t ? 1 : 0; }).join('');
     if (key !== holesKey) { holesKey = key; var cp = document.getElementById('lvHoles'); if (cp) cp.innerHTML = A.holes(tiles); }
   }
-  function placePieces() {
-    state.players.forEach(function (p, seat) {
+  function placePieces(S0) {
+    (S0 || state).players.forEach(function (p, seat) {
       var el = pieces[seat]; if (!el) return;
       el.getAnimations().forEach(function (a) { a.cancel(); });
       el.classList.toggle('gone', !p.alive);
@@ -208,54 +209,53 @@
     return roles[seat] === 'human' && !net() ? C[state.players[seat].corner].name : 'Друг';
   }
   function canAct() {
-    if (!state || state.over || busy || pending) return false;
+    if (!state || state.over || busy || pending || (rv && rv.viewing())) return false;
     var n = net();
     if (!n) return roles[state.turn] === 'human';
     return LavaLink.ready() && (n.role === 'host' ? roles[state.turn] === 'human' : state.turn === n.seat);
   }
 
   // ---------- отрисовка ----------
+  function viewing() { return !!rv && rv.viewing(); }
   function render() {
     if (!state) return;
-    var can = canAct(), turn = state.turn, n = net();
-    if (!busy) { paintTiles(state.tiles); placePieces(); }
-    if (armed !== state.ply) armed = -1;
-    // стрелки и кольцо
-    state.players.forEach(function (p, seat) {
+    var V = viewing(), S0 = V ? rv.display().s : state, vary = V && rv.canPlay();
+    var can = canAct(), turn = S0.turn, n = net();
+    if (!busy) { paintTiles(S0.tiles); placePieces(S0); }
+    if (armed !== state.ply || V) armed = -1;
+    // стрелки (куда можно прыгнуть) и кольцо того, чей ход
+    S0.players.forEach(function (p, seat) {
       var el = pieces[seat]; if (!el) return;
       var dirs = [false, false, false, false];
-      if (p.alive && !state.over) L.moves(state, seat).forEach(function (m) { if (m.n > 0) dirs[m.d] = true; });
+      if (p.alive && !S0.over) L.moves(S0, seat).forEach(function (m) { if (m.n > 0) dirs[m.d] = true; });
       for (var d = 0; d < 4; d++) el.querySelector('.a' + d).classList.toggle('on', dirs[d] && !busy);
-      el.classList.toggle('on', !state.over && seat === turn && !busy);
+      el.classList.toggle('on', !S0.over && seat === turn && !busy);
     });
-    // подсветка ходов
+    // клетки, куда можно прыгнуть (без подсветки — только для нажатий)
     markEls.forEach(function (m) { m.className = 'mark'; m.removeAttribute('data-m'); m.removeAttribute('aria-label'); m.tabIndex = -1; });
-    if (can) {
-      var col = C[state.players[turn].corner].light;
-      L.moves(state, turn).forEach(function (mv) {
+    if (can || vary) {
+      L.moves(S0, turn).forEach(function (mv) {
         var m = markEls[mv.m === 0 ? mv.to : mv.land];
-        m.dataset.m = mv.m; m.style.setProperty('--mc', col); m.tabIndex = 0;
-        if (mv.m === 0) { m.className = 'mark stay' + (mv.fatal ? ' bad' : '') + (armed === state.ply ? ' armed' : ''); m.setAttribute('aria-label', 'Прыжок на месте' + (mv.fatal ? ' — сгоришь' : '')); }
-        else {
-          m.className = 'mark go ' + mv.kind + (mv.fatal ? ' bad' : '') + (mv.kills.length ? ' kill' : '');
-          m.setAttribute('aria-label', 'Прыжок ' + L.DIRS[mv.d].label + ' на ' + mv.n + (mv.kind === 'push' ? ', толкнуть' : '') + (mv.fatal ? ', сгоришь' : ''));
-        }
+        m.dataset.m = mv.m; m.tabIndex = 0;
+        if (mv.m === 0) { m.className = 'mark stay' + (armed === state.ply && !V ? ' armed' : ''); m.setAttribute('aria-label', 'Прыжок на месте'); }
+        else { m.className = 'mark go'; m.setAttribute('aria-label', 'Прыжок ' + L.DIRS[mv.d].label + ' на ' + mv.n); }
       });
     }
     // игроки по углам
     [0, 1, 2, 3].forEach(function (c) {
       var seat = seatOf(c), el = $('seat' + c); if (seat < 0) return;
-      var p = state.players[seat], nm = label(seat), cn = C[c].name;
+      var p = S0.players[seat], nm = label(seat), cn = C[c].name;
       el.querySelector('.nm').textContent = nm;
       el.querySelector('.nm').style.color = C[c].light;
-      var st = !p.alive ? 'сгорел' : state.over && state.winner === seat ? 'победил!' : n && roles[seat] === 'net' && !n.online[seat] ? 'нет связи' : nm === cn ? '' : cn.toLowerCase();
+      var st = !p.alive ? 'сгорел' : S0.over && S0.winner === seat ? 'победил!' : n && roles[seat] === 'net' && !n.online[seat] ? 'нет связи' : nm === cn ? '' : cn.toLowerCase();
       el.querySelector('.st').textContent = st;
-      el.classList.toggle('on', !state.over && seat === turn);
+      el.classList.toggle('on', !S0.over && seat === turn);
       el.classList.toggle('dead', !p.alive);
     });
-    // заголовок
+    // заголовок (в просмотре строку состояния пишет модуль перемотки)
     var tn = $('turnName'), stt = $('status');
-    if (state.over) {
+    if (V) { tn.textContent = rv.inVar() ? 'Вариант' : 'Просмотр партии'; tn.style.color = '#ffc58a'; }
+    else if (state.over) {
       var w = state.winner;
       tn.textContent = w === null ? 'Все сгорели' : mine(w) && !humansLocal() ? 'Победа!' : C[state.players[w].corner].name + ' победил' + (roles[w] === 'bot' ? ' (бот)' : '');
       tn.style.color = w === null ? '' : C[state.players[w].corner].light;
@@ -264,20 +264,23 @@
       var c = state.players[turn].corner, p0 = state.players[turn];
       tn.style.color = C[c].light;
       tn.textContent = roles[turn] === 'bot' ? 'Ходит бот · ' + C[c].who : mine(turn) ? (humansLocal() ? 'Ходит ' + C[c].who : 'Твой ход') : 'Ходит друг · ' + C[c].who;
-      stt.textContent = n && !LavaLink.ready() ? 'Ждём связи…' : pending ? 'Отправляем ход…' : can ? (p0.back >= 0 ? 'Назад ' + L.DIRS[p0.back].label + ' нельзя · прыжок на месте снимет запрет' : 'Прыгай по прямой на любую плитку') : '';
+      stt.textContent = n && !LavaLink.ready() ? 'Ждём связи…' : VOTE || undoWait ? 'Ждём ответа про возврат хода…' : pending ? 'Отправляем ход…' : can ? (p0.back >= 0 ? 'Назад ' + L.DIRS[p0.back].label + ' нельзя · прыжок на месте снимет запрет' : 'Прыгай по прямой на любую плитку') : '';
     }
-    $('stayBtn').disabled = !can; $('stayBtn').classList.toggle('armed', armed === state.ply && can);
+    $('stayBtn').disabled = !(can || vary); $('stayBtn').classList.toggle('armed', armed === state.ply && can);
+    var u = undoMode();
+    $('undoBtn').disabled = !u; $('undoBtn').title = u === 'here' ? 'Играть с этой позиции' : u === 'ask' ? 'Попросить вернуть ход' : 'Вернуть ход';
+    $('undoBtn').setAttribute('aria-label', $('undoBtn').title);
     $('soundBtn').innerHTML = A.icon(S.sound ? 'soundOn' : 'soundOff'); $('soundBtn').setAttribute('aria-pressed', String(S.sound));
     $('againBtn').disabled = !!n && (n.role !== 'host' || !state.over);
     $('netWarning').hidden = !n || LavaLink.ready(); $('netWarningText').textContent = n ? (n.error || 'Ждём игрока, у которого пропала связь. Его место сохранено.') : '';
     $('reconnectBtn').hidden = !n || n.role !== 'guest';
-    if (state.over && !busy) {
+    if (state.over && !busy && !V) {
       var key = netRound + ':' + state.ply + ':' + state.winner;
       if (shownResult !== key) { shownResult = key; clearTimeout(resultTimer); resultTimer = setTimeout(showResult, 700); }
     }
   }
   function showResult() {
-    if (!state || !state.over || $('game').hidden) return;
+    if (!state || !state.over || $('game').hidden || viewing()) return;
     var w = state.winner, n = net();
     $('winnerGem').innerHTML = w === null ? '' : A.gem(state.players[w].corner, { id: 'w' });
     $('resultTitle').textContent = w === null ? 'Все сгорели' : mine(w) && !humansLocal() ? 'Ты победил!' : C[state.players[w].corner].name + ' победил' + (roles[w] === 'bot' ? ' (бот)' : '');
@@ -321,7 +324,7 @@
   // анимация хода; done — когда всё закончилось
   function animate(old, nw, done) {
     var e = nw.last, my = epoch;
-    if (!e || !pieces[e.seat]) { done(); return; }
+    if (!e || !pieces[e.seat] || viewing()) { done(); return; }
     busy = true; render();
     paintTiles(old.tiles);
     old.players.forEach(function (p, seat) { var el = pieces[seat]; el.getAnimations().forEach(function (a) { a.cancel(); }); el.classList.toggle('gone', !p.alive); el.style.transform = tf(p.pos); });
@@ -375,11 +378,12 @@
     if (!state || state.turn !== seat || busy) return;
     var next = L.apply(state, m); if (!next) return;
     var old = state; state = next; pending = false; busy = true; armed = -1;
-    saveGame();
-    if (net()) LavaLink.update(state);
+    saveGame(); if (rv) rv.sync();
+    if (net()) { LavaLink.update(state); if (VOTE) finishVote(false); }
     animate(old, state, after);
   }
   function act(m) {
+    if (viewing()) { if (rv.canPlay()) rv.play(m); return; }
     if (!canAct() || !L.moves(state, state.turn).some(function (x) { return x.m === m; })) return;
     var n = net();
     if (!n) { commit(m, state.turn); return; }
@@ -389,6 +393,7 @@
     clearTimeout(pendTimer); pendTimer = setTimeout(function () { pending = false; render(); }, 4000);
   }
   function stayTap() {
+    if (viewing()) { if (rv.canPlay()) rv.play(0); return; }
     if (!canAct()) return;
     var mv = L.moves(state, state.turn).filter(function (x) { return x.m === 0; })[0];
     if (armed === state.ply) { armed = -1; act(0); return; }
@@ -398,7 +403,7 @@
   function schedule() {
     clearTimeout(botTimer);
     var n = net();
-    if (!state || state.over || busy || $('game').hidden || roles[state.turn] !== 'bot' || n && (n.role !== 'host' || !LavaLink.ready())) return;
+    if (!state || state.over || busy || VOTE || $('game').hidden || roles[state.turn] !== 'bot' || n && (n.role !== 'host' || !LavaLink.ready())) return;
     var my = epoch, seat = state.turn;
     botTimer = setTimeout(function () {
       if (my !== epoch || !state || state.turn !== seat || busy || net() && !LavaLink.ready()) return;
@@ -446,13 +451,138 @@
   $('stayBtn').onclick = stayTap;
   document.addEventListener('keydown', function (e) {
     if ($('game').hidden || document.querySelector('dialog[open]') || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) || e.altKey || e.ctrlKey || e.metaKey || e.repeat) return;
-    var k = { ArrowUp: 0, ArrowRight: 1, ArrowDown: 2, ArrowLeft: 3 }[e.key];
-    if (k !== undefined) { e.preventDefault(); act(k * 10 + 1); }
-    else if (e.key === ' ') { e.preventDefault(); stayTap(); }
+    if (e.key === ' ') { e.preventDefault(); stayTap(); }
   });
 
+  // ---------- перемотка (как в остальных играх) ----------
+  function lineOf() {
+    if (!state) return [{ s: L.create(2), mv: null, by: null }];
+    if (HC.key !== state) { HC.key = state; HC.line = L.history(state).map(function (st) { return { s: st, mv: st.last ? st.last.m : null, by: st.last ? st.last.seat : null }; }); }
+    return HC.line;
+  }
+  function cname(seat) { return state && state.players[seat] ? C[state.players[seat].corner].name : ''; }
+  function moveText(e) {
+    var t = e && e.s && e.s.last; if (!t) return '';
+    var names = function (arr) { return arr.map(function (x) { return cname(x).toLowerCase(); }).join(', '); };
+    if (t.kind === 'stay') return 'прыжок на месте' + (t.fell ? ' — сгорел' : '');
+    var out = L.DIRS[t.d].label + ' на ' + (t.m % 10);
+    if (t.kind === 'push') out += ', толкнул: ' + names(t.pushed.map(function (q) { return q.seat; }));
+    if (t.kind === 'bounce') out += ', отскок от стены';
+    if (t.killed.length) out += ' — сгорел ' + names(t.killed);
+    if (t.fell) out += ' — сгорел сам';
+    return out;
+  }
+  rv = Review({
+    mount: $('rvMount'), status: $('status'), noBar: true,
+    line: lineOf,
+    play: function (s, mv) { return L.apply(s, mv); },
+    over: function (s) { return s.over; }, toMove: function (s) { return s.turn; },
+    me: function () { var k = mySeat(); return k < 0 ? 0 : k; }, side: cname,
+    moveText: moveText,
+    overText: function (s) { return s.winner === null ? 'все сгорели' : cname(s.winner) + ' победил'; },
+    engine: function () { return !!state && (!net() || state.over); }, evalOn: function () { return true; },
+    analyze: function (s, cb) { cb(null); },
+    redraw: function () { render(); }, relayout: function () { layout(); },
+    active: function () { return !$('game').hidden && !document.querySelector('dialog[open]'); },
+    byOf: function (s) { return s.turn; }, same: function (a, b) { return a === b; }
+  });
+
+  // ---------- возврат хода ----------
+  function mySeat() {
+    var n = net();
+    if (!n) return roles.indexOf('human');
+    return n.role === 'host' ? roles.indexOf('human') : n.seat;
+  }
+  // позиция перед последним ходом кого-то из seats (индекс в истории), -1 — нечего возвращать
+  function lastMoveOf(seats) {
+    var h = lineOf();
+    for (var k = h.length - 1; k >= 1; k--) if (seats.indexOf(h[k].by) >= 0) return k - 1;
+    return -1;
+  }
+  function humanSeats() { var out = []; roles.forEach(function (r, i) { if (r === 'human') out.push(i); }); return out; }
+  function undoMode() {
+    if (!state) return '';
+    var n = net();
+    if (!n) return viewing() ? 'here' : lastMoveOf(humanSeats()) >= 0 ? 'undo' : '';
+    return !state.over && !VOTE && !undoWait && LavaLink.ready() && lastMoveOf([mySeat()]) >= 0 ? 'ask' : '';
+  }
+  function setLocal(ns, msg) {
+    stopTimers(); state = ns; armed = -1; shownResult = '';
+    if ($('result').open) $('result').close();
+    rv.reset(); saveGame(); render(); schedule(); if (msg) toast(msg);
+  }
+  $('undoBtn').onclick = function () {
+    var u = undoMode();
+    if (u === 'here') { var ns = L.replay(state, rv.pathHere()); if (ns) setLocal(ns, 'Играем с этой позиции'); }
+    else if (u === 'undo') setLocal(L.rewind(state, lastMoveOf(humanSeats())), 'Ход возвращён');
+    else if (u === 'ask') requestUndo();
+  };
+  document.addEventListener('keydown', function (e) {
+    if (!$('game').hidden && !net() && (e.ctrlKey || e.metaKey) && /^[zZяЯ]$/.test(e.key)) { e.preventDefault(); $('undoBtn').click(); }
+  });
+  // онлайн: просьба идёт через хозяина; вернуть можно, если согласны все люди за столом (боты согласны всегда)
+  function requestUndo() {
+    var n = net(); if (!n) return;
+    undoWait = true;
+    if (n.role === 'host') hostAsk(mySeat()); else { LavaLink.tell({ k: 'undoAsk', ply: state.ply }); toast('Просим вернуть ход…'); }
+    render();
+  }
+  function hostAsk(R) {
+    var t = lastMoveOf([R]);
+    if (VOTE || state.over || t < 0) { sendDone({ k: 'undoDone', ok: false, R: R, by: -1 }); return; }
+    var voters = []; roles.forEach(function (r, i) { if (i !== R && (r === 'human' || r === 'net')) voters.push(i); });
+    VOTE = { R: R, ply: state.ply, target: t, need: voters, yes: {} };
+    clearTimeout(botTimer);
+    if (!voters.length) { finishVote(true); return; }
+    voters.forEach(function (v) { if (v === mySeat()) askVote(R, state.ply); else LavaLink.tellSeat(v, { k: 'undoVote', R: R, ply: state.ply }); });
+    if (R === mySeat()) toast('Ждём ответа…');
+    render();
+  }
+  function vote(seat, ok) {
+    if (!VOTE || VOTE.need.indexOf(seat) < 0) return;
+    if (!ok) { finishVote(false, seat); return; }
+    VOTE.yes[seat] = 1;
+    if (VOTE.need.every(function (v) { return VOTE.yes[v]; })) finishVote(true);
+  }
+  function finishVote(ok, by) {
+    var v = VOTE; if (!v) return; VOTE = null;
+    var res = { k: 'undoDone', ok: !!ok && state.ply === v.ply, R: v.R, by: by === undefined ? -1 : by };
+    if (res.ok) { var ns = L.rewind(state, v.target); stopTimers(); state = ns; rv.sync(); LavaLink.update(ns); }
+    sendDone(res);
+  }
+  function sendDone(res) { LavaLink.tellAll(res); undoDone(res); schedule(); }
+  function undoDone(d) {
+    undoWait = false; askFor = null; if ($('askDialog').open) $('askDialog').close();
+    if (d.R === mySeat()) toast(d.ok ? 'Ход вернули' : 'Не согласились вернуть ход');
+    else if (d.ok) toast(cname(d.R) + ': ход возвращён');
+    render();
+  }
+  function askVote(R, ply) {
+    askFor = { R: R, ply: ply };
+    $('askText').textContent = cname(R) + ' просит вернуть свой последний ход. Согласен?';
+    if (!$('askDialog').open) $('askDialog').showModal();
+  }
+  function answer(ok) {
+    var a = askFor; askFor = null; if ($('askDialog').open) $('askDialog').close(); if (!a) return;
+    var n = net(); if (!n) return;
+    if (n.role === 'host') vote(mySeat(), ok); else LavaLink.tell({ k: 'undoAns', ok: ok, ply: a.ply });
+  }
+  $('askYes').onclick = function () { answer(true); }; $('askNo').onclick = function () { answer(false); };
+  $('askDialog').addEventListener('cancel', function (e) { e.preventDefault(); answer(false); });
+  function onMsg(d, from) {
+    var n = net(); if (!n || !state || !d) return;
+    if (n.role === 'host') {
+      if (d.k === 'undoAsk' && d.ply === state.ply) hostAsk(from);
+      else if (d.k === 'undoAsk') LavaLink.tellSeat(from, { k: 'undoDone', ok: false, R: from, by: -1 });
+      else if (d.k === 'undoAns' && VOTE && d.ply === VOTE.ply) vote(from, !!d.ok);
+    } else {
+      if (d.k === 'undoVote') askVote(d.R, d.ply);
+      else if (d.k === 'undoDone') undoDone(d);
+    }
+  }
+
   // ---------- старт, меню, реванш ----------
-  function stopTimers() { epoch++; busy = false; pending = false; clearTimeout(botTimer); clearTimeout(pendTimer); clearTimeout(resultTimer); }
+  function stopTimers() { epoch++; busy = false; pending = false; undoWait = false; clearTimeout(botTimer); clearTimeout(pendTimer); clearTimeout(resultTimer); }
   function showGame() {
     if ($('game').hidden) { $('menu').hidden = true; $('game').hidden = false; window.scrollTo(0, 0); }
     layout();
@@ -462,7 +592,7 @@
     if (saved) { state = saved.state; roles = saved.roles.slice(); gameSetup = saved.setup || null; }
     else { gameSetup = selectedSetup(); roles = gameSetup.roles.slice(); state = L.create(gameSetup); }
     shownResult = ''; if ($('result').open) $('result').close();
-    $('menu').hidden = true; $('game').hidden = false; layout(); buildBoard(); saveGame(); render(); schedule();
+    $('menu').hidden = true; $('game').hidden = false; rv.reset(); buildBoard(); layout(); saveGame(); render(); schedule();
   }
   $('playBtn').onclick = function () {
     var err = setupError(); if (err) { toast(err); return; }
@@ -489,7 +619,7 @@
     if (n) { LavaLink.start(L.create(n.cfg)); return; }
     if (!gameSetup) gameSetup = { mapId: state.mapId, corners: state.players.map(function (p) { return p.corner; }), first: 0, roles: roles.slice() };
     var g = { mapId: gameSetup.mapId, corners: gameSetup.corners, first: Math.floor(Math.random() * gameSetup.corners.length) };
-    state = L.create(g); roles = gameSetup.roles.slice(); buildBoard(); saveGame(); render(); schedule();
+    state = L.create(g); roles = gameSetup.roles.slice(); rv.reset(); buildBoard(); saveGame(); render(); schedule();
   }
   $('againBtn').onclick = function () { if (net() || state.over) restart(); else $('restartDialog').showModal(); };
   $('resultAgain').onclick = restart; $('restartConfirm').onclick = restart; $('restartCancel').onclick = function () { $('restartDialog').close(); };
@@ -526,13 +656,13 @@
     clearTimeout(pendTimer); pending = false;
     if (fresh) {
       stopTimers(); shownResult = ''; if ($('result').open) $('result').close();
-      state = n.state; $('menu').hidden = true; $('game').hidden = false; layout(); buildBoard(); render(); schedule(); return;
+      state = n.state; VOTE = null; $('menu').hidden = true; $('game').hidden = false; rv.reset(); buildBoard(); layout(); render(); schedule(); return;
     }
-    if (busy) { state = n.state; return; }
-    state = n.state; showGame();
+    if (busy) { state = n.state; rv.sync(); return; }
+    state = n.state; rv.sync(); showGame();
     if (moved) animate(old, state, after); else after();
   }
-  var handlers = { change: netChange, move: function (m, seat) { commit(m, seat); } };
+  var handlers = { change: netChange, move: function (m, seat) { commit(m, seat); }, msg: onMsg };
   function host() {
     var err = setupError(); if (err) { toast(err); return; }
     try { var cfg = selectedSetup(); stopTimers(); state = null; netRound = 0; shownResult = ''; LavaLink.host(cfg, handlers); }
