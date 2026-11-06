@@ -33,6 +33,7 @@
       <p class="hint">Отправь другу ссылку или код. У каждого своя рука на экране.</p>
     </section>
     <details class="card rules"><summary>Как играть</summary><ol>
+      <li>Перетащи карту из руки на середину стола, чтобы сходить.</li>
       <li>У каждого по шесть карт. Первый ход у игрока с младшим козырем, а если козырей на руках нет, ходит первый участник.</li>
       <li>Отбивай старшей картой той же масти. Некозырную карту можно побить козырем.</li>
       <li>Подкидывай только достоинства, уже лежащие на столе. За заход можно подкинуть не больше шести карт и не больше, чем было у отбивающегося в начале захода.</li>
@@ -45,33 +46,69 @@
 
 <section id="game" class="screen" hidden>
   <main class="table-layout">
-    <header class="match-head"><span class="eyebrow">Подкидной дурак</span><span id="modeTitle"></span></header>
-    <div id="players" class="players" aria-label="Соперники"></div>
+    <header class="match-head">
+      <div><h1>Дурак</h1><p id="modeTitle"></p></div>
+      <div class="toolbar"><button id="homeBtn">Меню</button><button id="againBtn">Заново</button></div>
+    </header>
     <section class="felt" aria-label="Карточный стол">
-      <div class="table-head">
-        <div id="stock" class="stock"></div>
-        <div class="table-title"><strong id="status" role="status"></strong><p id="detail"></p></div>
-        <div id="discard" class="discard"></div>
+      <div id="players" class="players" aria-label="Соперники"></div>
+      <div class="turn-line"><strong id="status" role="status"></strong></div>
+      <div class="table-center">
+        <div id="stock" class="stock" role="group"></div>
+        <div id="pairs" class="pairs" aria-label="Карты на столе"></div>
+        <div id="discard" class="discard" role="group"></div>
       </div>
-      <div id="pairs" class="pairs" aria-label="Карты на столе"></div>
-      <div id="tableNote" class="table-note"></div>
-    </section>
-    <div class="action-row" aria-label="Действия">
-      <button id="takeBtn" class="accent" hidden>Взять карты</button>
-      <button id="passBtn" class="accent" hidden>Не подкидывать</button>
-    </div>
-    <section class="hand-section" aria-labelledby="handTitle">
-      <div class="hand-head"><h2 id="handTitle">Твоя рука</h2><span id="handInfo"></span></div>
-      <div id="hand" class="hand"></div>
+      <div class="action-row" aria-label="Действия">
+        <button id="takeBtn" class="accent" hidden>Беру</button>
+        <button id="passBtn" class="accent" hidden>Бито</button>
+      </div>
+      <section class="hand-section" aria-labelledby="handTitle">
+        <div id="hand" class="hand"></div>
+        <div class="hand-caption"><h2 id="handTitle">Твоя рука</h2><span id="handInfo"></span></div>
+      </section>
     </section>
     <section id="endOv" class="card end-panel" aria-labelledby="endTitle" hidden>
       <h2 id="endTitle"></h2><p id="endText" class="hint"></p>
       <div class="btns"><button id="endAgain">Ещё раз</button><button class="alt" id="endMenu">В меню</button></div>
     </section>
-    <div class="toolbar"><button id="homeBtn">⌂ <span>Меню</span></button><button id="againBtn">↻ <span>Заново</span></button></div>
   </main>
 </section>
 
+<svg class="card-defs" width="0" height="0" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <g id="court-frame">
+      <rect x=".6" y=".6" width="38.8" height="52.8" rx="3" fill="#f4e8ce" stroke="currentColor" opacity=".86"/>
+      <path d="M3 45 36 10M3 36 30 7M12 48 37 22" stroke="#bf945b" stroke-width=".7" opacity=".6"/>
+    </g>
+    <g id="court-5">
+      <use href="#court-frame"/>
+      <path d="M5 43c1-11 6-15 14-17l6 4 2 15H5z" fill="currentColor"/>
+      <path d="m11 29 6 6 6-5-5 15-7-10z" fill="#d5a85f"/>
+      <path d="M15 14h10v7l-3 2v5h-6v-5l-2-3z" fill="#e8bd92" stroke="currentColor"/>
+      <path d="M12 18c-2-5 1-9 7-9 3 0 6 2 8 6l-8-1-7 4z" fill="currentColor"/>
+      <path d="M26 13c0-5 3-7 8-7-1 4-4 6-8 7Z" fill="#c89243"/>
+      <path d="m6 38 7-19m-9 15 6 2" stroke="#d0a056" stroke-width="1.5"/>
+    </g>
+    <g id="court-6">
+      <use href="#court-frame"/>
+      <path d="M7 44c1-9 5-14 12-16l7 3 4 13H7z" fill="currentColor"/>
+      <path d="m15 28 5 5 6-3-3 10-3 4-5-9z" fill="#d6aa66"/>
+      <path d="M11 28c3-5-1-15 7-16 8-1 9 8 9 16l-7-2z" fill="currentColor"/>
+      <path d="M15 16h10v6l-3 4h-4l-2-4z" fill="#e8bd92" stroke="currentColor"/>
+      <path d="m13 10 3 2 3-5 3 5 4-2-2 6h-9z" fill="#cb994f" stroke="currentColor" stroke-width=".8"/>
+      <path d="m28 33 5-14m0 1c-6 0-4-7 1-4 4-3 7 4-1 4Z" fill="#b36d63" stroke="#876340"/>
+    </g>
+    <g id="court-7">
+      <use href="#court-frame"/>
+      <path d="M5 44c2-10 7-14 14-17l8 5 2 12z" fill="currentColor"/>
+      <path d="m14 30 5 4 6-4-4 14h-5z" fill="#d4a660"/>
+      <path d="M14 16h12v8l-4 5h-5l-3-6z" fill="#e9be93" stroke="currentColor"/>
+      <path d="M14 22c2 2 3 3 5 1 3 1 4 1 7-2l-2 7-4 3-5-4z" fill="currentColor"/>
+      <path d="m12 10 4 2 3-5 3 5 5-2-2 7H14z" fill="#cb994f" stroke="currentColor" stroke-width=".8"/>
+      <path d="m29 37 5-20 1-1-2 22m-6-5 9 2" fill="#af956c" stroke="#805b33"/>
+    </g>
+  </defs>
+</svg>
 <dialog id="lobby" class="lobby" aria-labelledby="lbTitle">
   <h2 id="lbTitle">Онлайн на двоих</h2><p id="lbText"></p><div id="lbCode" class="code" hidden></div>
   <div class="join" id="lbLinkRow" hidden><input id="lbLink" aria-label="Ссылка на игру" readonly><button id="lbCopy">Копировать</button></div>
