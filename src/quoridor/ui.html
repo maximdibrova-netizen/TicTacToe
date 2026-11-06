@@ -1,0 +1,80 @@
+<title>Кворидор</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@500;700;800&display=swap">
+<style>/*QUORIDOR_CSS*/</style>
+<section id="menu" class="screen">
+  <div class="col">
+    <header class="intro">
+      <svg class="game-icon" viewBox="0 0 76 76" aria-hidden="true">
+        <rect width="76" height="76" rx="18" fill="#202b42" stroke="#46536c"/>
+        <path d="M18 29h40M18 47h40M29 18v40M47 18v40" stroke="#34435c" stroke-width="1.5"/>
+        <path d="M16 29h27m4 3v27" stroke="#eac17c" stroke-width="6" stroke-linecap="round"/>
+        <circle cx="56" cy="20" r="7" fill="#76c5f2"/><circle cx="20" cy="56" r="7" fill="#f1817c"/>
+      </svg>
+      <div><span class="eyebrow">Стратегия · 9 × 9</span><h1>Кворидор</h1></div>
+      <p>Доберись до противоположного края. Строй стены, чтобы соперники шли в обход.</p>
+    </header>
+
+    <section class="card"><h2>С кем играть</h2><div class="seg" id="modeSeg">
+      <button data-mode="bot">С ботами</button><button data-mode="duo">На одном экране</button><button id="m-net" data-mode="net">Онлайн</button>
+    </div></section>
+    <section class="card" id="countCard"><h2>Участники</h2><div class="seg two" id="countSeg">
+      <button data-count="2">Вдвоём</button><button data-count="4">Вчетвером</button>
+    </div></section>
+    <section class="card" id="sideCard"><h2>Мой цвет</h2><div class="seg side-seg" id="sideSeg"></div></section>
+    <section class="card" id="levelCard"><h2>Сложность ботов</h2><div class="seg" id="levelSeg">
+      <button data-level="0">Лёгкая</button><button data-level="1">Средняя</button><button data-level="2">Сильная</button>
+    </div></section>
+    <section class="card" id="netCard" hidden><h2>Онлайн на двоих</h2><div class="seg two">
+      <button id="netCreate">Создать игру</button><button id="netJoinBtn">Войти по коду</button>
+    </div><div id="joinRow" class="join" hidden>
+      <input id="joinCode" maxlength="5" aria-label="Код игры" placeholder="КОД" autocomplete="off" spellcheck="false"><button id="joinGo">Войти</button>
+    </div><p class="hint">Отправь другу ссылку или код комнаты.</p></section>
+    <button class="play" id="playBtn">Играть</button>
+    <button class="secondary" id="analyzeBtn">Анализ позиции</button>
+    <details class="card rules"><summary>Как играть</summary><ol>
+      <li>За ход передвинь фишку на одну клетку по горизонтали или вертикали либо поставь стену длиной в две клетки.</li>
+      <li>Через соседнюю фишку можно перепрыгнуть. Если за ней нет свободной клетки, обойди её по диагонали сбоку, если путь открыт. Через две фишки прыгать нельзя.</li>
+      <li>Стены нельзя пересекать, накладывать друг на друга или перекрывать ими последний путь к цели любого игрока.</li>
+      <li>Вдвоём у каждого по 10 стен, вчетвером — по 5. Побеждает первый, кто дошёл до своего цветного края.</li>
+    </ol></details>
+    <p class="hint version">Версия от /*VER*/</p>
+  </div>
+</section>
+
+<section id="game" class="screen" hidden>
+  <div class="match-head"><span class="eyebrow">Кворидор · 9 × 9</span><span id="modeTitle"></span></div>
+  <div id="players" class="players" aria-label="Участники"></div>
+  <div id="status" role="status"></div>
+  <div class="layout">
+    <main id="boardColumn">
+      <div class="move-tools" id="moveTools" aria-label="Выбор действия">
+        <button data-tool="p"><span class="tool-disc" aria-hidden="true"></span>Фишка</button>
+        <button data-tool="h"><span class="tool-wall horizontal" aria-hidden="true"></span>Стена ↔</button>
+        <button data-tool="v"><span class="tool-wall vertical" aria-hidden="true"></span>Стена ↕</button>
+      </div>
+      <svg id="board" viewBox="0 0 520 520" aria-label="Доска Кворидора"></svg>
+      <div id="wallPanel" class="wall-panel" hidden>
+        <p id="wallMessage" role="status"></p>
+        <button id="wallConfirm" class="accent" disabled>Поставить стену</button>
+      </div>
+      <section class="card end-panel" id="endOv" aria-labelledby="endTitle" hidden>
+        <h2 id="endTitle"></h2><p id="endText" class="hint"></p>
+        <div class="btns"><button id="endLook">Анализ</button><button id="endAgain">Ещё раз</button><button class="alt" id="endMenu">В меню</button></div>
+      </section>
+      <div id="rvMount"></div>
+      <div class="toolbar"><button id="homeBtn">⌂ <span>Меню</span></button><button id="againBtn">↻ <span>Заново</span></button><button id="undoBtn">↶ <span>Отменить</span></button><button id="hintBtn">✦ <span>Подсказка</span></button></div>
+    </main>
+    <aside class="card notation-card"><h2>Ходы партии</h2><div id="notation"></div></aside>
+  </div>
+</section>
+
+<dialog id="lobby" class="lobby" aria-labelledby="lbTitle">
+  <h2 id="lbTitle">Онлайн на двоих</h2><p id="lbText"></p><div id="lbCode" class="code" hidden></div>
+  <div id="lbLinkRow" class="join" hidden><input id="lbLink" aria-label="Ссылка на игру" readonly><button id="lbCopy">Копировать</button></div>
+  <div class="btns"><button id="lbRetry" hidden>Повторить</button><button id="lbCancel" class="alt">Отмена</button></div>
+</dialog>
+<div id="toast" class="toast" role="status" hidden></div>
+<script>/*CLOCK*/</script><script>/*NET*/</script><script>/*REVIEW*/</script>
+<script id="core">/*CORE*/</script><script>/*QUORIDOR_APP*/</script>

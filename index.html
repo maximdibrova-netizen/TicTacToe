@@ -91,6 +91,23 @@ a.game.current::after { content: "сейчас играете"; position: absolu
   <section class="room" id="room" aria-live="polite"></section>
 
   <div class="games" id="games">
+    <a class="game" href="quoridor/" data-g="quoridor" data-name="Кворидор">
+      <div class="art" style="background:#202b42">
+        <svg viewBox="0 0 140 100" aria-hidden="true">
+          <defs><pattern id="quoridorCells" width="16" height="16" patternUnits="userSpaceOnUse">
+            <rect width="13" height="13" rx="3" fill="#3d4b65" stroke="#52617b" stroke-width=".8"/>
+          </pattern></defs>
+          <rect x="24" y="5" width="93" height="90" rx="11" fill="#111b2b" stroke="#596a86"/>
+          <path d="M33 12h73" stroke="#f1817c" stroke-width="2"/><path d="M33 89h73" stroke="#76c5f2" stroke-width="2"/>
+          <rect x="32" y="16" width="77" height="66" fill="url(#quoridorCells)"/>
+          <path d="M34 47h30m14 4v28m3-48h28" fill="none" stroke="#eac17c" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="54" cy="71" r="7" fill="#f1817c" stroke="#ffbab0"/>
+          <circle cx="88" cy="24" r="7" fill="#76c5f2" stroke="#c1e7ff"/>
+        </svg>
+      </div>
+      <h3>Кворидор</h3><p>Доберись до противоположного края. Ставь стены, чтобы соперникам пришлось идти в обход.</p>
+      <div class="tags"><span>2 или 4 игрока</span><span>боты</span><span>онлайн</span></div>
+    </a>
     <a class="game" href="lava/" data-g="lava" data-name="Лава">
       <div class="art" style="background:#191518"><svg viewBox="0 0 120 90" aria-hidden="true"><g stroke="#e8d1ad" stroke-width="2" fill="#b7a58a"><rect x="19" y="4" width="24" height="24" rx="4"/><rect x="48" y="4" width="24" height="24" rx="4" fill="#fff5df"/><rect x="77" y="4" width="24" height="24" rx="4"/><rect x="19" y="33" width="24" height="24" rx="4" fill="#fff5df"/><rect x="77" y="33" width="24" height="24" rx="4"/><rect x="19" y="62" width="24" height="24" rx="4"/><rect x="48" y="62" width="24" height="24" rx="4"/><rect x="77" y="62" width="24" height="24" rx="4" fill="#fff5df"/></g><rect x="48" y="33" width="24" height="24" rx="4" fill="#48220e" stroke="#e57925" stroke-width="2"/><path d="m50 50 8-13 6 8 6-2" stroke="#ff9c38" stroke-width="3" fill="none"/><path d="m26 8 10 0 6 6v8l-6 6H26l-6-6v-8z" fill="#da00ef" stroke="#f958ff"/><path d="m84 64 10 0 6 6v8l-6 6H84l-6-6v-8z" fill="#2928f4" stroke="#7972ff"/><path d="M25 12h12v12H25zM83 68h12v12H83z" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="2"/></svg></div>
       <h3>Лава</h3><p>Прыгай по прямой на любое расстояние, сталкивай соперников в лаву. Плитки ломаются под ногами — останься последним.</p>
@@ -166,7 +183,7 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     <div><b>Играть без интернета</b><p id="instText"></p></div>
     <button class="btn main" id="instBtn" hidden>Установить</button>
   </section>
-  <p class="foot">Версия от 04.11.2026 23:37<span id="offState"></span></p>
+  <p class="foot">Версия от 06.11.2026 09:53<span id="offState"></span></p>
 </main>
 </div>
 
@@ -615,7 +632,7 @@ var Net2P = (function () {
     $('instBtn').onclick = function () { if (!prompt) return; prompt.prompt(); prompt.userChoice.then(function () { prompt = null; render(); }); };
     function check() {
       if (!window.caches || !('serviceWorker' in navigator)) return;
-      Promise.all(['./', 'tochki/', 'ttt/', 'battleship/', 'checkers/', 'go/', 'chess/', 'lava/', 'abalone/', 'falling4/'].map(function (u) { return caches.match(u, { ignoreSearch: true }); })).then(function (rs) {
+      Promise.all(['./', 'tochki/', 'ttt/', 'battleship/', 'checkers/', 'go/', 'chess/', 'lava/', 'abalone/', 'falling4/', 'quoridor/'].map(function (u) { return caches.match(u, { ignoreSearch: true }); })).then(function (rs) {
         var ok = rs.every(Boolean);
         if (ok && !saved) { saved = true; $('offState').innerHTML = ' · <span class="ok">✓ работает без интернета</span>'; render(); }
         if (!ok) setTimeout(check, 1500);
