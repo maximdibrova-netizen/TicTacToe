@@ -1,5 +1,5 @@
 <title>Дурак</title>
-<link rel="preload" href="cards/deck.webp" as="image">
+<link rel="preload" href="cards/deck-full.webp" as="image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@500;700;800&display=swap">
@@ -18,11 +18,25 @@
           <path d="m16.5 12 10 11-10 11-10-11z" fill="#bc4f58"/>
         </g>
       </svg>
-      <div><span class="eyebrow">Подкидной · 36 карт</span><h1>Дурак</h1></div>
+      <div><span id="rulesSummary" class="eyebrow">Подкидной · 36 карт</span><h1>Дурак</h1></div>
       <p>Отбивайся, подкидывай карты и выйди из игры до того, как останешься последним.</p>
     </header>
     <section class="card"><h2>С кем играть</h2><div class="seg two" id="modeSeg">
       <button data-mode="bot">С ботами</button><button data-mode="net" id="m-net">Онлайн</button>
+    </div></section>
+    <section class="card"><h2>Правила партии</h2><div class="rule-settings" id="ruleSettings">
+      <div class="seg two" role="group" aria-label="Вариант игры">
+        <button type="button" data-variant="throw">Подкидной</button><button type="button" data-variant="transfer">Переводной</button>
+      </div>
+      <div class="seg two" role="group" aria-label="Размер колоды">
+        <button type="button" data-size="36">36 карт</button><button type="button" data-size="52">52 карты</button>
+      </div>
+      <div id="cheatSettings" hidden>
+        <div class="seg two" role="group" aria-label="Правила отбоя онлайн">
+          <button type="button" data-cheat="no">Честная игра</button><button type="button" data-cheat="yes">С мухлёжем</button>
+        </div>
+        <p class="hint">В режиме с мухлёжем можно отбиться любой картой. Нажми на карту соперника, чтобы проверить её, пока идёт окно проверки.</p>
+      </div>
     </div></section>
     <section class="card" id="countCard"><h2>Участники</h2><div class="seg" id="countSeg">
       <button data-count="2">2 игрока</button><button data-count="3">3 игрока</button><button data-count="4">4 игрока</button>
@@ -35,8 +49,9 @@
     </section>
     <details class="card rules"><summary>Как играть</summary><ol>
       <li>Перетащи карту из руки на середину стола, чтобы сходить.</li>
-      <li>У каждого по шесть карт. Первый ход у игрока с младшим козырем, а если козырей на руках нет, ходит первый участник.</li>
+      <li>У каждого по шесть карт. Начинает игрок с младшим козырем. Если козырей на руках нет, первого игрока выбирает жребий.</li>
       <li>Отбивай старшей картой той же масти. Некозырную карту можно побить козырем.</li>
+      <li>В переводном режиме до первого отбоя можно добавить карту того же достоинства и перевести атаку следующему игроку, если у него хватит карт для защиты.</li>
       <li>Подкидывай только достоинства, уже лежащие на столе. За заход можно подкинуть не больше шести карт и не больше, чем было у отбивающегося в начале захода.</li>
       <li>Если берёшь, соперники могут ещё подкинуть. После захода первым добирает тот, кто ходил, а отбивавшийся добирает последним.</li>
       <li>Когда колода пуста, игрок без карт выходит. Кто остался с картами последним, проиграл.</li>
@@ -61,6 +76,7 @@
       </div>
       <div class="action-row" aria-label="Действия">
         <button id="takeBtn" class="accent" hidden>Беру</button>
+        <button id="transferBtn" aria-pressed="false" hidden>Перевести</button>
         <button id="passBtn" class="accent" hidden>Бито</button>
       </div>
       <section class="hand-section" aria-labelledby="handTitle">

@@ -3,9 +3,9 @@ const D=require('../src/durak/core.js');
 const cards=Array.from({length:36},(_,i)=>i);
 const card=(s,c)=>D.play(s,s.actor,{type:'card',card:c});
 const action=(s,type)=>D.play(s,s.actor,{type});
-const fixture=(hands,deck=[])=>{
+const fixture=(hands,deck=[],options={})=>{
   const used=new Set([...hands.flat(),...deck]);
-  return {...D.create(hands.length,cards),hands,deck,discard:cards.filter(c=>!used.has(c)),attacker:0,defender:1,actor:0,
+  return {...D.create(hands.length,cards,options),hands,deck,discard:cards.filter(c=>!used.has(c)),attacker:0,originalAttacker:0,defender:1,actor:0,
     trump:0,trumpCard:deck[0]??0,limit:Math.min(6,hands[1].length)};
 };
 
@@ -35,7 +35,9 @@ test('defense obeys suit, rank and trump; wrong seat and absent cards are reject
 });
 
 test('successful defense refills attacker before defender; defender leads next',()=>{
-  let s=D.create(2,cards);
+  const ordered=cards.slice();
+  [ordered[35],ordered[2]]=[ordered[2],ordered[35]];
+  let s=D.create(2,ordered);
   s=card(s,27);
   const next=card(s,28);
   assert.equal(next.round,2);
@@ -52,6 +54,67 @@ test('successful defense refills attacker before defender; defender leads next',
   assert.deepEqual(next.resolved.draws,[0,1]);
   assert.deepEqual(next.discard,[27,28]);
   assert.equal(s.discard.length,0);
+});
+
+test('when neither hand has a trump both seats can start',()=>{
+  const descriptor=Object.getOwnPropertyDescriptor(globalThis,'crypto');
+  let random=0;
+  Object.defineProperty(globalThis,'crypto',{configurable:true,value:{getRandomValues:word=>{word[0]=random;return word;}}});
+  try {
+    assert.equal(D.create(2,cards).attacker,0);
+    random=1;
+    assert.equal(D.create(2,cards).attacker,1);
+  } finally {
+    if(descriptor)Object.defineProperty(globalThis,'crypto',descriptor);
+    else delete globalThis.crypto;
+  }
+});
+
+test('52-card decks include all ranks with the original card IDs intact',()=>{
+  const full=D.create(2,Array.from({length:52},(_,i)=>i),{size:52});
+  assert.equal(full.deck.length,40);
+  assert.deepEqual([36,37,38,39,0,8].map(c=>D.RANKS[D.rank(c)]),['2','3','4','5','6','A']);
+  assert.equal(D.suit(51),3);
+  assert.ok(D.beats(27,51,0));
+  assert.ok(!D.beats(51,27,0));
+  assert.ok(D.validView(D.view(full,1),1));
+});
+
+test('transfer passes all matching attacks and checks the next hand size and first cover',()=>{
+  const variant={variant:'transfer'};
+  const open=card(fixture([[9,20,21,22],[18,11,13],[27,28,29,30]],[],variant),9);
+  const transfer=(s,c)=>D.play(s,s.actor,{type:'transfer',card:c});
+  assert.equal(transfer(open,11),null);
+  const moved=transfer(open,18);
+  assert.deepEqual(moved.table.map(p=>p.attack),[9,18]);
+  assert.deepEqual([moved.originalAttacker,moved.attacker,moved.defender,moved.actor],[0,1,2,2]);
+  assert.equal(transfer(moved,27).defender,0);
+  assert.equal(transfer(card(fixture([[9,19],[18,11]],[],variant),9),18),null);
+  const back=transfer(card(fixture([[9,19,20],[18,11,13]],[],variant),9),18);
+  assert.equal(back.defender,0);
+  assert.ok(D.validView(D.view(back,1),1));
+  const covered=card(transfer(card(fixture([[9,19,20,0],[18,11,13]],[],variant),9),18),0);
+  assert.equal(covered.phase,'defend');
+  assert.equal(covered.table[1].cover,null);
+  assert.deepEqual(D.legal(D.view(covered,0)).transfers,[]);
+});
+
+test('optional online check accepts unnoticed covers and returns caught cards for an honest retry',()=>{
+  const hands=[[16,13,21],[14,17,19,20]];
+  assert.equal(card(card(fixture(hands),16),14),null);
+  const open=card(fixture(hands,[],{cheat:true}),16);
+  const shady=card(open,14), honest=card(open,17);
+  assert.deepEqual([shady.phase,honest.phase],['review','review']);
+  assert.ok(D.validView(D.view(shady,1),1));
+  assert.equal(D.play(shady,1,{type:'challenge',card:14}),null);
+  assert.equal(D.play(shady,0,{type:'challenge',card:16}),null);
+  const caught=D.play(shady,0,{type:'challenge',card:14});
+  assert.deepEqual([caught.phase,caught.actor,caught.table[0].cover],['defend',1,null]);
+  assert.ok(caught.hands[1].includes(14));
+  assert.equal(card(caught,14),null);
+  assert.equal(card(caught,17).phase,'review');
+  assert.ok(action(shady,'pass').discard.includes(14));
+  assert.ok(D.play(honest,0,{type:'challenge',card:17}).discard.includes(17));
 });
 
 test('taking allows matching throws, skips defender for the next attack and respects the limit',()=>{
@@ -103,21 +166,21 @@ test('guest snapshots expose only their hand, public cards and counts',()=>{
 
 test('complete bot games conserve every card and always reach a result',()=>{
   let seed=31;
-  function deck() {
-    const a=cards.slice();
+  function deck(size) {
+    const a=Array.from({length:size},(_,i)=>i);
     for(let i=a.length-1;i>0;i--){seed=(Math.imul(seed,1664525)+1013904223)>>>0;const j=seed%(i+1);[a[i],a[j]]=[a[j],a[i]];}
     return a;
   }
-  for(const count of [2,3,4])for(let game=0;game<30;game++){
-    let s=D.create(count,deck());
+  for(const size of [36,52])for(const variant of ['throw','transfer'])for(const count of [2,3,4])for(let game=0;game<15;game++){
+    let s=D.create(count,deck(size),{size,variant});
     for(let step=0;step<500&&!s.result;step++){
       const a=D.bot(D.view(s,s.actor));
       s=D.play(s,s.actor,a);
       assert.ok(s);
       assert.ok(s.table.length<=s.limit);
       const all=[...s.deck,...s.discard,...s.hands.flat(),...s.table.flatMap(p=>p.cover===null?[p.attack]:[p.attack,p.cover])];
-      assert.equal(all.length,36);
-      assert.equal(new Set(all).size,36);
+      assert.equal(all.length,size);
+      assert.equal(new Set(all).size,size);
       if(count===2)assert.ok(D.validView(D.view(s,1),1));
     }
     assert.ok(s.result);

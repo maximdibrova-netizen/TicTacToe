@@ -2,22 +2,25 @@
   'use strict';
 
   const D = Durak, $ = id => document.getElementById(id);
-  const ID = 'durak', PREFIX = 'durak-v1-';
+  const ID = 'durak', PREFIX = 'durak-v2-', REVIEW_MS = 5200;
   const SUIT_NAME = ['трефы','бубны','червы','пики'];
   const SUIT_CARD = ['треф','бубен','червей','пик'];
-  const RANK_NAME = ['6','7','8','9','10','Валет','Дама','Король','Туз'];
+  const RANK_NAME = ['2','3','4','5','6','7','8','9','10','Валет','Дама','Король','Туз'];
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const motionLayer = $('cardMotion');
   const deckImage = new Image();
-  deckImage.src = 'cards/deck.webp';
+  deckImage.src = 'cards/deck-full.webp';
   const artReady = deckImage.decode().catch(() => {});
-  const prefs = {mode:'bot',count:2,sort:'suit'};
+  const prefs = {mode:'bot',count:2,sort:'suit',variant:'throw',size:36,cheat:false};
   try { Object.assign(prefs, JSON.parse(localStorage.getItem(ID+'-settings') || '{}')); } catch (e) {}
   if (prefs.mode !== 'net') prefs.mode = 'bot';
   if (![2,3,4].includes(prefs.count)) prefs.count = 2;
   if (!['suit','rank','manual'].includes(prefs.sort)) prefs.sort = 'suit';
+  if (prefs.variant !== 'transfer') prefs.variant = 'throw';
+  if (prefs.size !== 52) prefs.size = 36;
+  prefs.cheat = prefs.cheat === true;
 
-  let game = null, drag = null, botTimer = 0, pauseTimer = 0, toastTimer = 0, lastJoin = null;
+  let game = null, drag = null, botTimer = 0, pauseTimer = 0, reviewTimer = 0, toastTimer = 0, lastJoin = null;
   function save() {
     try { localStorage.setItem(ID+'-settings',JSON.stringify(prefs)); } catch (e) {}
   }
@@ -31,8 +34,13 @@
     const online = prefs.mode === 'net';
     $('modeSeg').querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed',String(b.dataset.mode === prefs.mode)));
     $('countSeg').querySelectorAll('[data-count]').forEach(b => b.setAttribute('aria-pressed',String(Number(b.dataset.count) === prefs.count)));
+    $('ruleSettings').querySelectorAll('[data-variant]').forEach(b => b.setAttribute('aria-pressed',String(b.dataset.variant === prefs.variant)));
+    $('ruleSettings').querySelectorAll('[data-size]').forEach(b => b.setAttribute('aria-pressed',String(Number(b.dataset.size) === prefs.size)));
+    $('cheatSettings').querySelectorAll('[data-cheat]').forEach(b => b.setAttribute('aria-pressed',String((b.dataset.cheat === 'yes') === prefs.cheat)));
+    $('rulesSummary').textContent = variantLabel(prefs.variant)+' · '+cardsLabel(prefs.size);
     $('countCard').hidden = online;
     $('netCard').hidden = !online;
+    $('cheatSettings').hidden = !online;
     $('playBtn').hidden = online;
   }
   $('modeSeg').onclick = e => {
@@ -43,7 +51,16 @@
     const b = e.target.closest('[data-count]');
     if (b) { prefs.count = Number(b.dataset.count); save(); renderMenu(); }
   };
+  $('ruleSettings').onclick = e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.variant) prefs.variant = b.dataset.variant;
+    if (b.dataset.size) prefs.size = Number(b.dataset.size);
+    if (b.dataset.cheat) prefs.cheat = b.dataset.cheat === 'yes';
+    save(); renderMenu();
+  };
 
+  function variantLabel(variant) { return variant === 'transfer' ? 'Переводной' : 'Подкидной'; }
   function cardName(card) { return RANK_NAME[D.rank(card)]+' '+SUIT_CARD[D.suit(card)]; }
   function cardsLabel(n) {
     const one = n % 10, tens = n % 100;
@@ -53,7 +70,7 @@
     if (seat === game.seat) return 'Ты';
     return game.online ? 'Друг' : game.view.count === 2 ? 'Бот' : 'Бот '+seat;
   }
-  function cardPosition(card) { return (D.rank(card)*100/9)+'% '+(D.suit(card)*100/3)+'%'; }
+  function cardPosition(card) { return (D.rank(card)*100/13)+'% '+(D.suit(card)*100/3)+'%'; }
   function cardMarkup(card, cls = '', button = false) {
     const tag = button ? 'button' : 'div';
     return '<'+tag+' '+(button?'type="button"':'role="img"')+' class="card-face '+cls+'" style="background-position:'+cardPosition(card)
@@ -66,6 +83,7 @@
     return !!game && !game.moving && !game.pending && !game.view.result && game.view.actor === game.seat
       && (!game.online || Net2P.online());
   }
+  function canPlayCard() { return canAct() && game.view.phase !== 'review'; }
   function resultTitle(v) {
     if (v.result.loser === null) return 'Ничья';
     if (v.result.reason === 'resign') return v.result.loser === game.seat ? 'Ты сдался' : playerName(v.result.loser)+' сдался';
@@ -78,9 +96,10 @@
     if (game.drawing) return 'Добор карт';
     if (game.paused) return v.resolved.taking ? 'Карты взяты' : 'Бито';
     if (game.pending) return 'Отправляем ход…';
+    if (v.phase === 'review') return v.actor === game.seat ? 'Нажми на ответ соперника для проверки' : 'Соперник проверяет ответ';
     if (v.actor === game.seat) {
       if (v.phase === 'lead') return 'Твой ход';
-      if (v.phase === 'defend') return 'Ты отбиваешься';
+      if (v.phase === 'defend') return game.transfer ? 'Положи карту для перевода' : 'Ты отбиваешься';
       return v.taking ? 'Соперник берёт' : 'Твой ход · подкидывание';
     }
     if (isOut(v,game.seat)) return 'Ты вышел из игры';
@@ -105,7 +124,7 @@
   function orderHand(v) {
     const suitOrder = card => D.suit(card) === v.trump ? 4 : D.suit(card);
     const bySuit = (a,b) => suitOrder(a)-suitOrder(b) || D.rank(a)-D.rank(b);
-    const byStrength = card => D.rank(card)+(D.suit(card) === v.trump ? 9 : 0);
+    const byStrength = card => D.rank(card)+(D.suit(card) === v.trump ? D.RANKS.length : 0);
     if (game.manualOrder) {
       const kept = game.manualOrder.filter(card => v.hand.includes(card));
       game.manualOrder = kept.concat(v.hand.filter(card => !kept.includes(card)));
@@ -138,7 +157,8 @@
   function render() {
     if (!game) return;
     const v = game.view, act = canAct();
-    $('modeTitle').textContent = 'Подкидной · '+(game.online ? 'онлайн' : v.count+' игрока');
+    $('modeTitle').textContent = [variantLabel(v.variant),cardsLabel(v.size ?? 36),
+      game.online ? (v.cheat ? 'С мухлёжем' : 'Честная игра') : v.count+' игрока'].join(' · ');
     $('players').innerHTML = Array.from({length:v.count-1},(_,offset) => {
       const i = (game.seat+1+offset)%v.count, n = v.counts[i];
       const out = isOut(v,i);
@@ -155,16 +175,26 @@
 
     const past = (game.paused || (v.result && !v.table.length)) && v.resolved;
     const table = past ? past.table : v.table;
-    const pairs = $('pairs'), tableKey = table.map(pair => pair.attack+':'+pair.cover).join(',');
+    const pairs = $('pairs');
+    const candidate = v.phase === 'review' && v.actor === game.seat ? v.last.card : null;
+    const tableKey = table.map(pair => pair.attack+':'+pair.cover).join(',')+'/'+candidate;
     if (pairs.dataset.cards !== tableKey) {
       pairs.dataset.cards = tableKey;
       pairs.innerHTML = table.length ? table.map(pair => '<div class="pair">'+cardMarkup(pair.attack,'attack')
-        +(pair.cover===null?'':cardMarkup(pair.cover,'cover'))+'</div>').join('') : '<div class="table-mark" aria-hidden="true">♠</div>';
+        +(pair.cover===null?'':cardMarkup(pair.cover,'cover',pair.cover===candidate))+'</div>').join('') : '<div class="table-mark" aria-hidden="true">♠</div>';
+    }
+    const check = pairs.querySelector('button[data-card]');
+    if (check) {
+      check.dataset.check = '';
+      check.disabled = !act;
+      check.setAttribute('aria-label','Проверить: '+cardName(candidate));
     }
     $('takeBtn').hidden = !act || v.phase !== 'defend';
-    $('passBtn').hidden = !act || v.phase !== 'throw';
-    $('passBtn').textContent = v.taking ? 'Не подкидывать' : v.count === 2 ? 'Бито' : 'Не подкидывать';
-    renderHand(v,act);
+    $('transferBtn').hidden = !act || !D.legal(v).transfers.length;
+    $('transferBtn').setAttribute('aria-pressed',String(!!game.transfer));
+    $('passBtn').hidden = !act || (v.phase !== 'throw' && v.phase !== 'review');
+    $('passBtn').textContent = v.phase === 'review' ? 'Дальше' : (v.taking || v.count !== 2 ? 'Не подкидывать' : 'Бито');
+    renderHand(v,canPlayCard());
 
     $('endOv').hidden = !v.result;
     $('againBtn').hidden = !!v.result || (game.online && Net2P.role() === 'guest');
@@ -280,8 +310,11 @@
     clearTimers();
     const previous = game.view;
     const last = next.last;
-    const played = animate && previous.version < next.version && last?.type === 'card' && D.isCard(last.card)
+    const played = animate && previous.version < next.version && ['card','transfer'].includes(last?.type) && D.isCard(last.card)
       && Number.isInteger(last.seat) && (last.card !== previous.last?.card || last.seat !== previous.last.seat);
+    const caught = animate && previous.phase === 'review' && next.version === previous.version+1 && last?.type === 'caught'
+      && D.isCard(last.card) && last.seat === previous.defender;
+    const returnedFrom = caught && dropZone.querySelector('[data-card="'+last.card+'"]')?.getBoundingClientRect();
     const origin = played && (game.cardOrigin || seatOrigin(last.seat));
     const resolved = animate && next.resolved && next.resolved.round !== previous.resolved?.round ? next.resolved : null;
     const takenCards = resolved?.taking && resolved.defender === game.seat
@@ -292,14 +325,26 @@
       && draws.length === previous.deckCount-next.deckCount && ownDraws.length === draws.filter(seat => seat === game.seat).length;
     game.stockView = refill ? {deckCount:previous.deckCount,trumpCard:previous.trumpCard} : null;
     game.paused = !!(resolved && !next.result);
-    game.moving = !!(game.paused || played || refill);
+    game.moving = !!(game.paused || played || caught || refill);
     game.dealing = false;
     game.drawing = false;
     game.cardOrigin = null;
+    game.transfer = false;
     game.view = next;
     game.pending = false;
     render();
     let duration = 0;
+    if (caught) {
+      const mine = last.seat === game.seat;
+      toast(mine ? 'Мухлёж замечен. Отбейся по правилам.' : 'Мухлёж замечен. Карта вернулась сопернику.');
+      if (!reducedMotion.matches) {
+        const target = mine ? hand.querySelector('[data-card="'+last.card+'"]')
+          : $('players').querySelector('[data-seat="'+last.seat+'"] .card-back:last-child');
+        duration = flyCard(target,returnedFrom,{duration:470,face:last.card,hideTarget:mine});
+      }
+    } else if (animate && previous.phase === 'review' && last?.type === 'challenge' && last.seat === game.seat) {
+      toast('Карта сыграна по правилам.');
+    }
     if (played) {
       const card = $('pairs').querySelector('[data-card="'+last.card+'"]');
       if (card && reducedMotion.matches) {
@@ -318,6 +363,7 @@
   function enter(options, initial) {
     releaseDrag(false);
     clearTimers();
+    clearTimeout(reviewTimer);
     const dealing = initial.version===0 && !reducedMotion.matches;
     game = {...options,view:initial,pending:false,paused:false,moving:dealing,dealing};
     if ($('lobby').open) $('lobby').close();
@@ -339,6 +385,7 @@
     game.state = next;
     showView(D.view(next,game.seat),true);
     if (game.online) sendState();
+    scheduleReview();
     return true;
   }
   function scheduleBot() {
@@ -362,9 +409,12 @@
   }
 
   function playCard(card, origin) {
-    if (!canAct() || !D.legal(game.view).cards.includes(card)) return false;
+    if (!canPlayCard()) return false;
+    const options = D.legal(game.view);
+    const transfer = game.transfer || (!options.cards.includes(card) && options.transfers.includes(card));
+    if (!(transfer ? options.transfers : options.cards).includes(card)) return false;
     game.cardOrigin = origin;
-    if (act({type:'card',card})) return true;
+    if (act({type:transfer?'transfer':'card',card})) return true;
     game.cardOrigin = null;
     return false;
   }
@@ -378,7 +428,7 @@
     }
     prefs.sort = button.dataset.sort;
     save();
-    renderHand(game.view,canAct());
+    renderHand(game.view,canPlayCard());
   };
   function overArea(area,e) {
     const bounds = area.getBoundingClientRect();
@@ -390,7 +440,7 @@
     if (from < 0 || index < 0 || index >= order.length || from === index) return false;
     order.splice(from,1);
     order.splice(index,0,card);
-    renderHand(game.view,canAct());
+    renderHand(game.view,canPlayCard());
     return true;
   }
   function clearHandSlot() {
@@ -467,7 +517,7 @@
     if (!drag.mode) {
       if (Math.hypot(dx,dy) < 7) return;
       if (!canArrange() && hand.scrollWidth > hand.clientWidth && Math.abs(dx) > Math.abs(dy)*1.25) drag.mode = 'scroll';
-      else if (canAct() || canArrange()) {
+      else if (canPlayCard() || canArrange()) {
         drag.mode = 'card';
         drag.bounds = drag.button.getBoundingClientRect();
         drag.ghost = drag.button.cloneNode(true);
@@ -482,7 +532,7 @@
     if (drag.mode === 'scroll') { hand.scrollLeft = drag.scroll-dx; return; }
     drag.ghost.style.left = drag.bounds.left+dx+'px';
     drag.ghost.style.top = drag.bounds.top+dy+'px';
-    dropZone.classList.toggle('drag-over',canAct() && overArea(dropZone,e));
+    dropZone.classList.toggle('drag-over',canPlayCard() && overArea(dropZone,e));
     updateHandDrop(e);
   };
   hand.onpointerup = e => {
@@ -516,14 +566,24 @@
   };
   $('takeBtn').onclick = () => act({type:'take'});
   $('passBtn').onclick = () => act({type:'pass'});
+  $('transferBtn').onclick = () => {
+    if (!canPlayCard() || $('transferBtn').hidden) return;
+    game.transfer = !game.transfer;
+    render();
+  };
+  dropZone.onclick = e => {
+    const card = e.target.closest('button[data-check]');
+    if (card && !card.disabled) act({type:'challenge',card:Number(card.dataset.card)});
+  };
 
   function startLocal(count = prefs.count) {
     Net2P.close();
-    const state = D.create(count);
+    const state = D.create(count,undefined,{variant:prefs.variant,size:prefs.size});
     enter({state,seat:0,online:false},D.view(state,0));
   }
   function home() {
     releaseDrag(false);
+    clearTimeout(reviewTimer);
     clearTimers(); Net2P.close(); game = null;
     for (const id of ['lobby','restartDialog']) if ($(id).open) $(id).close();
     $('game').hidden = true; $('menu').hidden = false;
@@ -551,7 +611,7 @@
     if (!$('lobby').open) $('lobby').showModal();
   }
   function hostStart() {
-    const state = D.create(2);
+    const state = D.create(2,undefined,{variant:prefs.variant,size:prefs.size,cheat:prefs.cheat});
     const id = Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
     enter({state,seat:0,online:true,id},D.view(state,0));
     sendState();
@@ -560,6 +620,15 @@
     if (!game || !game.online) return;
     if (!connected) { game.pending = false; game.cardOrigin = null; }
     render();
+    scheduleReview();
+  }
+  function scheduleReview() {
+    clearTimeout(reviewTimer);
+    const state = game?.state;
+    if (!state || !game.online || state.phase !== 'review' || !Net2P.online()) return;
+    reviewTimer = setTimeout(() => {
+      if (game?.state === state && Net2P.online()) update(D.play(state,state.actor,{type:'pass'}));
+    },REVIEW_MS);
   }
   function host() {
     lastJoin = null;

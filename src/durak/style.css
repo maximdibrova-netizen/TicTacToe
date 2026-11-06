@@ -24,6 +24,8 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
 .card { display:grid; gap:9px; padding:13px; border:1px solid var(--line); border-radius:14px; background:var(--bg-2); }
 .seg { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
 .seg.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.rule-settings { display:grid; gap:7px; }
+#cheatSettings .hint { margin-top:6px; }
 .seg button,.join button { border:0; border-radius:9px; background:var(--btn); min-height:42px; padding:8px 6px; font-weight:800; font-size:12px; }
 .seg button[aria-pressed=true] { background:var(--ink); color:var(--bg); }
 .play,.accent { border:0; border-radius:11px; background:var(--gold); color:#231c11; font-weight:800; }
@@ -91,6 +93,9 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
 .table-mark { align-self:center; width:100px; height:100px; display:grid; place-items:center; border:1px solid #b0d4b32b; border-radius:50%; color:#afd3c14d; font:700 50px Georgia,serif; box-shadow:inset 0 0 0 6px #183d3426; }
 .action-row { display:flex; justify-content:center; align-items:center; gap:8px; }
 .action-row button { min-height:40px; min-width:116px; padding:7px 18px; box-shadow:0 3px 10px #08181578; }
+#transferBtn { border:1px solid #c6dcc29c; border-radius:11px; background:#173c36; font-weight:800; }
+#transferBtn[aria-pressed=true] { background:#e6ede5; color:#15352f; }
+.pair button[data-check]:disabled { cursor:default; }
 .hand-section { display:grid; justify-items:center; min-width:0; }
 .hand {
   --overlap:.32;
@@ -118,8 +123,8 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
 .card-face { display:block; position:relative; aspect-ratio:5/7; padding:0; border:0; border-radius:6%; }
 /* Adrian Kennard's Standard deck and Goodall back, https://www.me.uk/cards/ (CC0 1.0). */
 .card-face,.card-back {
-  background-color:transparent; background-image:url('cards/deck.webp'); background-repeat:no-repeat;
-  background-size:1000% 400%; box-shadow:0 3px 8px #08121360;
+  background-color:transparent; background-image:url('cards/deck-full.webp'); background-repeat:no-repeat;
+  background-size:1400% 400%; box-shadow:0 3px 8px #08121360;
 }
 .hand .card-face.drag-origin { opacity:.35; }
 .drag-card { position:fixed; z-index:80; pointer-events:none; margin:0; box-shadow:0 10px 28px #0008; }

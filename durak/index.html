@@ -280,7 +280,7 @@ a.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 </script>
 </head><body>
 <title>Дурак</title>
-<link rel="preload" href="cards/deck.webp" as="image">
+<link rel="preload" href="cards/deck-full.webp" as="image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@500;700;800&display=swap">
@@ -310,6 +310,8 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
 .card { display:grid; gap:9px; padding:13px; border:1px solid var(--line); border-radius:14px; background:var(--bg-2); }
 .seg { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
 .seg.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.rule-settings { display:grid; gap:7px; }
+#cheatSettings .hint { margin-top:6px; }
 .seg button,.join button { border:0; border-radius:9px; background:var(--btn); min-height:42px; padding:8px 6px; font-weight:800; font-size:12px; }
 .seg button[aria-pressed=true] { background:var(--ink); color:var(--bg); }
 .play,.accent { border:0; border-radius:11px; background:var(--gold); color:#231c11; font-weight:800; }
@@ -377,6 +379,9 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
 .table-mark { align-self:center; width:100px; height:100px; display:grid; place-items:center; border:1px solid #b0d4b32b; border-radius:50%; color:#afd3c14d; font:700 50px Georgia,serif; box-shadow:inset 0 0 0 6px #183d3426; }
 .action-row { display:flex; justify-content:center; align-items:center; gap:8px; }
 .action-row button { min-height:40px; min-width:116px; padding:7px 18px; box-shadow:0 3px 10px #08181578; }
+#transferBtn { border:1px solid #c6dcc29c; border-radius:11px; background:#173c36; font-weight:800; }
+#transferBtn[aria-pressed=true] { background:#e6ede5; color:#15352f; }
+.pair button[data-check]:disabled { cursor:default; }
 .hand-section { display:grid; justify-items:center; min-width:0; }
 .hand {
   --overlap:.32;
@@ -404,8 +409,8 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
 .card-face { display:block; position:relative; aspect-ratio:5/7; padding:0; border:0; border-radius:6%; }
 /* Adrian Kennard's Standard deck and Goodall back, https://www.me.uk/cards/ (CC0 1.0). */
 .card-face,.card-back {
-  background-color:transparent; background-image:url('cards/deck.webp'); background-repeat:no-repeat;
-  background-size:1000% 400%; box-shadow:0 3px 8px #08121360;
+  background-color:transparent; background-image:url('cards/deck-full.webp'); background-repeat:no-repeat;
+  background-size:1400% 400%; box-shadow:0 3px 8px #08121360;
 }
 .hand .card-face.drag-origin { opacity:.35; }
 .drag-card { position:fixed; z-index:80; pointer-events:none; margin:0; box-shadow:0 10px 28px #0008; }
@@ -469,11 +474,25 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
           <path d="m16.5 12 10 11-10 11-10-11z" fill="#bc4f58"/>
         </g>
       </svg>
-      <div><span class="eyebrow">Подкидной · 36 карт</span><h1>Дурак</h1></div>
+      <div><span id="rulesSummary" class="eyebrow">Подкидной · 36 карт</span><h1>Дурак</h1></div>
       <p>Отбивайся, подкидывай карты и выйди из игры до того, как останешься последним.</p>
     </header>
     <section class="card"><h2>С кем играть</h2><div class="seg two" id="modeSeg">
       <button data-mode="bot">С ботами</button><button data-mode="net" id="m-net">Онлайн</button>
+    </div></section>
+    <section class="card"><h2>Правила партии</h2><div class="rule-settings" id="ruleSettings">
+      <div class="seg two" role="group" aria-label="Вариант игры">
+        <button type="button" data-variant="throw">Подкидной</button><button type="button" data-variant="transfer">Переводной</button>
+      </div>
+      <div class="seg two" role="group" aria-label="Размер колоды">
+        <button type="button" data-size="36">36 карт</button><button type="button" data-size="52">52 карты</button>
+      </div>
+      <div id="cheatSettings" hidden>
+        <div class="seg two" role="group" aria-label="Правила отбоя онлайн">
+          <button type="button" data-cheat="no">Честная игра</button><button type="button" data-cheat="yes">С мухлёжем</button>
+        </div>
+        <p class="hint">В режиме с мухлёжем можно отбиться любой картой. Нажми на карту соперника, чтобы проверить её, пока идёт окно проверки.</p>
+      </div>
     </div></section>
     <section class="card" id="countCard"><h2>Участники</h2><div class="seg" id="countSeg">
       <button data-count="2">2 игрока</button><button data-count="3">3 игрока</button><button data-count="4">4 игрока</button>
@@ -486,13 +505,14 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
     </section>
     <details class="card rules"><summary>Как играть</summary><ol>
       <li>Перетащи карту из руки на середину стола, чтобы сходить.</li>
-      <li>У каждого по шесть карт. Первый ход у игрока с младшим козырем, а если козырей на руках нет, ходит первый участник.</li>
+      <li>У каждого по шесть карт. Начинает игрок с младшим козырем. Если козырей на руках нет, первого игрока выбирает жребий.</li>
       <li>Отбивай старшей картой той же масти. Некозырную карту можно побить козырем.</li>
+      <li>В переводном режиме до первого отбоя можно добавить карту того же достоинства и перевести атаку следующему игроку, если у него хватит карт для защиты.</li>
       <li>Подкидывай только достоинства, уже лежащие на столе. За заход можно подкинуть не больше шести карт и не больше, чем было у отбивающегося в начале захода.</li>
       <li>Если берёшь, соперники могут ещё подкинуть. После захода первым добирает тот, кто ходил, а отбивавшийся добирает последним.</li>
       <li>Когда колода пуста, игрок без карт выходит. Кто остался с картами последним, проиграл.</li>
     </ol></details>
-    <p class="hint version">Версия от 06.11.2026 12:33</p>
+    <p class="hint version">Версия от 06.11.2026 15:29</p>
   </div>
 </section>
 
@@ -512,6 +532,7 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
       </div>
       <div class="action-row" aria-label="Действия">
         <button id="takeBtn" class="accent" hidden>Беру</button>
+        <button id="transferBtn" aria-pressed="false" hidden>Перевести</button>
         <button id="passBtn" class="accent" hidden>Бито</button>
       </div>
       <section class="hand-section" aria-labelledby="handTitle">
@@ -681,25 +702,26 @@ var Net2P = (function () {
 </script><script>var Durak = (function () {
   'use strict';
 
-  const SIZE = 36, HAND = 6;
-  const CARDS = Array.from({length: SIZE}, (_, i) => i);
-  const RANKS = ['6','7','8','9','10','J','Q','K','A'];
+  const SHORT = 36, FULL = 52, HAND = 6;
+  const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
   const SUITS = ['♣','♦','♥','♠'];
-  const rank = card => card % 9;
-  const suit = card => Math.floor(card / 9);
-  const isCard = card => Number.isInteger(card) && card >= 0 && card < SIZE;
+  // Keep the existing IDs for 6–A. The four low ranks of each suit follow.
+  const rank = card => card < SHORT ? card % 9 + 4 : (card-SHORT) % 4;
+  const suit = card => card < SHORT ? Math.floor(card/9) : Math.floor((card-SHORT)/4);
+  const isCard = (card, size = FULL) => Number.isInteger(card) && card >= 0 && card < size;
+  const word = new Uint32Array(1);
 
-  function shuffle() {
-    const deck = CARDS.slice();
-    const word = new Uint32Array(1);
+  function randomBelow(n) {
     const crypto = typeof globalThis !== 'undefined' && globalThis.crypto;
+    if (!crypto?.getRandomValues) return Math.floor(Math.random()*n);
+    const limit = 0x100000000 - 0x100000000 % n;
+    do { crypto.getRandomValues(word); } while (word[0] >= limit);
+    return word[0] % n;
+  }
+  function shuffle(size = SHORT) {
+    const deck = Array.from({length:size},(_,i)=>i);
     for (let i = deck.length - 1; i > 0; i--) {
-      let j;
-      if (crypto && crypto.getRandomValues) {
-        const limit = 0x100000000 - 0x100000000 % (i + 1);
-        do { crypto.getRandomValues(word); } while (word[0] >= limit);
-        j = word[0] % (i + 1);
-      } else j = Math.floor(Math.random() * (i + 1));
+      const j = randomBelow(i+1);
       [deck[i], deck[j]] = [deck[j], deck[i]];
     }
     return deck;
@@ -716,6 +738,7 @@ var Net2P = (function () {
   }
   function begin(state, attacker) {
     state.attacker = attacker;
+    state.originalAttacker = attacker;
     state.defender = nextWithCards(state, attacker);
     state.limit = Math.min(HAND, state.hands[state.defender].length);
     state.actor = attacker;
@@ -723,19 +746,25 @@ var Net2P = (function () {
     state.table = [];
     state.taking = false;
     state.passed = [];
+    state.honest = false;
   }
-  function create(count = 2, cards = shuffle()) {
+  function create(count = 2, cards, options = {}) {
     if (!Number.isInteger(count) || count < 2 || count > 4) throw new RangeError('Нужно от 2 до 4 игроков.');
-    if (!Array.isArray(cards) || cards.length !== SIZE || new Set(cards).size !== SIZE || !cards.every(isCard)) throw new Error('Некорректная колода.');
+    const size = options.size ?? cards?.length ?? SHORT;
+    if (![SHORT,FULL].includes(size)) throw new RangeError('Нужно 36 или 52 карты.');
+    if (cards === undefined) cards = shuffle(size);
+    if (!Array.isArray(cards) || cards.length !== size || new Set(cards).size !== size || !cards.every(card => isCard(card,size))) throw new Error('Некорректная колода.');
     const deck = cards.slice(), hands = Array.from({length: count}, () => []);
     for (let card = 0; card < HAND; card++) for (const hand of hands) hand.push(deck.pop());
     const trumpCard = deck[0], trump = suit(trumpCard);
-    let attacker = 0, lowest = SIZE;
+    let attacker = null, lowest = RANKS.length;
     hands.forEach((hand, i) => hand.forEach(card => {
       if (suit(card) === trump && rank(card) < lowest) { attacker = i; lowest = rank(card); }
     }));
-    const state = {count, deck, hands, trump, trumpCard, discard: [], round: 1, version: 0, result: null, resolved: null, last: null};
-    begin(state, attacker);
+    const variant = options.variant === 'transfer' ? 'transfer' : 'throw';
+    const cheat = count === 2 && options.cheat === true;
+    const state = {count, size, variant, cheat, deck, hands, trump, trumpCard, discard: [], round: 1, version: 0, result: null, resolved: null, last: null};
+    begin(state, attacker ?? randomBelow(count));
     return state;
   }
 
@@ -748,12 +777,23 @@ var Net2P = (function () {
     return hand.filter(card => ranks.has(rank(card)));
   }
   function legal(view) {
-    const noMove = {cards: [], take: false, pass: false};
+    const noMove = {cards: [], transfers: [], take: false, pass: false, challenge: null};
     if (view.result || view.actor !== view.seat) return noMove;
     if (view.phase === 'lead') return {...noMove, cards: view.hand.slice()};
     if (view.phase === 'throw') return {...noMove, pass: true, cards: matching(view.hand, view.table)};
+    if (view.phase === 'review') return {...noMove, pass:true, challenge:view.last.card};
     const pair = view.table.find(p => p.cover === null);
-    return pair ? {...noMove, take: true, cards: view.hand.filter(card => beats(card, pair.attack, view.trump))} : noMove;
+    if (!pair) return noMove;
+    const target = transferTarget(view);
+    return {...noMove, take:true,
+      cards:view.hand.filter(card => (view.cheat && !view.honest) || beats(card,pair.attack,view.trump)),
+      transfers:target === undefined ? [] : view.hand.filter(card => rank(card) === rank(pair.attack))};
+  }
+
+  function transferTarget(v) {
+    if (v.variant !== 'transfer' || v.table.some(pair => pair.cover !== null)) return;
+    const next = orderFrom(v.count,(v.defender+1)%v.count).find(i => i !== v.defender && v.counts[i]);
+    if (v.table.length < HAND && v.counts[next] > v.table.length) return next;
   }
 
   function resolve(state) {
@@ -763,7 +803,9 @@ var Net2P = (function () {
     state.resolved = {round: state.round, defender, taking, table: table.map(pair => ({...pair})), draws};
     if (taking) state.hands[defender].push(...played);
     else state.discard.push(...played);
-    const drawOrder = orderFrom(state.count, attacker).filter(i => i !== defender).concat(defender);
+    const original = state.originalAttacker ?? attacker;
+    const seats = orderFrom(state.count, original);
+    const drawOrder = original === defender ? seats : seats.filter(i => i !== defender).concat(defender);
     for (const seat of drawOrder) {
       while (state.deck.length && state.hands[seat].length < HAND) {
         state.hands[seat].push(state.deck.pop());
@@ -791,19 +833,37 @@ var Net2P = (function () {
     state.phase = 'throw';
     state.actor = seat;
   }
+  function finishCover(state) {
+    if (state.table.some(pair => pair.cover === null)) {
+      state.phase = 'defend';
+      state.actor = state.defender;
+    } else offerThrow(state);
+  }
 
   function play(state, seat, action) {
     if (!action || typeof action !== 'object' || state.result || state.actor !== seat) return null;
     const options = legal(view(state, seat));
     const card = action.card;
     if (action.type === 'card' ? !options.cards.includes(card)
+      : action.type === 'transfer' ? !options.transfers.includes(card)
+      : action.type === 'challenge' ? options.challenge === null || card !== options.challenge
       : action.type === 'take' ? !options.take
       : action.type === 'pass' ? !options.pass : true) return null;
 
     const next = copy(state);
     next.version++;
-    next.last = action.type === 'card' ? {type: 'card', seat, card} : {type: action.type, seat};
-    if (action.type === 'take') {
+    next.last = ['card','transfer'].includes(action.type) ? {type:action.type,seat,card} : {type:action.type,seat};
+    if (state.phase === 'review') {
+      const pair = next.table.find(p => p.cover === options.challenge);
+      if (action.type === 'challenge' && !beats(card,pair.attack,state.trump)) {
+        pair.cover = null;
+        next.hands[next.defender].push(card);
+        next.last = {type:'caught',seat:next.defender,card};
+        next.actor = next.defender;
+        next.phase = 'defend';
+        next.honest = true;
+      } else finishCover(next);
+    } else if (action.type === 'take') {
       next.taking = true;
       next.passed = [];
       offerThrow(next);
@@ -813,10 +873,21 @@ var Net2P = (function () {
     } else {
       const hand = next.hands[seat];
       hand.splice(hand.indexOf(card), 1);
-      if (state.phase === 'defend') {
+      if (action.type === 'transfer') {
+        const target = transferTarget(view(state,seat));
+        next.table.push({attack:card,cover:null,by:seat});
+        next.attacker = seat;
+        next.defender = next.actor = target;
+        next.limit = Math.min(HAND,next.hands[target].length);
+        next.honest = false;
+      } else if (state.phase === 'defend') {
         next.table.find(pair => pair.cover === null).cover = card;
         next.passed = [];
-        offerThrow(next);
+        next.honest = false;
+        if (state.cheat) {
+          next.phase = 'review';
+          next.actor = 1-seat;
+        } else finishCover(next);
       } else {
         next.table.push({attack: card, cover: null, by: seat});
         if (next.taking) offerThrow(next);
@@ -836,7 +907,8 @@ var Net2P = (function () {
   // A peer receives their own hand and public information only.
   function view(state, seat) {
     return {
-      seat, count: state.count, hand: state.hands[seat].slice(), counts: state.hands.map(hand => hand.length),
+      seat, count: state.count, size:state.size, variant:state.variant, cheat:state.cheat, honest:state.honest,
+      hand: state.hands[seat].slice(), counts: state.hands.map(hand => hand.length),
       deckCount: state.deck.length, discardCount: state.discard.length,
       trump: state.trump, trumpCard: state.deck.length ? state.trumpCard : null,
       attacker: state.attacker, defender: state.defender, limit: state.limit, actor: state.actor,
@@ -851,30 +923,38 @@ var Net2P = (function () {
     if (!v || v.count !== 2 || v.seat !== seat) return false;
     const number = (n, lo, hi) => Number.isInteger(n) && n >= lo && n <= hi;
     const player = n => number(n, 0, 1);
-    const pair = p => p && isCard(p.attack) && (p.cover === null || isCard(p.cover)) && player(p.by);
+    const size = v.size ?? SHORT;
+    const card = c => isCard(c,size);
+    const pair = p => p && card(p.attack) && (p.cover === null || card(p.cover)) && player(p.by);
     const table = t => Array.isArray(t) && t.length <= HAND && t.every(pair);
-    return Array.isArray(v.hand) && v.hand.length <= SIZE && v.hand.every(isCard) && new Set(v.hand).size === v.hand.length
-      && Array.isArray(v.counts) && v.counts.length === 2 && v.counts.every(n => number(n, 0, SIZE)) && v.counts[seat] === v.hand.length
-      && number(v.deckCount,0,SIZE) && number(v.discardCount,0,SIZE) && number(v.trump,0,3)
-      && (v.deckCount ? isCard(v.trumpCard) && suit(v.trumpCard) === v.trump : v.trumpCard === null)
+    return [SHORT,FULL].includes(size) && ['throw','transfer'].includes(v.variant ?? 'throw')
+      && [undefined,false,true].includes(v.cheat) && [undefined,false,true].includes(v.honest)
+      && Array.isArray(v.hand) && v.hand.length <= size && v.hand.every(card) && new Set(v.hand).size === v.hand.length
+      && Array.isArray(v.counts) && v.counts.length === 2 && v.counts.every(n => number(n, 0, size)) && v.counts[seat] === v.hand.length
+      && number(v.deckCount,0,size) && number(v.discardCount,0,size) && number(v.trump,0,3)
+      && (v.deckCount ? card(v.trumpCard) && suit(v.trumpCard) === v.trump : v.trumpCard === null)
       && player(v.attacker) && player(v.defender) && v.attacker !== v.defender && number(v.limit,1,HAND)
-      && ['lead','defend','throw','end'].includes(v.phase) && typeof v.taking === 'boolean'
+      && ['lead','defend','throw','review','end'].includes(v.phase) && typeof v.taking === 'boolean'
       && (v.phase === 'end' ? v.actor === -1 && !!v.result : player(v.actor) && v.result === null)
       && table(v.table) && number(v.round,1,10000) && number(v.version,0,100000)
+      && (v.phase !== 'review' || (v.cheat && v.actor !== v.defender && v.last?.type === 'card'
+        && v.last.seat === v.defender && card(v.last.card) && v.table.some(p => p.cover === v.last.card)))
       && (v.resolved === null || (v.resolved && player(v.resolved.defender) && table(v.resolved.table)
-        && (v.resolved.draws === undefined || (Array.isArray(v.resolved.draws) && v.resolved.draws.length <= SIZE && v.resolved.draws.every(player)))))
+        && (v.resolved.draws === undefined || (Array.isArray(v.resolved.draws) && v.resolved.draws.length <= size && v.resolved.draws.every(player)))))
       && (v.result === null || (['cards','draw','resign'].includes(v.result.reason) && (v.result.loser === null || player(v.result.loser))));
   }
 
   function bot(v) {
     const options = legal(v);
-    const value = card => rank(card) + (suit(card) === v.trump ? 11 : 0);
+    const value = card => rank(card) + (suit(card) === v.trump ? RANKS.length : 0);
     const cards = options.cards.slice().sort((a,b) => value(a) - value(b));
     if (options.take) {
+      const transfer = options.transfers.slice().sort((a,b) => value(a)-value(b))[0];
+      if (transfer !== undefined && (!cards.length || value(transfer) <= value(cards[0]))) return {type:'transfer',card:transfer};
       if (!cards.length) return {type:'take'};
       const attack = v.table.find(pair => pair.cover === null).attack;
-      const expensive = suit(cards[0]) === v.trump && suit(attack) !== v.trump && rank(cards[0]) >= 6;
-      if (expensive && v.deckCount > 6 && v.table.length === 1 && rank(attack) <= 3 && v.hand.length >= 4) return {type:'take'};
+      const expensive = suit(cards[0]) === v.trump && suit(attack) !== v.trump && rank(cards[0]) >= RANKS.indexOf('Q');
+      if (expensive && v.deckCount > 6 && v.table.length === 1 && rank(attack) <= RANKS.indexOf('9') && v.hand.length >= 4) return {type:'take'};
     }
     if (options.pass && cards.length && suit(cards[0]) === v.trump && v.deckCount > 0 && !v.taking && v.hand.length > 1) return {type:'pass'};
     if (cards.length) return {type:'card', card:cards[0]};
@@ -888,22 +968,25 @@ if (typeof module !== 'undefined') module.exports = Durak;
   'use strict';
 
   const D = Durak, $ = id => document.getElementById(id);
-  const ID = 'durak', PREFIX = 'durak-v1-';
+  const ID = 'durak', PREFIX = 'durak-v2-', REVIEW_MS = 5200;
   const SUIT_NAME = ['трефы','бубны','червы','пики'];
   const SUIT_CARD = ['треф','бубен','червей','пик'];
-  const RANK_NAME = ['6','7','8','9','10','Валет','Дама','Король','Туз'];
+  const RANK_NAME = ['2','3','4','5','6','7','8','9','10','Валет','Дама','Король','Туз'];
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const motionLayer = $('cardMotion');
   const deckImage = new Image();
-  deckImage.src = 'cards/deck.webp';
+  deckImage.src = 'cards/deck-full.webp';
   const artReady = deckImage.decode().catch(() => {});
-  const prefs = {mode:'bot',count:2,sort:'suit'};
+  const prefs = {mode:'bot',count:2,sort:'suit',variant:'throw',size:36,cheat:false};
   try { Object.assign(prefs, JSON.parse(localStorage.getItem(ID+'-settings') || '{}')); } catch (e) {}
   if (prefs.mode !== 'net') prefs.mode = 'bot';
   if (![2,3,4].includes(prefs.count)) prefs.count = 2;
   if (!['suit','rank','manual'].includes(prefs.sort)) prefs.sort = 'suit';
+  if (prefs.variant !== 'transfer') prefs.variant = 'throw';
+  if (prefs.size !== 52) prefs.size = 36;
+  prefs.cheat = prefs.cheat === true;
 
-  let game = null, drag = null, botTimer = 0, pauseTimer = 0, toastTimer = 0, lastJoin = null;
+  let game = null, drag = null, botTimer = 0, pauseTimer = 0, reviewTimer = 0, toastTimer = 0, lastJoin = null;
   function save() {
     try { localStorage.setItem(ID+'-settings',JSON.stringify(prefs)); } catch (e) {}
   }
@@ -917,8 +1000,13 @@ if (typeof module !== 'undefined') module.exports = Durak;
     const online = prefs.mode === 'net';
     $('modeSeg').querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed',String(b.dataset.mode === prefs.mode)));
     $('countSeg').querySelectorAll('[data-count]').forEach(b => b.setAttribute('aria-pressed',String(Number(b.dataset.count) === prefs.count)));
+    $('ruleSettings').querySelectorAll('[data-variant]').forEach(b => b.setAttribute('aria-pressed',String(b.dataset.variant === prefs.variant)));
+    $('ruleSettings').querySelectorAll('[data-size]').forEach(b => b.setAttribute('aria-pressed',String(Number(b.dataset.size) === prefs.size)));
+    $('cheatSettings').querySelectorAll('[data-cheat]').forEach(b => b.setAttribute('aria-pressed',String((b.dataset.cheat === 'yes') === prefs.cheat)));
+    $('rulesSummary').textContent = variantLabel(prefs.variant)+' · '+cardsLabel(prefs.size);
     $('countCard').hidden = online;
     $('netCard').hidden = !online;
+    $('cheatSettings').hidden = !online;
     $('playBtn').hidden = online;
   }
   $('modeSeg').onclick = e => {
@@ -929,7 +1017,16 @@ if (typeof module !== 'undefined') module.exports = Durak;
     const b = e.target.closest('[data-count]');
     if (b) { prefs.count = Number(b.dataset.count); save(); renderMenu(); }
   };
+  $('ruleSettings').onclick = e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.variant) prefs.variant = b.dataset.variant;
+    if (b.dataset.size) prefs.size = Number(b.dataset.size);
+    if (b.dataset.cheat) prefs.cheat = b.dataset.cheat === 'yes';
+    save(); renderMenu();
+  };
 
+  function variantLabel(variant) { return variant === 'transfer' ? 'Переводной' : 'Подкидной'; }
   function cardName(card) { return RANK_NAME[D.rank(card)]+' '+SUIT_CARD[D.suit(card)]; }
   function cardsLabel(n) {
     const one = n % 10, tens = n % 100;
@@ -939,7 +1036,7 @@ if (typeof module !== 'undefined') module.exports = Durak;
     if (seat === game.seat) return 'Ты';
     return game.online ? 'Друг' : game.view.count === 2 ? 'Бот' : 'Бот '+seat;
   }
-  function cardPosition(card) { return (D.rank(card)*100/9)+'% '+(D.suit(card)*100/3)+'%'; }
+  function cardPosition(card) { return (D.rank(card)*100/13)+'% '+(D.suit(card)*100/3)+'%'; }
   function cardMarkup(card, cls = '', button = false) {
     const tag = button ? 'button' : 'div';
     return '<'+tag+' '+(button?'type="button"':'role="img"')+' class="card-face '+cls+'" style="background-position:'+cardPosition(card)
@@ -952,6 +1049,7 @@ if (typeof module !== 'undefined') module.exports = Durak;
     return !!game && !game.moving && !game.pending && !game.view.result && game.view.actor === game.seat
       && (!game.online || Net2P.online());
   }
+  function canPlayCard() { return canAct() && game.view.phase !== 'review'; }
   function resultTitle(v) {
     if (v.result.loser === null) return 'Ничья';
     if (v.result.reason === 'resign') return v.result.loser === game.seat ? 'Ты сдался' : playerName(v.result.loser)+' сдался';
@@ -964,9 +1062,10 @@ if (typeof module !== 'undefined') module.exports = Durak;
     if (game.drawing) return 'Добор карт';
     if (game.paused) return v.resolved.taking ? 'Карты взяты' : 'Бито';
     if (game.pending) return 'Отправляем ход…';
+    if (v.phase === 'review') return v.actor === game.seat ? 'Нажми на ответ соперника для проверки' : 'Соперник проверяет ответ';
     if (v.actor === game.seat) {
       if (v.phase === 'lead') return 'Твой ход';
-      if (v.phase === 'defend') return 'Ты отбиваешься';
+      if (v.phase === 'defend') return game.transfer ? 'Положи карту для перевода' : 'Ты отбиваешься';
       return v.taking ? 'Соперник берёт' : 'Твой ход · подкидывание';
     }
     if (isOut(v,game.seat)) return 'Ты вышел из игры';
@@ -991,7 +1090,7 @@ if (typeof module !== 'undefined') module.exports = Durak;
   function orderHand(v) {
     const suitOrder = card => D.suit(card) === v.trump ? 4 : D.suit(card);
     const bySuit = (a,b) => suitOrder(a)-suitOrder(b) || D.rank(a)-D.rank(b);
-    const byStrength = card => D.rank(card)+(D.suit(card) === v.trump ? 9 : 0);
+    const byStrength = card => D.rank(card)+(D.suit(card) === v.trump ? D.RANKS.length : 0);
     if (game.manualOrder) {
       const kept = game.manualOrder.filter(card => v.hand.includes(card));
       game.manualOrder = kept.concat(v.hand.filter(card => !kept.includes(card)));
@@ -1024,7 +1123,8 @@ if (typeof module !== 'undefined') module.exports = Durak;
   function render() {
     if (!game) return;
     const v = game.view, act = canAct();
-    $('modeTitle').textContent = 'Подкидной · '+(game.online ? 'онлайн' : v.count+' игрока');
+    $('modeTitle').textContent = [variantLabel(v.variant),cardsLabel(v.size ?? 36),
+      game.online ? (v.cheat ? 'С мухлёжем' : 'Честная игра') : v.count+' игрока'].join(' · ');
     $('players').innerHTML = Array.from({length:v.count-1},(_,offset) => {
       const i = (game.seat+1+offset)%v.count, n = v.counts[i];
       const out = isOut(v,i);
@@ -1041,16 +1141,26 @@ if (typeof module !== 'undefined') module.exports = Durak;
 
     const past = (game.paused || (v.result && !v.table.length)) && v.resolved;
     const table = past ? past.table : v.table;
-    const pairs = $('pairs'), tableKey = table.map(pair => pair.attack+':'+pair.cover).join(',');
+    const pairs = $('pairs');
+    const candidate = v.phase === 'review' && v.actor === game.seat ? v.last.card : null;
+    const tableKey = table.map(pair => pair.attack+':'+pair.cover).join(',')+'/'+candidate;
     if (pairs.dataset.cards !== tableKey) {
       pairs.dataset.cards = tableKey;
       pairs.innerHTML = table.length ? table.map(pair => '<div class="pair">'+cardMarkup(pair.attack,'attack')
-        +(pair.cover===null?'':cardMarkup(pair.cover,'cover'))+'</div>').join('') : '<div class="table-mark" aria-hidden="true">♠</div>';
+        +(pair.cover===null?'':cardMarkup(pair.cover,'cover',pair.cover===candidate))+'</div>').join('') : '<div class="table-mark" aria-hidden="true">♠</div>';
+    }
+    const check = pairs.querySelector('button[data-card]');
+    if (check) {
+      check.dataset.check = '';
+      check.disabled = !act;
+      check.setAttribute('aria-label','Проверить: '+cardName(candidate));
     }
     $('takeBtn').hidden = !act || v.phase !== 'defend';
-    $('passBtn').hidden = !act || v.phase !== 'throw';
-    $('passBtn').textContent = v.taking ? 'Не подкидывать' : v.count === 2 ? 'Бито' : 'Не подкидывать';
-    renderHand(v,act);
+    $('transferBtn').hidden = !act || !D.legal(v).transfers.length;
+    $('transferBtn').setAttribute('aria-pressed',String(!!game.transfer));
+    $('passBtn').hidden = !act || (v.phase !== 'throw' && v.phase !== 'review');
+    $('passBtn').textContent = v.phase === 'review' ? 'Дальше' : (v.taking || v.count !== 2 ? 'Не подкидывать' : 'Бито');
+    renderHand(v,canPlayCard());
 
     $('endOv').hidden = !v.result;
     $('againBtn').hidden = !!v.result || (game.online && Net2P.role() === 'guest');
@@ -1166,8 +1276,11 @@ if (typeof module !== 'undefined') module.exports = Durak;
     clearTimers();
     const previous = game.view;
     const last = next.last;
-    const played = animate && previous.version < next.version && last?.type === 'card' && D.isCard(last.card)
+    const played = animate && previous.version < next.version && ['card','transfer'].includes(last?.type) && D.isCard(last.card)
       && Number.isInteger(last.seat) && (last.card !== previous.last?.card || last.seat !== previous.last.seat);
+    const caught = animate && previous.phase === 'review' && next.version === previous.version+1 && last?.type === 'caught'
+      && D.isCard(last.card) && last.seat === previous.defender;
+    const returnedFrom = caught && dropZone.querySelector('[data-card="'+last.card+'"]')?.getBoundingClientRect();
     const origin = played && (game.cardOrigin || seatOrigin(last.seat));
     const resolved = animate && next.resolved && next.resolved.round !== previous.resolved?.round ? next.resolved : null;
     const takenCards = resolved?.taking && resolved.defender === game.seat
@@ -1178,14 +1291,26 @@ if (typeof module !== 'undefined') module.exports = Durak;
       && draws.length === previous.deckCount-next.deckCount && ownDraws.length === draws.filter(seat => seat === game.seat).length;
     game.stockView = refill ? {deckCount:previous.deckCount,trumpCard:previous.trumpCard} : null;
     game.paused = !!(resolved && !next.result);
-    game.moving = !!(game.paused || played || refill);
+    game.moving = !!(game.paused || played || caught || refill);
     game.dealing = false;
     game.drawing = false;
     game.cardOrigin = null;
+    game.transfer = false;
     game.view = next;
     game.pending = false;
     render();
     let duration = 0;
+    if (caught) {
+      const mine = last.seat === game.seat;
+      toast(mine ? 'Мухлёж замечен. Отбейся по правилам.' : 'Мухлёж замечен. Карта вернулась сопернику.');
+      if (!reducedMotion.matches) {
+        const target = mine ? hand.querySelector('[data-card="'+last.card+'"]')
+          : $('players').querySelector('[data-seat="'+last.seat+'"] .card-back:last-child');
+        duration = flyCard(target,returnedFrom,{duration:470,face:last.card,hideTarget:mine});
+      }
+    } else if (animate && previous.phase === 'review' && last?.type === 'challenge' && last.seat === game.seat) {
+      toast('Карта сыграна по правилам.');
+    }
     if (played) {
       const card = $('pairs').querySelector('[data-card="'+last.card+'"]');
       if (card && reducedMotion.matches) {
@@ -1204,6 +1329,7 @@ if (typeof module !== 'undefined') module.exports = Durak;
   function enter(options, initial) {
     releaseDrag(false);
     clearTimers();
+    clearTimeout(reviewTimer);
     const dealing = initial.version===0 && !reducedMotion.matches;
     game = {...options,view:initial,pending:false,paused:false,moving:dealing,dealing};
     if ($('lobby').open) $('lobby').close();
@@ -1225,6 +1351,7 @@ if (typeof module !== 'undefined') module.exports = Durak;
     game.state = next;
     showView(D.view(next,game.seat),true);
     if (game.online) sendState();
+    scheduleReview();
     return true;
   }
   function scheduleBot() {
@@ -1248,9 +1375,12 @@ if (typeof module !== 'undefined') module.exports = Durak;
   }
 
   function playCard(card, origin) {
-    if (!canAct() || !D.legal(game.view).cards.includes(card)) return false;
+    if (!canPlayCard()) return false;
+    const options = D.legal(game.view);
+    const transfer = game.transfer || (!options.cards.includes(card) && options.transfers.includes(card));
+    if (!(transfer ? options.transfers : options.cards).includes(card)) return false;
     game.cardOrigin = origin;
-    if (act({type:'card',card})) return true;
+    if (act({type:transfer?'transfer':'card',card})) return true;
     game.cardOrigin = null;
     return false;
   }
@@ -1264,7 +1394,7 @@ if (typeof module !== 'undefined') module.exports = Durak;
     }
     prefs.sort = button.dataset.sort;
     save();
-    renderHand(game.view,canAct());
+    renderHand(game.view,canPlayCard());
   };
   function overArea(area,e) {
     const bounds = area.getBoundingClientRect();
@@ -1276,7 +1406,7 @@ if (typeof module !== 'undefined') module.exports = Durak;
     if (from < 0 || index < 0 || index >= order.length || from === index) return false;
     order.splice(from,1);
     order.splice(index,0,card);
-    renderHand(game.view,canAct());
+    renderHand(game.view,canPlayCard());
     return true;
   }
   function clearHandSlot() {
@@ -1353,7 +1483,7 @@ if (typeof module !== 'undefined') module.exports = Durak;
     if (!drag.mode) {
       if (Math.hypot(dx,dy) < 7) return;
       if (!canArrange() && hand.scrollWidth > hand.clientWidth && Math.abs(dx) > Math.abs(dy)*1.25) drag.mode = 'scroll';
-      else if (canAct() || canArrange()) {
+      else if (canPlayCard() || canArrange()) {
         drag.mode = 'card';
         drag.bounds = drag.button.getBoundingClientRect();
         drag.ghost = drag.button.cloneNode(true);
@@ -1368,7 +1498,7 @@ if (typeof module !== 'undefined') module.exports = Durak;
     if (drag.mode === 'scroll') { hand.scrollLeft = drag.scroll-dx; return; }
     drag.ghost.style.left = drag.bounds.left+dx+'px';
     drag.ghost.style.top = drag.bounds.top+dy+'px';
-    dropZone.classList.toggle('drag-over',canAct() && overArea(dropZone,e));
+    dropZone.classList.toggle('drag-over',canPlayCard() && overArea(dropZone,e));
     updateHandDrop(e);
   };
   hand.onpointerup = e => {
@@ -1402,14 +1532,24 @@ if (typeof module !== 'undefined') module.exports = Durak;
   };
   $('takeBtn').onclick = () => act({type:'take'});
   $('passBtn').onclick = () => act({type:'pass'});
+  $('transferBtn').onclick = () => {
+    if (!canPlayCard() || $('transferBtn').hidden) return;
+    game.transfer = !game.transfer;
+    render();
+  };
+  dropZone.onclick = e => {
+    const card = e.target.closest('button[data-check]');
+    if (card && !card.disabled) act({type:'challenge',card:Number(card.dataset.card)});
+  };
 
   function startLocal(count = prefs.count) {
     Net2P.close();
-    const state = D.create(count);
+    const state = D.create(count,undefined,{variant:prefs.variant,size:prefs.size});
     enter({state,seat:0,online:false},D.view(state,0));
   }
   function home() {
     releaseDrag(false);
+    clearTimeout(reviewTimer);
     clearTimers(); Net2P.close(); game = null;
     for (const id of ['lobby','restartDialog']) if ($(id).open) $(id).close();
     $('game').hidden = true; $('menu').hidden = false;
@@ -1437,7 +1577,7 @@ if (typeof module !== 'undefined') module.exports = Durak;
     if (!$('lobby').open) $('lobby').showModal();
   }
   function hostStart() {
-    const state = D.create(2);
+    const state = D.create(2,undefined,{variant:prefs.variant,size:prefs.size,cheat:prefs.cheat});
     const id = Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
     enter({state,seat:0,online:true,id},D.view(state,0));
     sendState();
@@ -1446,6 +1586,15 @@ if (typeof module !== 'undefined') module.exports = Durak;
     if (!game || !game.online) return;
     if (!connected) { game.pending = false; game.cardOrigin = null; }
     render();
+    scheduleReview();
+  }
+  function scheduleReview() {
+    clearTimeout(reviewTimer);
+    const state = game?.state;
+    if (!state || !game.online || state.phase !== 'review' || !Net2P.online()) return;
+    reviewTimer = setTimeout(() => {
+      if (game?.state === state && Net2P.online()) update(D.play(state,state.actor,{type:'pass'}));
+    },REVIEW_MS);
   }
   function host() {
     lastJoin = null;
