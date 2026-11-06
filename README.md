@@ -2,7 +2,39 @@
 
 Одиннадцать игр в браузере: с ботами, на одном экране или онлайн с друзьями.
 
-Играть: https://maximdibrova-netizen.github.io/TicTacToe/
+Играть: https://mdgames153.web.app/
+
+Зеркало GitHub Pages: https://maximdibrova-netizen.github.io/TicTacToe/
+
+## Firebase и аккаунты
+
+Проект Google Firebase: `mdgames153`. На главной есть необязательный вход через
+Google или почту, регистрация, смена имени, выход и восстановление пароля.
+Сессию и данные аккаунта хранит Firebase Authentication. Играть и создавать
+комнаты можно гостем; сохранённые партии и настройки игр пока остаются на
+устройстве, а обмен ходами по-прежнему идёт через PeerJS.
+
+Исходники аккаунта — `src/account/`, публичная конфигурация — `config.js`.
+`getAnalytics` не подключён. Firebase SDK 13.2.0 собирается локально через
+`build-account.mjs` в `account.js`; браузеру не нужен npm или внешний CDN SDK.
+Вносите изменения в `src/`, затем запускайте `python build.py`, чтобы обновить
+страницы GitHub Pages. Сгенерированные HTML и `account.js` вручную не редактируются.
+
+Для публикации установите зависимости (`npm ci`) и Firebase CLI
+(`npm install -g firebase-tools@15.35.0`), выполните `firebase login`, затем
+`npm run deploy:firebase`. Команда собирает только публичные файлы в
+игнорируемую папку `firebase-public/` и публикует их. Конфигурация `firebase.json`
+сохраняет отдельные адреса всех игр; исходники, тесты, node_modules и файлы CLI
+в публикацию не включаются. Пароли и учётные данные CLI в репозиторий не входят.
+Способы входа включены в Authentication; разрешённые домены — `mdgames153.web.app`,
+`mdgames153.firebaseapp.com` и `maximdibrova-netizen.github.io`.
+
+Проверки: `npm test`; в отдельном терминале `npm run emulator:auth`, затем
+`npm run test:account`. Последняя проверка использует настоящий Firebase SDK
+с локальным эмулятором: регистрация, вход, сохранение сессии, профиль,
+восстановление доступа, Google-вход и гостевая игра без сети.
+Параметр `?authEmulator=9099` действует только на localhost/127.0.0.1;
+публичный сайт всегда подключается к настоящему Firebase.
 
 | Игра | Адрес | Режимы |
 |---|---|---|

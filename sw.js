@@ -1,9 +1,9 @@
 // Работа без интернета: при первом заходе сохраняем все игры и шрифты, дальше открываем их и без сети.
 // Страницы: сначала сеть (чтобы сразу видеть новую версию), без сети или при долгом ответе — сохранённая копия.
 // Шрифты и библиотека связи: сохранённая копия, если она есть.
-var VERSION = '06.11.2026 15:29';
+var VERSION = '06.11.2026 22:32';
 var CACHE = 'games-' + VERSION;
-var PAGES = ['./', 'tochki/', 'ttt/', 'battleship/', 'checkers/', 'go/', 'chess/', 'lava/', 'abalone/', 'falling4/', 'quoridor/', 'durak/', 'durak/cards/deck-full.webp', 'chess/sf/stockfish-19-lite-single.js', 'chess/sf/stockfish-19-lite-single.wasm', 'chess/db/names.json', 'chess/db/meta.json', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
+var PAGES = ['./', 'account.js', 'tochki/', 'ttt/', 'battleship/', 'checkers/', 'go/', 'chess/', 'lava/', 'abalone/', 'falling4/', 'quoridor/', 'durak/', 'durak/cards/deck-full.webp', 'chess/sf/stockfish-19-lite-single.js', 'chess/sf/stockfish-19-lite-single.wasm', 'chess/db/names.json', 'chess/db/meta.json', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 var FONTS = ["https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;700;800&display=swap", "https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Manrope:wght@500;700;800&display=swap", "https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800;900&family=Nunito:wght@600;700;800&display=swap", "https://fonts.googleapis.com/css2?family=Rubik:wght@600;800&family=Manrope:wght@500;700;800&display=swap", "https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@500;700;800&display=swap"];
 var EXTRA = ['https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js'];
 
@@ -71,6 +71,8 @@ self.addEventListener('fetch', function (e) {
   var req = e.request;
   if (req.method !== 'GET') return;
   var u = new URL(req.url);
+  // Firebase owns these auth endpoints; never cache login redirects or callbacks.
+  if (u.origin === location.origin && u.pathname.indexOf('/__/auth/') === 0) return;
   if (u.origin === location.origin) { e.respondWith(networkFirst(req)); return; }
   if (/fonts\.(googleapis|gstatic)\.com$/.test(u.hostname) || /peerjs@/.test(u.pathname)) { e.respondWith(cacheFirst(req)); return; }
 });

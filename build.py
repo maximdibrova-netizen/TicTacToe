@@ -1,5 +1,5 @@
 """Собирает все игры и главную из src, включая lava/. Запуск: python3 build.py"""
-import os, re, json, shutil, datetime, zoneinfo
+import os, re, json, shutil, datetime, zoneinfo, subprocess
 here = os.path.dirname(os.path.abspath(__file__))
 src = os.path.join(here, 'src')
 ver = datetime.datetime.now(zoneinfo.ZoneInfo('Europe/Vienna')).strftime('%d.%m.%Y %H:%M')
@@ -49,7 +49,8 @@ def build(name):
     print('собрано:', name + '/index.html')
 GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go', 'chess', 'lava', 'abalone', 'falling4', 'quoridor', 'durak']
 for g in GAMES: build(g)
-hub = read('hub.html').replace('/*NET*/', net).replace('/*VER*/', ver)
+subprocess.run(['node', os.path.join(here, 'build-account.mjs')], cwd=here, check=True)
+hub = read('hub.html').replace('/*NET*/', net).replace('/*VER*/', ver).replace('/*ACCOUNT_CSS*/', read('account', 'style.css')).replace('<!--ACCOUNT_UI-->', read('account', 'ui.html'))
 open(os.path.join(here, 'index.html'), 'w', encoding='utf-8').write(head() + hub + '\n</body></html>\n')
 print('собрано: index.html (главная и комната)')
 # работа без интернета: манифест, иконки и service worker в корень сайта

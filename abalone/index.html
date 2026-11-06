@@ -165,7 +165,7 @@ var MatchActions = (function () {
         el('matchResultTitle').textContent = r.title;
         el('matchResultText').textContent = r.type === 'draw' ? 'Ничья по соглашению игроков.' : r.winnerLabel ? 'Победа: ' + r.winnerLabel + '.' : 'Партия завершена.';
         el('matchAgain').hidden = !a.again || role() === 'guest';
-        closeQuestion(); if (!result.open) result.showModal();
+        closeQuestion(); if (a.resultModal !== false && !result.open) result.showModal();
       } else note(r.title + '. Остальные продолжают игру.');
     }
     function commit(type, seat) {
@@ -212,7 +212,7 @@ var MatchActions = (function () {
           if (s && role() === 'host') bind();
         }
         wasOver = !!s && s.over;
-        var visible = active(s) && local(s).length > 0, ended = !!(s && s.over && !s.analysis && finalResult && !mount.hidden), shown = visible || ended, changed = row.hidden === shown;
+        var visible = active(s) && local(s).length > 0, ended = !!(a.resultModal !== false && s && s.over && !s.analysis && finalResult && !mount.hidden), shown = visible || ended, changed = row.hidden === shown;
         row.hidden = !shown; mount.classList.toggle('match-actions-active', shown);
         el('surrenderBtn').hidden = el('offerDrawBtn').hidden = !visible;
         el('matchReview').hidden = el('matchSummary').hidden = !ended;
@@ -309,7 +309,7 @@ body:not(.ab-analysis):not(.view-no-history) #sidePanel{display:block;margin-top
   <div class="card" id="netCard" hidden><h2>Онлайн с другом</h2><div class="seg" style="--cols:2"><button id="netCreate">Создать игру</button><button id="netJoinBtn">Войти по коду</button></div><div class="join" id="joinRow" hidden><input id="joinCode" maxlength="5" placeholder="КОД" aria-label="Код игры" autocomplete="off" spellcheck="false"><button id="joinGo">Войти</button></div><p class="hint">Хозяин выбирает расстановку и время. Другу достаточно ссылки или кода.</p></div>
   <button class="play" id="playBtn">Играть</button><button class="secondary" id="analyzeBtn">Анализ позиции</button>
   <details class="card rules"><summary>Как играть</summary><ol><li>Выбери один шар или прямую непрерывную группу из двух или трёх своих шаров.</li><li>За ход группа сдвигается на одну лунку в одном из шести направлений. При боковом сдвиге все лунки должны быть свободны.</li><li>Вдоль линии можно толкать меньшую группу соперника: <b>2 против 1, 3 против 1 или 3 против 2</b>. Толкать необязательно.</li><li>За шарами соперника должно быть свободное место или край доски. Свои шары за край выводить нельзя.</li><li>Выбил шесть шаров соперника — победил. Чёрные всегда ходят первыми.</li></ol><a href="https://foxmind.co.il/wp-content/uploads/2021/10/ABALONE_CLASSIC_RULES_EN-FM-p.pdf" target="_blank" rel="noopener">Правила издателя ↗</a></details>
-  <p class="hint version">Версия от 04.11.2026 23:37</p>
+  <p class="hint version">Версия от 06.11.2026 22:32</p>
  </div>
 </section>
 <section id="game" class="screen" hidden>
@@ -457,7 +457,7 @@ var GameClock = (function () {
     function guest() { return a.role() === 'guest'; }
     function expire() {
       if (!model || model.flag === null || ended) return;
-      ended = true; a.expire(model.flag); result.querySelector('p').textContent = a.labels[model.flag] + ' — поражение по времени. Партия окончена.'; result.hidden = false;
+      ended = true; a.expire(model.flag); result.querySelector('p').textContent = a.labels[model.flag] + ' — поражение по времени. Партия окончена.'; result.hidden = a.resultModal === false;
     }
     function packet() { return model ? { left: model.left.slice(), inc: model.inc.slice(), turn: model.turn, running: model.running && !paused, flag: model.flag } : null; }
     function publish() { if (a.role() === 'host') { a.send({ t: 'clock-v1', clock: packet() }); lastSend = Date.now(); } }

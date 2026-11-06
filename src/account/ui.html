@@ -1,0 +1,23 @@
+<section class="account-card" aria-label="Аккаунт игрока">
+  <div class="account-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg></div>
+  <div class="account-identity"><strong id="accountLabel">Играть со своего аккаунта</strong><span id="accountHint">Вход через Google или почту. Можно играть гостем.</span></div>
+  <div class="account-card-buttons"><button type="button" class="btn main" id="accountOpen">Войти</button><button type="button" class="btn" id="accountManage" hidden>Профиль</button><button type="button" class="btn" id="accountLogout" hidden>Выйти</button></div>
+</section>
+<dialog class="account-dialog" id="accountDialog" aria-labelledby="accountTitle" aria-describedby="accountIntro">
+  <button type="button" class="account-close" id="accountClose" aria-label="Закрыть">×</button>
+  <h2 id="accountTitle">Войти в аккаунт</h2><p id="accountIntro">Выберите удобный способ входа.</p>
+  <div id="accountGuestPane">
+    <button type="button" id="accountGoogle" class="account-google"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.87h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.25c1.9-1.75 2.97-4.33 2.97-7.35Z"/><path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.62-2.42l-3.25-2.51c-.9.6-2.05.96-3.37.96-2.6 0-4.8-1.76-5.59-4.12H3.05v2.59A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.41 13.91a6 6 0 0 1 0-3.82V7.5H3.05a10 10 0 0 0 0 9l3.36-2.59Z"/><path fill="#EA4335" d="M12 5.97c1.47 0 2.8.5 3.83 1.49l2.87-2.88A9.6 9.6 0 0 0 12 2a10 10 0 0 0-8.95 5.5l3.36 2.59A5.99 5.99 0 0 1 12 5.97Z"/></svg>Войти через Google</button>
+    <div class="account-tabs" role="tablist" aria-label="Вход или регистрация"><button type="button" id="accountLoginTab" role="tab" aria-selected="true">Вход по почте</button><button type="button" id="accountRegisterTab" role="tab" aria-selected="false">Регистрация</button></div>
+    <form id="accountForm" novalidate>
+      <label id="accountNameRow" hidden>Имя игрока<input id="accountName" name="nickname" autocomplete="nickname" maxlength="32" placeholder="Как вас называть"></label>
+      <label>Почта<input id="accountEmail" name="email" type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="you@example.com"></label>
+      <label id="accountPasswordRow">Пароль<input id="accountPassword" name="password" type="password" autocomplete="current-password" placeholder="Ваш пароль"></label>
+      <button type="submit" id="accountSubmit" class="btn main">Войти</button>
+    </form>
+    <button type="button" id="accountReset" class="account-link">Забыли пароль?</button>
+  </div>
+  <form id="accountProfileForm" hidden novalidate><label>Имя игрока<input id="accountProfileName" autocomplete="nickname" maxlength="32"></label><button type="submit" id="accountSaveProfile" class="btn main">Сохранить имя</button></form>
+  <p id="accountMessage" class="account-message" role="status" aria-live="polite"></p>
+  <button type="button" class="account-link account-guest" id="accountGuest">Продолжить гостем</button>
+</dialog>

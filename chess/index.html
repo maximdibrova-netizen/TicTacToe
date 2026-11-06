@@ -165,7 +165,7 @@ var MatchActions = (function () {
         el('matchResultTitle').textContent = r.title;
         el('matchResultText').textContent = r.type === 'draw' ? 'Ничья по соглашению игроков.' : r.winnerLabel ? 'Победа: ' + r.winnerLabel + '.' : 'Партия завершена.';
         el('matchAgain').hidden = !a.again || role() === 'guest';
-        closeQuestion(); if (!result.open) result.showModal();
+        closeQuestion(); if (a.resultModal !== false && !result.open) result.showModal();
       } else note(r.title + '. Остальные продолжают игру.');
     }
     function commit(type, seat) {
@@ -212,7 +212,7 @@ var MatchActions = (function () {
           if (s && role() === 'host') bind();
         }
         wasOver = !!s && s.over;
-        var visible = active(s) && local(s).length > 0, ended = !!(s && s.over && !s.analysis && finalResult && !mount.hidden), shown = visible || ended, changed = row.hidden === shown;
+        var visible = active(s) && local(s).length > 0, ended = !!(a.resultModal !== false && s && s.over && !s.analysis && finalResult && !mount.hidden), shown = visible || ended, changed = row.hidden === shown;
         row.hidden = !shown; mount.classList.toggle('match-actions-active', shown);
         el('surrenderBtn').hidden = el('offerDrawBtn').hidden = !visible;
         el('matchReview').hidden = el('matchSummary').hidden = !ended;
@@ -493,7 +493,7 @@ body.blind.peek .sq .pc { visibility: visible; }
         <li>Можно сдаться. На время — проигрывает тот, у кого кончились часы.</li>
       </ol>
     </div>
-    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 04.11.2026 23:37</span></p>
+    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 06.11.2026 22:32</span></p>
   </div>
 </section>
 
@@ -693,7 +693,7 @@ var GameClock = (function () {
     function guest() { return a.role() === 'guest'; }
     function expire() {
       if (!model || model.flag === null || ended) return;
-      ended = true; a.expire(model.flag); result.querySelector('p').textContent = a.labels[model.flag] + ' — поражение по времени. Партия окончена.'; result.hidden = false;
+      ended = true; a.expire(model.flag); result.querySelector('p').textContent = a.labels[model.flag] + ' — поражение по времени. Партия окончена.'; result.hidden = a.resultModal === false;
     }
     function packet() { return model ? { left: model.left.slice(), inc: model.inc.slice(), turn: model.turn, running: model.running && !paused, flag: model.flag } : null; }
     function publish() { if (a.role() === 'host') { a.send({ t: 'clock-v1', clock: packet() }); lastSend = Date.now(); } }
