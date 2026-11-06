@@ -51,6 +51,7 @@ GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go', 'chess', 'lava', 'abal
 for g in GAMES: build(g)
 subprocess.run(['node', os.path.join(here, 'build-account.mjs')], cwd=here, check=True)
 hub = read('hub.html').replace('/*NET*/', net).replace('/*VER*/', ver).replace('/*ACCOUNT_CSS*/', read('account', 'style.css')).replace('<!--ACCOUNT_UI-->', read('account', 'ui.html')).replace('/*RATING_CSS*/', read('ratings','style.css')).replace('<!--RATING_UI-->',read('ratings','ui.html'))
+hub = hub.replace('/*SOCIAL_CSS*/', read('social', 'style.css')).replace('<!--SOCIAL_UI-->', read('social', 'ui.html'))
 open(os.path.join(here, 'index.html'), 'w', encoding='utf-8').write(head() + hub + '\n</body></html>\n')
 print('собрано: index.html (главная и комната)')
 # работа без интернета: манифест, иконки и service worker в корень сайта

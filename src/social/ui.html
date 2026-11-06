@@ -1,0 +1,95 @@
+<section id="friendsPage" role="tabpanel" aria-labelledby="friendsTab" hidden>
+  <section class="room" id="socialGuest">
+    <h2>Друзья</h2>
+    <p>Войдите в аккаунт, чтобы найти друзей, переписываться и приглашать их в игру.</p>
+    <div class="row"><button type="button" class="btn main" id="socialSignIn">Войти</button></div>
+  </section>
+
+  <div class="social-pane" id="socialPane" hidden>
+    <header class="social-head">
+      <div>
+        <h2>Друзья</h2>
+        <p>Общайтесь и играйте вместе</p>
+      </div>
+      <div class="social-head-actions">
+        <button type="button" class="btn" id="socialResume" hidden>Вернуться к игре</button>
+        <button type="button" class="btn" id="socialCode" title="Скопировать код игрока">Скопировать мой код</button>
+      </div>
+    </header>
+    <p class="social-notice" id="socialNotice" role="status" hidden></p>
+    <div class="social-columns">
+      <div class="social-lists">
+        <section class="room social-card" aria-labelledby="socialSearchTitle">
+          <h3 id="socialSearchTitle">Найти игрока</h3>
+          <form class="social-search" id="socialSearchForm" role="search">
+            <input id="socialSearch" aria-label="Имя или код игрока" placeholder="Имя или код с #" maxlength="129" autocomplete="off" spellcheck="false" required>
+            <button class="btn main" type="submit">Найти</button>
+          </form>
+          <p id="socialSearchStatus" role="status" hidden></p>
+          <ul class="social-rows" id="socialSearchResults" hidden></ul>
+        </section>
+
+        <section class="room social-card" id="socialRequestsWrap" aria-labelledby="socialRequestsTitle" hidden>
+          <h3 id="socialRequestsTitle">Заявки в друзья</h3>
+          <ul class="social-rows" id="socialRequests"></ul>
+        </section>
+
+        <section class="room social-card" id="socialChallengesWrap" aria-labelledby="socialChallengesTitle" hidden>
+          <h3 id="socialChallengesTitle">Вызовы на игру</h3>
+          <ul class="social-rows" id="socialChallenges"></ul>
+        </section>
+
+        <section class="room social-card" aria-labelledby="socialFriendsTitle">
+          <div class="social-card-head">
+            <h3 id="socialFriendsTitle">Мои друзья</h3>
+            <span class="social-count" id="socialOnlineCount" hidden></span>
+          </div>
+          <p id="socialFriendsEmpty">Загружаем список…</p>
+          <ul class="social-rows" id="socialFriends" hidden></ul>
+        </section>
+      </div>
+
+      <section class="room social-card social-chat" id="socialChat" aria-labelledby="socialChatTitle">
+        <div id="socialChatEmpty" class="social-chat-empty">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5h-2l-5 2v-4a7.5 7.5 0 0 1 5-13h2a7.5 7.5 0 0 1 7.5 7.5Z"/><path d="M9 10h7m-7 4h5"/>
+          </svg>
+          <h3 id="socialChatTitle">Личные сообщения</h3>
+          <p>Откройте переписку из списка друзей.</p>
+        </div>
+        <div id="socialChatOpen" class="social-chat-open" hidden>
+          <header class="social-chat-head">
+            <div>
+              <h3 id="socialChatName"></h3>
+              <p id="socialChatStatus"></p>
+            </div>
+            <button type="button" id="socialChatBack" class="btn">К списку</button>
+          </header>
+          <div class="social-messages" id="socialMessages" role="log" aria-label="Личные сообщения" tabindex="0">
+            <button class="btn social-older" type="button" id="socialOlder" hidden>Показать более ранние</button>
+            <p class="social-chat-info" id="socialChatInfo">Загружаем сообщения…</p>
+            <div id="socialMessageList" class="social-message-list"></div>
+          </div>
+          <form class="social-composer" id="socialMessageForm">
+            <textarea id="socialMessage" rows="2" maxlength="1500" placeholder="Сообщение" aria-label="Сообщение" required></textarea>
+            <button type="submit" class="btn main">Отправить</button>
+          </form>
+          <p class="social-inline-error" id="socialMessageError" role="status" hidden></p>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
+<dialog id="socialChallengeDialog" class="choice" aria-labelledby="socialChallengeTitle">
+  <h2 id="socialChallengeTitle">Вызвать на игру</h2>
+  <p id="socialChallengePlayer"></p>
+  <form id="socialChallengeForm">
+    <label class="social-game-label">Игра<select id="socialGameSelect"></select></label>
+    <p class="choice-note">Действует 10 минут. Партия без рейтинга.</p>
+    <p class="social-inline-error" id="socialChallengeError" role="status" hidden></p>
+    <div class="row">
+      <button type="button" class="btn" id="socialChallengeCancel">Отмена</button>
+      <button type="submit" class="btn main">Отправить вызов</button>
+    </div>
+  </form>
+</dialog>

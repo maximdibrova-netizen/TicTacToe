@@ -1,0 +1,159 @@
+.home-tabs {
+  display: flex;
+  gap: 4px;
+  align-self: flex-start;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #0e1424;
+}
+.home-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 6px 16px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink-dim);
+  font-weight: 800;
+}
+.home-tabs button:hover { color: var(--ink); }
+.home-tabs button[aria-selected="true"] {
+  background: #252e49;
+  border-color: var(--line);
+  color: var(--gold);
+}
+.games-page, .social-pane, .social-lists { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.games-page { gap: 20px; }
+.social-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding-inline: 4px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #2a1d00;
+  font-size: 11px;
+  line-height: 1;
+}
+#stageFriends { display: flex; align-items: center; gap: 5px; flex: none; }
+.social-head, .social-card-head, .social-chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.social-head { flex-wrap: wrap; }
+.social-head h2 { margin: 0; font: 800 clamp(19px, 4vw, 26px)/1.2 var(--display); }
+.social-head p { margin: 5px 0 0; color: var(--ink-dim); }
+.social-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.social-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 16px; }
+.social-card { min-width: 0; }
+.social-card h3 { margin: 0; font: 800 15px/1.3 var(--display); overflow-wrap: anywhere; }
+.social-count { color: var(--ok); font-size: 12px; font-weight: 800; white-space: nowrap; }
+.social-search, .social-composer { display: flex; align-items: stretch; gap: 8px; }
+.social-search input, .social-composer textarea, .social-game-label select {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 11px;
+  color: var(--ink);
+  background: #101728;
+  font: inherit;
+  font-size: 16px;
+}
+.social-search input:focus-visible, .social-composer textarea:focus-visible, .social-game-label select:focus-visible,
+.social-messages:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+.social-pane .btn, #socialGuest .btn { min-height: 38px; font-size: 13px; padding: 9px 12px; }
+.social-pane .btn:disabled, #socialChallengeDialog .btn:disabled { opacity: .55; cursor: default; }
+.social-rows { display: flex; flex-direction: column; gap: 7px; list-style: none; margin: 0; padding: 0; }
+.social-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #131a2d;
+}
+.social-row-info { flex: 1 1 102px; min-width: 0; }
+.social-row-info strong { display: block; font-size: 14px; line-height: 1.3; overflow-wrap: anywhere; }
+.social-row-info small { display: block; margin-top: 3px; color: var(--ink-dim); font-size: 12px; overflow-wrap: anywhere; }
+.social-row-info .social-player-code { font: 500 10px/1.4 ui-monospace, monospace; }
+.social-row-actions { display: flex; flex-wrap: wrap; gap: 5px; }
+.social-row-actions .btn { min-height: 34px; padding: 7px 9px; font-size: 12px; border-radius: 8px; }
+.social-row-actions .social-quiet { background: transparent; color: var(--ink-dim); }
+.social-row-actions .social-quiet:hover { color: var(--ink); background: #2a3456; }
+.social-presence { display: inline-flex; align-items: center; gap: 5px; color: var(--ink-dim); }
+.social-presence::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #7783a3; }
+.social-presence.online { color: var(--ok); }
+.social-presence.online::before { background: var(--ok); }
+.social-chat { min-height: 230px; }
+.social-chat-empty { display: grid; flex: 1; place-content: center; justify-items: center; gap: 9px; padding: 24px 12px; text-align: center; }
+.social-chat-empty svg { color: var(--gold); margin-bottom: 4px; }
+.social-chat-open { display: flex; flex-direction: column; gap: 10px; }
+.social-chat-head { padding-bottom: 1px; }
+.social-chat-head > div { min-width: 0; }
+.social-chat-head p { margin-top: 3px; font-size: 12px; }
+.social-chat-head button { flex: none; }
+.social-messages {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  height: clamp(210px, calc(100dvh - 540px), 460px);
+  overflow-y: auto;
+  overflow-anchor: none;
+  overscroll-behavior: contain;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #101728;
+}
+.social-older { align-self: center; }
+.social-messages .social-chat-info { padding: 10px 5px; align-self: center; text-align: center; font-size: 13px; }
+.social-message-list { display: flex; flex-direction: column; gap: 7px; margin-block-start: auto; }
+.social-message {
+  max-width: 88%;
+  align-self: flex-start;
+  min-width: 76px;
+  padding: 7px 10px;
+  border-radius: 11px 11px 11px 3px;
+  background: #242e49;
+}
+.social-message.mine { align-self: flex-end; border-radius: 11px 11px 3px 11px; background: #413820; }
+.social-message p { color: var(--ink); font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.social-message time { display: block; margin-top: 4px; color: var(--ink-dim); font-size: 10px; text-align: right; }
+.social-composer textarea { resize: vertical; min-height: 50px; max-height: 150px; }
+.social-composer .btn { align-self: flex-end; }
+.social-notice {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #1d2840;
+  color: var(--ink);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.social-notice.error, .social-card .social-inline-error, #socialChallengeDialog .social-inline-error { color: #ffb3bc; }
+.social-game-label { display: grid; gap: 7px; font-weight: 800; }
+#socialChallengeDialog .row { margin-top: 16px; }
+@media (max-width: 720px) {
+  .social-columns { grid-template-columns: minmax(0, 1fr); }
+  .social-pane:not([data-chat="true"]) .social-chat,
+  .social-pane[data-chat="true"] .social-lists,
+  .social-pane[data-chat="true"] .social-head { display: none; }
+  .social-messages { height: clamp(180px, 44vh, 430px); }
+}
+@media (max-width: 380px) {
+  .social-pane .room { padding: 12px; }
+  .social-row-actions { flex-basis: 100%; }
+  #stageFriends { padding-inline: 8px; }
+}

@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { firebaseConfig } from './config.js';
+import { startPresence } from '../social/presence.js';
 const query=new URLSearchParams(location.search),loopback=['localhost','127.0.0.1','[::1]'].includes(location.hostname);
 function port(key){const p=query.get(key)||'';return loopback&&/^\d{4,5}$/.test(p)&&+p<65536?+p:null;}
 const authPort=port('authEmulator'),firestorePort=port('firestoreEmulator');
@@ -20,3 +21,4 @@ window.GameAccount={currentUser:()=>auth.currentUser,ready:auth.authStateReady()
   const button=document.getElementById('accountOpen');if(button)button.click();else location.href='../?signin=1&return='+encodeURIComponent(location.pathname.split('/').filter(Boolean).pop()||'');
 }};
 onAuthStateChanged(auth,user=>window.dispatchEvent(new CustomEvent('account:changed',{detail:{uid:user?.uid||null,name:user?.displayName||''}})));
+startPresence(auth,database);

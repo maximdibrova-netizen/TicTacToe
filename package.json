@@ -8,6 +8,7 @@
     "emulator:auth": "firebase emulators:start --only auth --project demo-mdgames",
     "emulator:ratings": "firebase emulators:start --only auth,firestore --project demo-mdgames",
     "test:account": "node tests/account-ui.cjs",
+    "test:social": "node tests/social-rules.cjs && node tests/social-ui.cjs",
     "test:ratings": "node tests/rating-rules.cjs && node tests/ratings-store.cjs && node tests/ratings-ui.cjs && node tests/rated-multigame-ui.cjs && node tests/rated-four-player-ui.cjs",
     "test:multi": "node tests/multigame-ui.cjs",
     "test:events": "node tests/game-events-ui.cjs",

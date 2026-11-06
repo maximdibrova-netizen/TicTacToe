@@ -78,6 +78,7 @@ $('accountForm').onsubmit = event => {
       try {
         const created = await createUserWithEmailAndPassword(auth, input.email, input.password);
         await updateProfile(created.user, { displayName: input.name });
+        window.dispatchEvent(new Event('account:profile-updated'));
       } finally { registration = false; }
     } else await signInWithEmailAndPassword(auth, input.email, input.password);
     user = auth.currentUser; paint(); close();
@@ -86,7 +87,7 @@ $('accountForm').onsubmit = event => {
 $('accountProfileForm').onsubmit = event => {
   event.preventDefault(); const name = $('accountProfileName').value.trim();
   const problem = Core.validate('profile', { name }); if (problem) { message(problem); return; }
-  run(async () => { await updateProfile(auth.currentUser, { displayName: name }); user = auth.currentUser; paint(); close(); });
+  run(async () => { await updateProfile(auth.currentUser, { displayName: name }); user = auth.currentUser; paint(); close(); window.dispatchEvent(new Event('account:profile-updated')); });
 };
 
 try {

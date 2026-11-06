@@ -105,6 +105,166 @@ a.game.current::after { content: "сейчас играете"; position: absolu
 #multiPanels{position:relative;flex:1;min-height:0;overflow:hidden;background:#0d1120}.multi-panel{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;z-index:0;background:var(--bg)}.multi-panel.active{opacity:1;pointer-events:auto;z-index:1}.multi-panel header{display:flex;gap:8px;align-items:center;flex:none;padding:6px 10px;background:#172039;border-bottom:1px solid var(--line);font:700 11px var(--body)}.multi-panel header strong{flex:1;min-width:0}.multi-panel header span{color:var(--ink-dim)}.multi-panel header button{border:0;border-radius:6px;background:#2a3456;padding:4px 7px;font:700 11px var(--body)}.multi-panel iframe{width:100%;height:100%;flex:1;min-height:0;border:0;background:var(--bg)}#stage.multi-mode>#frame{display:none}.multi-toolbar[hidden],.multi-tabs[hidden],#multiPanels[hidden]{display:none!important}
 @media(min-width:1100px) and (min-height:720px){#stage.multi-mode:not([data-multi-view=tabs]) #multiPanels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:2px}#stage.multi-mode:not([data-multi-view=tabs]) .multi-panel{position:relative;inset:auto;opacity:1;pointer-events:auto;z-index:1;min-height:0;min-width:0;overflow:hidden}#stage.multi-mode:not([data-multi-view=tabs]) .multi-panel header{height:30px;box-sizing:border-box;z-index:2}#stage.multi-mode:not([data-multi-view=tabs]) .multi-panel iframe{position:absolute;left:0;top:30px;width:150%;height:calc((100% - 30px)*1.5);max-width:none;flex:none;transform:scale(.6666667);transform-origin:top left}#stage.multi-mode:not([data-multi-view=tabs]) .multi-panel.active header{box-shadow:inset 0 2px var(--gold)}}
 @media(max-width:1099px),(max-height:719px){#multiGrid{display:none}.multi-panel header button{display:none}.multi-toolbar{gap:7px}.multi-toolbar .multi-summary{font-size:11px}.sbar .who{font-size:10px}}
+.home-tabs {
+  display: flex;
+  gap: 4px;
+  align-self: flex-start;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #0e1424;
+}
+.home-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 6px 16px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink-dim);
+  font-weight: 800;
+}
+.home-tabs button:hover { color: var(--ink); }
+.home-tabs button[aria-selected="true"] {
+  background: #252e49;
+  border-color: var(--line);
+  color: var(--gold);
+}
+.games-page, .social-pane, .social-lists { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.games-page { gap: 20px; }
+.social-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding-inline: 4px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #2a1d00;
+  font-size: 11px;
+  line-height: 1;
+}
+#stageFriends { display: flex; align-items: center; gap: 5px; flex: none; }
+.social-head, .social-card-head, .social-chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.social-head { flex-wrap: wrap; }
+.social-head h2 { margin: 0; font: 800 clamp(19px, 4vw, 26px)/1.2 var(--display); }
+.social-head p { margin: 5px 0 0; color: var(--ink-dim); }
+.social-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.social-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 16px; }
+.social-card { min-width: 0; }
+.social-card h3 { margin: 0; font: 800 15px/1.3 var(--display); overflow-wrap: anywhere; }
+.social-count { color: var(--ok); font-size: 12px; font-weight: 800; white-space: nowrap; }
+.social-search, .social-composer { display: flex; align-items: stretch; gap: 8px; }
+.social-search input, .social-composer textarea, .social-game-label select {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 11px;
+  color: var(--ink);
+  background: #101728;
+  font: inherit;
+  font-size: 16px;
+}
+.social-search input:focus-visible, .social-composer textarea:focus-visible, .social-game-label select:focus-visible,
+.social-messages:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+.social-pane .btn, #socialGuest .btn { min-height: 38px; font-size: 13px; padding: 9px 12px; }
+.social-pane .btn:disabled, #socialChallengeDialog .btn:disabled { opacity: .55; cursor: default; }
+.social-rows { display: flex; flex-direction: column; gap: 7px; list-style: none; margin: 0; padding: 0; }
+.social-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #131a2d;
+}
+.social-row-info { flex: 1 1 102px; min-width: 0; }
+.social-row-info strong { display: block; font-size: 14px; line-height: 1.3; overflow-wrap: anywhere; }
+.social-row-info small { display: block; margin-top: 3px; color: var(--ink-dim); font-size: 12px; overflow-wrap: anywhere; }
+.social-row-info .social-player-code { font: 500 10px/1.4 ui-monospace, monospace; }
+.social-row-actions { display: flex; flex-wrap: wrap; gap: 5px; }
+.social-row-actions .btn { min-height: 34px; padding: 7px 9px; font-size: 12px; border-radius: 8px; }
+.social-row-actions .social-quiet { background: transparent; color: var(--ink-dim); }
+.social-row-actions .social-quiet:hover { color: var(--ink); background: #2a3456; }
+.social-presence { display: inline-flex; align-items: center; gap: 5px; color: var(--ink-dim); }
+.social-presence::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #7783a3; }
+.social-presence.online { color: var(--ok); }
+.social-presence.online::before { background: var(--ok); }
+.social-chat { min-height: 230px; }
+.social-chat-empty { display: grid; flex: 1; place-content: center; justify-items: center; gap: 9px; padding: 24px 12px; text-align: center; }
+.social-chat-empty svg { color: var(--gold); margin-bottom: 4px; }
+.social-chat-open { display: flex; flex-direction: column; gap: 10px; }
+.social-chat-head { padding-bottom: 1px; }
+.social-chat-head > div { min-width: 0; }
+.social-chat-head p { margin-top: 3px; font-size: 12px; }
+.social-chat-head button { flex: none; }
+.social-messages {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  height: clamp(210px, calc(100dvh - 540px), 460px);
+  overflow-y: auto;
+  overflow-anchor: none;
+  overscroll-behavior: contain;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #101728;
+}
+.social-older { align-self: center; }
+.social-messages .social-chat-info { padding: 10px 5px; align-self: center; text-align: center; font-size: 13px; }
+.social-message-list { display: flex; flex-direction: column; gap: 7px; margin-block-start: auto; }
+.social-message {
+  max-width: 88%;
+  align-self: flex-start;
+  min-width: 76px;
+  padding: 7px 10px;
+  border-radius: 11px 11px 11px 3px;
+  background: #242e49;
+}
+.social-message.mine { align-self: flex-end; border-radius: 11px 11px 3px 11px; background: #413820; }
+.social-message p { color: var(--ink); font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.social-message time { display: block; margin-top: 4px; color: var(--ink-dim); font-size: 10px; text-align: right; }
+.social-composer textarea { resize: vertical; min-height: 50px; max-height: 150px; }
+.social-composer .btn { align-self: flex-end; }
+.social-notice {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #1d2840;
+  color: var(--ink);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.social-notice.error, .social-card .social-inline-error, #socialChallengeDialog .social-inline-error { color: #ffb3bc; }
+.social-game-label { display: grid; gap: 7px; font-weight: 800; }
+#socialChallengeDialog .row { margin-top: 16px; }
+@media (max-width: 720px) {
+  .social-columns { grid-template-columns: minmax(0, 1fr); }
+  .social-pane:not([data-chat="true"]) .social-chat,
+  .social-pane[data-chat="true"] .social-lists,
+  .social-pane[data-chat="true"] .social-head { display: none; }
+  .social-messages { height: clamp(180px, 44vh, 430px); }
+}
+@media (max-width: 380px) {
+  .social-pane .room { padding: 12px; }
+  .social-row-actions { flex-basis: 100%; }
+  #stageFriends { padding-inline: 8px; }
+}
+
 </style>
 
 <div id="home">
@@ -137,6 +297,108 @@ a.game.current::after { content: "сейчас играете"; position: absolu
 </dialog>
 
 
+  <nav class="home-tabs" role="tablist" aria-label="Разделы сайта">
+    <button type="button" id="gamesTab" role="tab" aria-selected="true" aria-controls="gamesPage">Игры</button>
+    <button type="button" id="friendsTab" role="tab" aria-selected="false" aria-controls="friendsPage" tabindex="-1">Друзья <span class="social-badge" id="friendsBadge" hidden></span></button>
+  </nav>
+  <section id="friendsPage" role="tabpanel" aria-labelledby="friendsTab" hidden>
+  <section class="room" id="socialGuest">
+    <h2>Друзья</h2>
+    <p>Войдите в аккаунт, чтобы найти друзей, переписываться и приглашать их в игру.</p>
+    <div class="row"><button type="button" class="btn main" id="socialSignIn">Войти</button></div>
+  </section>
+
+  <div class="social-pane" id="socialPane" hidden>
+    <header class="social-head">
+      <div>
+        <h2>Друзья</h2>
+        <p>Общайтесь и играйте вместе</p>
+      </div>
+      <div class="social-head-actions">
+        <button type="button" class="btn" id="socialResume" hidden>Вернуться к игре</button>
+        <button type="button" class="btn" id="socialCode" title="Скопировать код игрока">Скопировать мой код</button>
+      </div>
+    </header>
+    <p class="social-notice" id="socialNotice" role="status" hidden></p>
+    <div class="social-columns">
+      <div class="social-lists">
+        <section class="room social-card" aria-labelledby="socialSearchTitle">
+          <h3 id="socialSearchTitle">Найти игрока</h3>
+          <form class="social-search" id="socialSearchForm" role="search">
+            <input id="socialSearch" aria-label="Имя или код игрока" placeholder="Имя или код с #" maxlength="129" autocomplete="off" spellcheck="false" required>
+            <button class="btn main" type="submit">Найти</button>
+          </form>
+          <p id="socialSearchStatus" role="status" hidden></p>
+          <ul class="social-rows" id="socialSearchResults" hidden></ul>
+        </section>
+
+        <section class="room social-card" id="socialRequestsWrap" aria-labelledby="socialRequestsTitle" hidden>
+          <h3 id="socialRequestsTitle">Заявки в друзья</h3>
+          <ul class="social-rows" id="socialRequests"></ul>
+        </section>
+
+        <section class="room social-card" id="socialChallengesWrap" aria-labelledby="socialChallengesTitle" hidden>
+          <h3 id="socialChallengesTitle">Вызовы на игру</h3>
+          <ul class="social-rows" id="socialChallenges"></ul>
+        </section>
+
+        <section class="room social-card" aria-labelledby="socialFriendsTitle">
+          <div class="social-card-head">
+            <h3 id="socialFriendsTitle">Мои друзья</h3>
+            <span class="social-count" id="socialOnlineCount" hidden></span>
+          </div>
+          <p id="socialFriendsEmpty">Загружаем список…</p>
+          <ul class="social-rows" id="socialFriends" hidden></ul>
+        </section>
+      </div>
+
+      <section class="room social-card social-chat" id="socialChat" aria-labelledby="socialChatTitle">
+        <div id="socialChatEmpty" class="social-chat-empty">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5h-2l-5 2v-4a7.5 7.5 0 0 1 5-13h2a7.5 7.5 0 0 1 7.5 7.5Z"/><path d="M9 10h7m-7 4h5"/>
+          </svg>
+          <h3 id="socialChatTitle">Личные сообщения</h3>
+          <p>Откройте переписку из списка друзей.</p>
+        </div>
+        <div id="socialChatOpen" class="social-chat-open" hidden>
+          <header class="social-chat-head">
+            <div>
+              <h3 id="socialChatName"></h3>
+              <p id="socialChatStatus"></p>
+            </div>
+            <button type="button" id="socialChatBack" class="btn">К списку</button>
+          </header>
+          <div class="social-messages" id="socialMessages" role="log" aria-label="Личные сообщения" tabindex="0">
+            <button class="btn social-older" type="button" id="socialOlder" hidden>Показать более ранние</button>
+            <p class="social-chat-info" id="socialChatInfo">Загружаем сообщения…</p>
+            <div id="socialMessageList" class="social-message-list"></div>
+          </div>
+          <form class="social-composer" id="socialMessageForm">
+            <textarea id="socialMessage" rows="2" maxlength="1500" placeholder="Сообщение" aria-label="Сообщение" required></textarea>
+            <button type="submit" class="btn main">Отправить</button>
+          </form>
+          <p class="social-inline-error" id="socialMessageError" role="status" hidden></p>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
+<dialog id="socialChallengeDialog" class="choice" aria-labelledby="socialChallengeTitle">
+  <h2 id="socialChallengeTitle">Вызвать на игру</h2>
+  <p id="socialChallengePlayer"></p>
+  <form id="socialChallengeForm">
+    <label class="social-game-label">Игра<select id="socialGameSelect"></select></label>
+    <p class="choice-note">Действует 10 минут. Партия без рейтинга.</p>
+    <p class="social-inline-error" id="socialChallengeError" role="status" hidden></p>
+    <div class="row">
+      <button type="button" class="btn" id="socialChallengeCancel">Отмена</button>
+      <button type="submit" class="btn main">Отправить вызов</button>
+    </div>
+  </form>
+</dialog>
+
+
+  <div id="gamesPage" class="games-page" role="tabpanel" aria-labelledby="gamesTab">
   <section class="rating-panel" aria-label="Рейтинг игроков">
   <div class="rating-heading"><div><h2>Рейтинг</h2><p id="ratingSummary">Начальный рейтинг 1200 · отдельно для каждой игры</p></div><button type="button" class="btn" id="ratingDetails">Мои результаты</button></div>
   <label class="rating-choice"><input type="checkbox" id="ratingToggle"><span>Играть на рейтинг с другом</span></label>
@@ -261,7 +523,8 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     <div><b>Играть без интернета</b><p id="instText"></p></div>
     <button class="btn main" id="instBtn" hidden>Установить</button>
   </section>
-  <p class="foot">Версия от 06.11.2026 23:31<span id="offState"></span></p>
+  <p class="foot">Версия от 07.11.2026 00:28<span id="offState"></span></p>
+  </div>
 </main>
 </div>
 
@@ -270,6 +533,7 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     <button id="backBtn">← Игры</button>
     <span class="ttl" id="stTitle"></span>
     <span class="who" id="stWho"></span>
+    <button type="button" id="stageFriends" aria-label="Друзья">Друзья <span class="social-badge" id="stageFriendsBadge" hidden></span></button>
   </div>
   <div id="multiToolbar" class="multi-toolbar" hidden><strong id="multiScore" class="multi-score">0 : 0</strong><span id="multiSummary" class="multi-summary" role="status">Подготовьте игры и начните набор.</span><button type="button" id="multiStart" class="btn main">Начать все</button><button type="button" id="multiNew" class="btn main" hidden>Новый набор</button><button type="button" id="multiGrid" class="btn">Одна доска</button></div>
   <div id="multiTabs" class="multi-tabs" role="tablist" aria-label="Параллельные партии" hidden></div>
@@ -440,15 +704,20 @@ var Net2P = (function () {
 
   function validGames(games) { return Array.isArray(games) && (games.length === 3 || games.length === 4) && games.every(function(g,i){return MULTI_GAMES.indexOf(g)>=0 && games.indexOf(g)===i;}); }
   function slotFor(win) { return R.slots.find(function(s){return s.frame && s.frame.contentWindow === win;}) || null; }
-  function roomContext() { return {role:R.role,code:R.code,online:Net2P.online(),peerUid:R.peerUid,peerName:R.peerName,instance:R.inst,game:R.game,slots:R.slots.map(function(s){return {game:s.game,id:s.id,index:s.index,frame:s.frame,score:s.score,phase:s.phase};}),multi:R.multi,ranked:R.ranked,ratedSession:R.ratedSession}; }
+  function roomContext() { return {role:R.role,state:R.state,code:R.code,online:Net2P.online(),peerUid:R.peerUid,peerName:R.peerName,instance:R.inst,game:R.game,slots:R.slots.map(function(s){return {game:s.game,id:s.id,index:s.index,frame:s.frame,score:s.score,phase:s.phase};}),multi:R.multi,ranked:R.ranked,ratedSession:R.ratedSession,friendAttempt:R.friend?.attempt||null}; }
   function frameContext(win) { var slot=slotFor(win); return slot ? Object.assign({},roomContext(),{slot:{game:slot.game,id:slot.id,index:slot.index,frame:slot.frame},game:slot.game,id:slot.id,index:slot.index}) : null; }
   function changed(reason) {
-    var key=JSON.stringify([R.state,R.role,R.code,Net2P.online(),R.peerUid,R.peerName,R.inst,R.ranked,ratingRevision,R.slots.map(function(s){return[s.id,s.score,s.phase];})]);
+    var key=JSON.stringify([R.state,R.role,R.code,Net2P.online(),R.peerUid,R.peerName,R.inst,R.ranked,R.friend?.attempt,ratingRevision,R.slots.map(function(s){return[s.id,s.score,s.phase];})]);
     if(key===roomFingerprint)return;roomFingerprint=key;
     dispatchEvent(new CustomEvent('room:changed',{detail:{context:roomContext(),reason:reason||'state'}}));
   }
   function identity() { var u=window.GameAccount && window.GameAccount.currentUser(); return {uid:u&&typeof u.uid==='string'?u.uid:null,name:u&&typeof u.displayName==='string'?u.displayName.slice(0,64):''}; }
-  function sendIdentity() { if(R.state==='live'||R.state==='waiting'){var u=identity();rsend({t:'identity',uid:u.uid,name:u.name});}changed('account'); }
+  function sendIdentity() {
+    var u=identity();
+    if(R.friend && u.uid!==R.friend.uid){leaveRoom(false);return;}
+    if(R.state==='live'||R.state==='waiting')rsend({t:'identity',uid:u.uid,name:u.name});
+    changed('account');
+  }
   addEventListener('account:changed',sendIdentity);
   function allowInvite(p) { if(!p.ranked)return true;var result=window.RatingUI&&window.RatingUI.checkInvite?window.RatingUI.checkInvite(p):{ok:false,reason:'Для рейтинговой игры оба участника должны войти в аккаунт.'};if(!result.ok){toast(result.reason||'Рейтинговая игра пока недоступна.');return false;}return true; }
 
@@ -496,8 +765,13 @@ var Net2P = (function () {
   function commitChoice() {
     if (!choice || R.role !== 'host' || !Net2P.online()) return;
     if (!allowInvite(choice)) return;
-    var p = choice, inst = R.code + '-' + (++R.seq) + '-' + Date.now().toString(36);
-    clearChoice(); rsend({t:'pick',id:p.id,inst:inst,g:p.g,games:p.games,ranked:!!p.ranked}); loadGame(p.g,inst,false,p.games,!!p.ranked);
+    var p = choice;
+    clearChoice(); launchGame(p);
+  }
+  function launchGame(p) {
+    var inst = R.code + '-' + (++R.seq) + '-' + Date.now().toString(36);
+    rsend({t:'pick',id:p.id,inst:inst,g:p.g,games:p.games,ranked:!!p.ranked});
+    loadGame(p.g,inst,false,p.games,!!p.ranked);
   }
   $('choiceAccept').onclick = acceptChoice;
   $('choiceDecline').onclick = function(){cancelChoice();};
@@ -523,8 +797,13 @@ var Net2P = (function () {
       if (id && typeof id === 'object') id = null;
       var self = this;
       this.win = win; this.inst = frameInstance; this.destroyed = false; this.id = id || ('g' + Math.random().toString(36).slice(2, 9));
-      if (id) { listening[this.inst] = this; rsend({ t: 'b', k: 'listen', inst: this.inst }); }
-      setTimeout(function () { if (!self.destroyed) self._emit('open', self.id); }, 0);
+      setTimeout(function () {
+        if (self.destroyed) return;
+        if (id) listening[self.inst] = self;
+        self._emit('open', self.id);
+        // The game must finish opening its lobby before the friend can join.
+        if (id && !self.destroyed) rsend({ t: 'b', k: 'listen', inst: self.inst });
+      }, 0);
     }
     BPeer.prototype = Object.create(Emitter.prototype);
     BPeer.prototype.connect = function () {
@@ -575,6 +854,8 @@ var Net2P = (function () {
     active: function () { return R.state === 'live' || R.state === 'waiting'; },
     peerFor: peerFor,
     home: function () { showHome(); },
+    openFriend: openFriendRoom,
+    closeFriend: function (attempt) { if (R.friend?.attempt===attempt && !R.game) leaveRoom(false); },
     context: roomContext,
     frameContext: frameContext,
     gameEvent: function(win,event){
@@ -590,23 +871,35 @@ var Net2P = (function () {
   };
 
   // ---- room connection ----
-  function createRoom() {
-    var saved = null; try { saved = sessionStorage.getItem('room-host-code'); } catch (e) {}
-    R = Object.assign(R, { state: 'creating', role: 'host', err: '' }); renderRoom();
-    Net2P.host({ prefix: PREFIX, code: saved,
+  function openFriendRoom(invite) {
+    var uid=identity().uid, host=invite.from===uid;
+    if(!uid || (!host && invite.to!==uid) || !/^[A-Za-z0-9]{20}$/.test(invite.attempt)
+      || invite.game==='multi' || !Object.prototype.hasOwnProperty.call(NAMES,invite.game)
+      || (host ? !['accepted','ready'].includes(invite.status) : invite.status!=='ready')
+      || (invite.status==='ready' && !/^[A-Z0-9]{5}$/.test(invite.roomCode))) return false;
+    if(R.state!=='idle' && !(R.state==='error' && R.friend?.attempt===invite.attempt)) return false;
+    var friend={attempt:invite.attempt,game:invite.game,uid:uid,peerUid:host?invite.to:invite.from,code:invite.roomCode};
+    if(host) createRoom(friend); else joinRoom(friend.code,friend);
+    return true;
+  }
+  function roomPrefix(friend) { return friend ? PREFIX+'friend-'+friend.attempt+'-' : PREFIX; }
+  function createRoom(friend) {
+    var saved = friend?.code || null;
+    if(!friend) try { saved = sessionStorage.getItem('room-host-code'); } catch (e) {}
+    R = Object.assign(R, { state: 'creating', role: 'host', friend:friend||null, err: '' }); renderRoom();
+    Net2P.host({ prefix: roomPrefix(friend), code: saved,
       onReady: function (code, link) {
         R.code = code; R.link = location.origin + location.pathname + '#' + code; R.state = R.state === 'live' ? 'live' : 'waiting';
-        try { sessionStorage.setItem('room-host-code', code); } catch (e) {}
+        if(!friend) try { sessionStorage.setItem('room-host-code', code); } catch (e) {}
         renderRoom();
       },
       onJoin: function (o) {
         clearChoice();
+        R.peerUid=null;R.peerName='';
         R.state = 'live'; renderRoom(); dropBridge(false);
-        toast(o.returning ? 'Друг вернулся в комнату' : 'Друг в комнате! Выбирайте игру');
+        toast(o.returning ? 'Друг вернулся в комнату' : R.friend ? 'Друг подключился' : 'Друг в комнате! Выбирайте игру');
         sendIdentity();
-        rsend({ t: 'pick', inst: R.inst, g: R.game, games:R.multi?R.slots.map(function(s){return s.game;}):undefined,ranked:R.ranked });
-        Object.keys(listening).forEach(function (inst) { rsend({ t: 'b', k: 'listen', inst: inst }); });
-        R.slots.forEach(function(s){if(s.localScore!==undefined)rsend({t:'bundle-result',inst:R.inst,id:s.id,score:s.localScore});});
+        if(!R.friend) announceState();
       },
       onPeer: function (on) { if (!on) clearChoice(); renderRoom(); },
       onLeave: function () { clearChoice(); toast('Друг вышел из комнаты'); renderRoom(); },
@@ -614,10 +907,18 @@ var Net2P = (function () {
       onFail: function (m) { clearChoice(); R.state = 'error'; R.err = m; renderRoom(); }
     });
   }
-  function joinRoom(code) {
-    R = Object.assign(R, { state: 'joining', role: 'guest', code: Net2P.cleanCode(code), err: '' }); renderRoom();
-    Net2P.join(code, { prefix: PREFIX,
-      onOpen: function () { R.state = 'live'; R.retry = 0; renderRoom(); sendIdentity(); toast('Ты в комнате друга'); },
+  function announceGame() {
+    rsend({ t:'pick', inst:R.inst, g:R.game, games:R.multi?R.slots.map(function(s){return s.game;}):undefined, ranked:R.ranked });
+  }
+  function announceState() {
+    announceGame();
+    Object.keys(listening).forEach(function (inst) { rsend({ t: 'b', k: 'listen', inst: inst }); });
+    R.slots.forEach(function(s){if(s.localScore!==undefined)rsend({t:'bundle-result',inst:R.inst,id:s.id,score:s.localScore});});
+  }
+  function joinRoom(code,friend) {
+    R = Object.assign(R, { state: 'joining', role: 'guest', friend:friend||null, peerUid:null, peerName:'', code: Net2P.cleanCode(code), err: '' }); renderRoom();
+    Net2P.join(code, { prefix: roomPrefix(friend),
+      onOpen: function () { R.state = 'live'; R.retry = 0; renderRoom(); sendIdentity(); if(!R.friend)toast('Ты в комнате друга'); },
       onPeer: function (on) { if (!on) clearChoice(); renderRoom(); },
       onData: onRoomData,
       onFail: function (m) {
@@ -625,22 +926,38 @@ var Net2P = (function () {
         // the friend may just be reloading the page: retry for a while
         if (R.role === 'guest' && R.retry < 20 && /потеряна|вышел/.test(m)) {
           R.retry++; R.state = 'joining'; R.err = ''; renderRoom();
-          setTimeout(function () { if (R.role === 'guest' && R.state === 'joining') joinRoom(R.code); }, 3000); return;
+          setTimeout(function () { if (R.role === 'guest' && R.state === 'joining') joinRoom(R.code,R.friend); }, 3000); return;
         }
         R.state = 'error'; R.err = m; renderRoom();
       }
     });
   }
-  function leaveRoom() {
+  function leaveRoom(notify) {
+    var friend=R.friend, opened=!!R.game;
     clearChoice();
     Net2P.close(); try { sessionStorage.removeItem('room-host-code'); } catch (e) {}
     R = { state: 'idle', role: null, code: null, link: '', err: '', inst: null, game: null, seq: R.seq, retry: 0,slots:[],multi:false,peerUid:null,peerName:'',ranked:false,ratedSession:null };
-    dropBridge(true); unloadGame(); history.replaceState(null, '', location.pathname); renderRoom(); showHome();
+    dropBridge(true); unloadGame(); history.replaceState(null, '', location.pathname+location.search); renderRoom(); showHome();
+    if(friend && !opened && notify!==false) dispatchEvent(new CustomEvent('room:friend-closed',{detail:friend.attempt}));
   }
   function onRoomData(m) {
     if (!m || typeof m !== 'object') return;
+    if(m.t==='identity'){
+      var previous=R.peerUid;
+      R.peerUid=typeof m.uid==='string'&&m.uid.length<=128?m.uid:null;
+      R.peerName=typeof m.name==='string'?m.name.slice(0,64):'';
+      if(R.friend && R.peerUid!==R.friend.peerUid){leaveRoom();toast('Войдите в аккаунт, которому адресован вызов.');return;}
+      changed('peer');
+      if(R.friend && R.role==='host' && previous!==R.peerUid){
+        if(!R.game){
+          launchGame({g:R.friend.game,ranked:false});
+          dispatchEvent(new CustomEvent('room:friend-opened',{detail:R.friend.attempt}));
+        } else announceState();
+      }
+      return;
+    }
+    if(R.friend && R.peerUid!==R.friend.peerUid) return;
     if (m.t === 'b') { onBridge(m); return; }
-    if(m.t==='identity'){R.peerUid=typeof m.uid==='string'&&m.uid.length<=128?m.uid:null;R.peerName=typeof m.name==='string'?m.name.slice(0,64):'';changed('peer');return;}
     if(m.t==='service'){if(m.data&&typeof m.data==='object')dispatchEvent(new CustomEvent('room:service',{detail:{context:roomContext(),data:m.data}}));return;}
     if(m.t==='bundle-result'){if(R.multi&&m.inst===R.inst&&[0,.5,1].indexOf(m.score)>=0){var slot=R.slots.find(function(s){return s.id===m.id;});if(slot){slot.remoteScore=m.score;updateSlotScore(slot);renderMulti();changed('score');}}return;}
     if (m.t === 'pick' && R.role === 'guest') { clearChoice(); if (Object.prototype.hasOwnProperty.call(NAMES,m.g) && typeof m.inst === 'string' && (m.g!=='multi'||validGames(m.games))) loadGame(m.g, m.inst, true,m.games,!!m.ranked); else if (!m.g && R.game) { unloadGame(); showHome(); } }
@@ -730,14 +1047,14 @@ var Net2P = (function () {
   function unloadGame() { $('frame').src = 'about:blank';$('multiPanels').replaceChildren();$('multiTabs').replaceChildren();R.slots=[];R.multi=false;R.ranked=false;R.ratedSession=null;R.game = null; R.inst = null; $('stage').hidden = true;changed('unload'); }
   function showStage() { $('stage').hidden = false; $('home').hidden = true; renderWho(); }
   function showHome() { $('home').hidden = false; renderRoom(); }
-  $('backBtn').onclick = showHome;
+  $('backBtn').onclick = function(){showHome();$('gamesTab').click();};
 
   // ---- render ----
   function renderWho() {
     var w = $('stWho');
     if (!ROOM.active() && R.state !== 'joining') { w.innerHTML = ''; return; }
     var on = Net2P.online();
-    w.innerHTML = '<span class="dot ' + (on ? 'on' : 'off') + '"></span>' + (on ? 'друг в комнате' : 'нет связи') + ' · ' + R.code;
+    w.innerHTML = '<span class="dot ' + (on ? 'on' : 'off') + '"></span>' + (on ? 'друг в комнате' : 'нет связи') + (R.friend?'':' · ' + R.code);
   }
   function renderRoom() {
     var el = $('room'), s = R.state, html = '';
@@ -748,26 +1065,28 @@ var Net2P = (function () {
       html = '<h2>Играть с другом</h2><p>Создай комнату и отправь другу одну ссылку. Потом выбирайте любые игры — он будет подключаться сам.</p>' +
         '<div class="row"><button class="btn main" id="mkRoom">Создать комнату</button><div class="join"><input id="joinCode" maxlength="5" placeholder="КОД" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Код комнаты"><button class="btn" id="joinGo">Войти</button></div></div>';
     } else if (s === 'creating') html = '<h2>Создаю комнату…</h2><p>Подключаюсь к серверу связи.</p>';
-    else if (s === 'waiting') {
+    else if (s === 'waiting' && R.friend) {
+      html = '<h2>Комната по вызову</h2><p>Ждём подключения друга.</p><div class="row"><button class="btn" id="leaveBtn">Отменить вызов</button></div>';
+    } else if (s === 'waiting') {
       html = '<h2>Комната создана <span class="pill">ждём друга</span></h2><p>Отправь другу ссылку или код. Как только он откроет её, вы окажетесь в одной комнате.</p>' +
         '<div class="row"><div class="code">' + R.code + '</div><div class="linkrow"><input id="roomLink" readonly value="' + R.link + '" aria-label="Ссылка для друга"><button class="btn" id="copyBtn">Копировать</button></div></div>' +
         '<div class="row"><button class="btn" id="leaveBtn">Закрыть комнату</button></div>';
     } else if (s === 'joining') html = '<h2>Вхожу в комнату ' + (R.code || '') + '…</h2><p>' + (R.retry ? 'Связь прервалась, переподключаюсь…' : 'Подключаюсь к другу.') + '</p><div class="row"><button class="btn" id="leaveBtn">Отмена</button></div>';
     else if (s === 'live') {
       var on = Net2P.online();
-      html = '<h2><span class="dot ' + (on ? 'on' : 'off') + '"></span>Комната ' + R.code + ' <span class="pill">' + (on ? 'друг здесь' : 'нет связи с другом') + '</span></h2>' +
+      html = '<h2><span class="dot ' + (on ? 'on' : 'off') + '"></span>'+(R.friend?'Комната по вызову':'Комната '+R.code)+' <span class="pill">' + (on ? 'друг здесь' : 'нет связи с другом') + '</span></h2>' +
         '<p>' + (R.game ? 'Сейчас: «' + NAMES[R.game] + '». Любой из вас может предложить другую игру.' : 'Любой из вас может выбрать игру ниже и отправить предложение.') + ' Игра откроется у обоих, когда второй игрок примет запрос.</p>' +
         '<div class="row">' + (R.game ? '<button class="btn main" id="resumeBtn">Вернуться к игре</button>' : '') +
-        (R.role === 'host' ? '<button class="btn" id="copyBtn2">Скопировать ссылку</button>' : '') + '<button class="btn" id="leaveBtn">Выйти из комнаты</button></div>';
+        (R.role === 'host' && !R.friend ? '<button class="btn" id="copyBtn2">Скопировать ссылку</button>' : '') + '<button class="btn" id="leaveBtn">Выйти из комнаты</button></div>';
     } else if (s === 'error') html = '<h2>Не получилось</h2><p class="err">' + R.err + '</p><div class="row"><button class="btn main" id="retryBtn">Попробовать ещё раз</button><button class="btn" id="leaveBtn">Отмена</button></div>';
     el.innerHTML = html;
     var on = function (id, fn) { var b = $(id); if (b) b.onclick = fn; };
-    on('mkRoom', createRoom);
+    on('mkRoom', function(){createRoom();});
     on('joinGo', function () { var c = Net2P.cleanCode($('joinCode').value); if (c.length === 5) { history.replaceState(null, '', '#' + c); joinRoom(c); } else $('joinCode').focus(); });
     var jc = $('joinCode'); if (jc) { jc.addEventListener('input', function () { this.value = Net2P.cleanCode(this.value); }); jc.addEventListener('keydown', function (e) { if (e.key === 'Enter') $('joinGo').click(); }); }
     on('leaveBtn', leaveRoom);
     on('resumeBtn', showStage);
-    on('retryBtn', function () { if (R.role === 'guest') joinRoom(R.code); else createRoom(); });
+    on('retryBtn', function () { if (R.role === 'guest') joinRoom(R.code,R.friend); else createRoom(R.friend); });
     var copy = function (btn) { try { navigator.clipboard.writeText(R.link).then(function () { btn.textContent = 'Скопировано'; }, function () { var i = $('roomLink'); if (i) i.select(); }); } catch (e) {} };
     on('copyBtn', function () { copy(this); }); on('copyBtn2', function () { copy(this); });
     Array.prototype.forEach.call(document.querySelectorAll('a.game'), function (a) { a.classList.toggle('current', a.dataset.g === R.game && s === 'live'); });

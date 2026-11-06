@@ -150,6 +150,89 @@ service cloud.firestore {
         allow delete: if false;
       }
     }
+    function socialPair(a,b){return a<b?a+'~'+b:b+'~'+a;}
+    function validSocialPair(s,pair){
+      return id(s.from) && id(s.to) && s.from!=s.to && pair==socialPair(s.from,s.to)
+        && s.members==(s.from<s.to?[s.from,s.to]:[s.to,s.from]);
+    }
+    function socialFriend(pair){
+      let link=get(/databases/$(database)/documents/friendships/$(pair)).data;
+      return request.auth.uid in link.members && link.status=='accepted';
+    }
+    function knownPlayer(uid){
+      return exists(/databases/$(database)/documents/socialProfiles/$(uid))
+        || exists(/databases/$(database)/documents/ratingProfiles/$(uid));
+    }
+    function challengeFresh(c){
+      return request.time<c.createdAt+duration.value(10,'m');
+    }
+    function newChallenge(c,pair){
+      return c.keys().hasOnly(['members','from','to','game','attempt','status','roomCode','createdAt','updatedAt'])
+        && validSocialPair(c,pair) && c.from==request.auth.uid && socialFriend(pair)
+        && pool(c.game) && !(c.game in ['multi3','multi4'])
+        && c.attempt is string && c.attempt.matches('^[A-Za-z0-9]{20}$')
+        && c.status=='pending' && c.roomCode=='' && c.createdAt==request.time && c.updatedAt==request.time;
+    }
+    function advanceChallenge(pair){
+      let before=resource.data; let next=request.resource.data; let uid=request.auth.uid;
+      let diff=next.diff(before).affectedKeys();
+      return challengeFresh(before) && next.updatedAt==request.time
+        && (next.status=='cancelled' && before.status in ['pending','accepted','ready']
+            && diff.hasOnly(['status','updatedAt'])
+          || socialFriend(pair) && (
+            before.status=='pending' && uid==before.to && next.status in ['accepted','declined']
+              && diff.hasOnly(['status','updatedAt'])
+            || before.status in ['accepted','ready'] && uid==before.from && next.status=='ready'
+              && next.roomCode!=before.roomCode
+              && next.roomCode is string && next.roomCode.matches('^[A-Z0-9]{5}$')
+              && diff.hasOnly(['status','roomCode','updatedAt'])
+            || before.status=='ready' && uid==before.from && next.status=='opened'
+              && diff.hasOnly(['status','updatedAt'])));
+    }
+
+    match /socialProfiles/{uid}{
+      allow get: if signed();
+      allow list: if signed() && request.query.limit<=20;
+      allow create,update: if signed() && request.auth.uid==uid
+        && request.resource.data.keys().hasOnly(['name','search','updatedAt'])
+        && name(request.resource.data.name) && request.resource.data.search is string
+        && request.resource.data.search.size()>0 && request.resource.data.search.size()<=96
+        && request.resource.data.updatedAt==request.time;
+    }
+    match /socialPresence/{uid}{
+      allow get: if signed() && (request.auth.uid==uid || socialFriend(socialPair(request.auth.uid,uid)));
+      allow create,update: if signed() && request.auth.uid==uid
+        && request.resource.data.keys().hasOnly(['lastSeenAt'])
+        && request.resource.data.lastSeenAt==request.time;
+    }
+    match /friendships/{pair}{
+      allow read: if signed() && request.auth.uid in resource.data.members;
+      allow create: if signed() && validSocialPair(request.resource.data,pair)
+        && request.resource.data.keys().hasOnly(['members','from','to','status','createdAt','updatedAt'])
+        && request.auth.uid==request.resource.data.from && knownPlayer(request.resource.data.to)
+        && request.resource.data.status=='pending' && request.resource.data.createdAt==request.time
+        && request.resource.data.updatedAt==request.time;
+      allow update: if signed() && request.auth.uid==resource.data.to && resource.data.status=='pending'
+        && request.resource.data.status=='accepted' && request.resource.data.updatedAt==request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']);
+      allow delete: if signed() && request.auth.uid in resource.data.members;
+      match /messages/{message}{
+        allow get: if signed() && socialFriend(pair);
+        allow list: if signed() && socialFriend(pair) && request.query.limit<=50;
+        allow create: if signed() && socialFriend(pair)
+          && request.resource.data.keys().hasOnly(['sender','text','createdAt'])
+          && request.resource.data.sender==request.auth.uid && request.resource.data.text is string
+          && request.resource.data.text.size()>0 && request.resource.data.text.size()<=1500
+          && request.resource.data.createdAt==request.time;
+      }
+    }
+    match /friendChallenges/{pair}{
+      allow read: if signed() && request.auth.uid in resource.data.members;
+      allow create: if signed() && newChallenge(request.resource.data,pair);
+      allow update: if signed() && request.auth.uid in resource.data.members
+        && (advanceChallenge(pair) || (resource.data.status in ['declined','cancelled','opened'] || !challengeFresh(resource.data))
+          && newChallenge(request.resource.data,pair) && request.resource.data.attempt!=resource.data.attempt);
+    }
     match /{document=**}{allow read,write: if false;}
   }
 }
