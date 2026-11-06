@@ -30,7 +30,7 @@ def build(name):
     if os.path.exists(pf): page = page.replace('/*PIECES*/', read(name, 'pieces.js'))
     if name == 'chess': page = page.replace('/*PGN_EXPORT*/', read('chess', 'pgn.js'))
     if name == 'checkers': page = page.replace('/*PDN*/', read('checkers', 'pdn.js'))
-    if name in ['abalone', 'falling4', 'quoridor']:
+    if name in ['abalone', 'falling4', 'quoridor', 'durak']:
         for marker, filename in [('CSS', 'style.css'), ('APP', 'app.js')]:
             page = page.replace('/*' + name.upper() + '_' + marker + '*/', read(name, filename))
     if name == 'lava':
@@ -47,7 +47,7 @@ def build(name):
             shutil.copytree(sp, dp)
     open(os.path.join(d, 'index.html'), 'w', encoding='utf-8').write(head('<style>' + clock_css + '</style><script>' + room + '\n' + view + '\n' + match + '</script>' + hub_back, '../') + page + '\n</body></html>\n')
     print('собрано:', name + '/index.html')
-GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go', 'chess', 'lava', 'abalone', 'falling4', 'quoridor']
+GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go', 'chess', 'lava', 'abalone', 'falling4', 'quoridor', 'durak']
 for g in GAMES: build(g)
 hub = read('hub.html').replace('/*NET*/', net).replace('/*VER*/', ver)
 open(os.path.join(here, 'index.html'), 'w', encoding='utf-8').write(head() + hub + '\n</body></html>\n')

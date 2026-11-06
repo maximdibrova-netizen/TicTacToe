@@ -1,0 +1,85 @@
+<title>Дурак</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@500;700;800&display=swap">
+<style>/*DURAK_CSS*/</style>
+<section id="menu" class="screen">
+  <div class="menu-col">
+    <header class="intro">
+      <svg class="game-icon" viewBox="0 0 76 76" aria-hidden="true">
+        <rect width="76" height="76" rx="18" fill="#202c42" stroke="#46536b"/>
+        <g transform="translate(12 18) rotate(-13 18 24)">
+          <rect width="34" height="45" rx="6" fill="#f5eedf"/>
+          <path d="M17 13c-4 5-10 8-10 14a5 5 0 0 0 9 3c0 4-2 5-3 6h8c-2-1-3-3-3-6a5 5 0 0 0 9-3c0-6-6-9-10-14z" fill="#243148"/>
+        </g>
+        <g transform="translate(34 15) rotate(12 17 23)">
+          <rect width="33" height="45" rx="6" fill="#fff7e8" stroke="#eac17c"/>
+          <path d="m16.5 12 10 11-10 11-10-11z" fill="#bc4f58"/>
+        </g>
+      </svg>
+      <div><span class="eyebrow">Подкидной · 36 карт</span><h1>Дурак</h1></div>
+      <p>Отбивайся, подкидывай карты и выйди из игры до того, как останешься последним.</p>
+    </header>
+    <section class="card"><h2>С кем играть</h2><div class="seg two" id="modeSeg">
+      <button data-mode="bot">С ботами</button><button data-mode="net" id="m-net">Онлайн</button>
+    </div></section>
+    <section class="card" id="countCard"><h2>Участники</h2><div class="seg" id="countSeg">
+      <button data-count="2">2 игрока</button><button data-count="3">3 игрока</button><button data-count="4">4 игрока</button>
+    </div><p class="hint">Число игроков включает тебя. Боты играют без просмотра чужих карт.</p></section>
+    <button class="play" id="playBtn">Играть</button>
+    <section class="card" id="netCard" hidden><h2>Онлайн на двоих</h2>
+      <div class="seg two"><button id="netCreate">Создать игру</button><button id="netJoinBtn">Войти по коду</button></div>
+      <div class="join" id="joinRow" hidden><input id="joinCode" aria-label="Код игры" placeholder="КОД" maxlength="5" autocomplete="off" spellcheck="false"><button id="joinGo">Войти</button></div>
+      <p class="hint">Отправь другу ссылку или код. У каждого своя рука на экране.</p>
+    </section>
+    <details class="card rules"><summary>Как играть</summary><ol>
+      <li>У каждого по шесть карт. Первый ход у игрока с младшим козырем, а если козырей на руках нет, ходит первый участник.</li>
+      <li>Отбивай старшей картой той же масти. Некозырную карту можно побить козырем.</li>
+      <li>Подкидывай только достоинства, уже лежащие на столе. За заход можно подкинуть не больше шести карт и не больше, чем было у отбивающегося в начале захода.</li>
+      <li>Если берёшь, соперники могут ещё подкинуть. После захода первым добирает тот, кто ходил, а отбивавшийся добирает последним.</li>
+      <li>Когда колода пуста, игрок без карт выходит. Кто остался с картами последним, проиграл.</li>
+    </ol></details>
+    <p class="hint version">Версия от /*VER*/</p>
+  </div>
+</section>
+
+<section id="game" class="screen" hidden>
+  <main class="table-layout">
+    <header class="match-head"><span class="eyebrow">Подкидной дурак</span><span id="modeTitle"></span></header>
+    <div id="players" class="players" aria-label="Соперники"></div>
+    <section class="felt" aria-label="Карточный стол">
+      <div class="table-head">
+        <div id="stock" class="stock"></div>
+        <div class="table-title"><strong id="status" role="status"></strong><p id="detail"></p></div>
+        <div id="discard" class="discard"></div>
+      </div>
+      <div id="pairs" class="pairs" aria-label="Карты на столе"></div>
+      <div id="tableNote" class="table-note"></div>
+    </section>
+    <div class="action-row" aria-label="Действия">
+      <button id="takeBtn" class="accent" hidden>Взять карты</button>
+      <button id="passBtn" class="accent" hidden>Не подкидывать</button>
+    </div>
+    <section class="hand-section" aria-labelledby="handTitle">
+      <div class="hand-head"><h2 id="handTitle">Твоя рука</h2><span id="handInfo"></span></div>
+      <div id="hand" class="hand"></div>
+    </section>
+    <section id="endOv" class="card end-panel" aria-labelledby="endTitle" hidden>
+      <h2 id="endTitle"></h2><p id="endText" class="hint"></p>
+      <div class="btns"><button id="endAgain">Ещё раз</button><button class="alt" id="endMenu">В меню</button></div>
+    </section>
+    <div class="toolbar"><button id="homeBtn">⌂ <span>Меню</span></button><button id="againBtn">↻ <span>Заново</span></button></div>
+  </main>
+</section>
+
+<dialog id="lobby" class="lobby" aria-labelledby="lbTitle">
+  <h2 id="lbTitle">Онлайн на двоих</h2><p id="lbText"></p><div id="lbCode" class="code" hidden></div>
+  <div class="join" id="lbLinkRow" hidden><input id="lbLink" aria-label="Ссылка на игру" readonly><button id="lbCopy">Копировать</button></div>
+  <div class="btns"><button id="lbRetry" hidden>Повторить</button><button class="alt" id="lbCancel">Отмена</button></div>
+</dialog>
+<dialog id="restartDialog" class="lobby" aria-labelledby="restartTitle">
+  <h2 id="restartTitle">Начать заново?</h2><p>Текущая раздача закончится.</p>
+  <div class="btns"><button id="restartYes">Новая раздача</button><button class="alt" id="restartNo">Отмена</button></div>
+</dialog>
+<div id="toast" class="toast" role="status" hidden></div>
+<script>/*NET*/</script><script>/*CORE*/</script><script>/*DURAK_APP*/</script>

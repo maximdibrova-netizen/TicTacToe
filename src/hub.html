@@ -89,6 +89,24 @@ a.game.current::after { content: "сейчас играете"; position: absolu
   <section class="room" id="room" aria-live="polite"></section>
 
   <div class="games" id="games">
+    <a class="game" href="durak/" data-g="durak" data-name="Дурак">
+      <div class="art" style="background:#233b43">
+        <svg viewBox="0 0 140 100" aria-hidden="true">
+          <g transform="translate(34 20) rotate(-13 23 31)">
+            <rect width="45" height="62" rx="7" fill="#e9deca" stroke="#b99d70"/>
+            <text x="7" y="16" font-family="Georgia,serif" font-size="14" font-weight="bold" fill="#243148">Т</text>
+            <text x="22.5" y="45" font-family="Georgia,serif" font-size="31" fill="#243148" text-anchor="middle">♠</text>
+          </g>
+          <g transform="translate(62 15) rotate(12 23 31)">
+            <rect width="45" height="62" rx="7" fill="#fff7e8" stroke="#eac17c"/>
+            <text x="7" y="16" font-family="Georgia,serif" font-size="14" font-weight="bold" fill="#ad4352">К</text>
+            <path d="m22.5 24 11 13-11 13-11-13z" fill="#b74758"/>
+          </g>
+        </svg>
+      </div>
+      <h3>Дурак</h3><p>Классический подкидной. Отбивайся и избавься от карт раньше соперников.</p>
+      <div class="tags"><span>36 карт</span><span>боты</span><span>онлайн</span></div>
+    </a>
     <a class="game" href="quoridor/" data-g="quoridor" data-name="Кворидор">
       <div class="art" style="background:#202b42">
         <svg viewBox="0 0 140 100" aria-hidden="true">
@@ -496,7 +514,7 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     $('instBtn').onclick = function () { if (!prompt) return; prompt.prompt(); prompt.userChoice.then(function () { prompt = null; render(); }); };
     function check() {
       if (!window.caches || !('serviceWorker' in navigator)) return;
-      Promise.all(['./', 'tochki/', 'ttt/', 'battleship/', 'checkers/', 'go/', 'chess/', 'lava/', 'abalone/', 'falling4/', 'quoridor/'].map(function (u) { return caches.match(u, { ignoreSearch: true }); })).then(function (rs) {
+      Promise.all(['./', 'tochki/', 'ttt/', 'battleship/', 'checkers/', 'go/', 'chess/', 'lava/', 'abalone/', 'falling4/', 'quoridor/', 'durak/'].map(function (u) { return caches.match(u, { ignoreSearch: true }); })).then(function (rs) {
         var ok = rs.every(Boolean);
         if (ok && !saved) { saved = true; $('offState').innerHTML = ' · <span class="ok">✓ работает без интернета</span>'; render(); }
         if (!ok) setTimeout(check, 1500);
