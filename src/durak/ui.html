@@ -65,7 +65,14 @@
       </div>
       <section class="hand-section" aria-labelledby="handTitle">
         <div id="hand" class="hand"></div>
-        <div class="hand-caption"><h2 id="handTitle">Твоя рука</h2><span id="handInfo"></span></div>
+        <div class="hand-tools">
+          <div class="hand-caption"><h2 id="handTitle">Твоя рука</h2><span id="handInfo"></span></div>
+          <div id="handSort" class="hand-sort" role="group" aria-label="Порядок карт">
+            <button type="button" data-sort="suit">По масти</button>
+            <button type="button" data-sort="rank">По силе</button>
+            <button type="button" data-sort="manual" title="Перетаскивай карты внутри руки">Вручную</button>
+          </div>
+        </div>
       </section>
     </section>
     <section id="endOv" class="card end-panel" aria-labelledby="endTitle" hidden>

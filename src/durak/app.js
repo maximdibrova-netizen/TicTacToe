@@ -11,10 +11,11 @@
   const deckImage = new Image();
   deckImage.src = 'cards/deck.webp';
   const artReady = deckImage.decode().catch(() => {});
-  const prefs = {mode:'bot',count:2};
+  const prefs = {mode:'bot',count:2,sort:'suit'};
   try { Object.assign(prefs, JSON.parse(localStorage.getItem(ID+'-settings') || '{}')); } catch (e) {}
   if (prefs.mode !== 'net') prefs.mode = 'bot';
   if (![2,3,4].includes(prefs.count)) prefs.count = 2;
+  if (!['suit','rank','manual'].includes(prefs.sort)) prefs.sort = 'suit';
 
   let game = null, drag = null, botTimer = 0, pauseTimer = 0, toastTimer = 0, lastJoin = null;
   function save() {
@@ -52,10 +53,10 @@
     if (seat === game.seat) return 'Ты';
     return game.online ? 'Друг' : game.view.count === 2 ? 'Бот' : 'Бот '+seat;
   }
+  function cardPosition(card) { return (D.rank(card)*100/9)+'% '+(D.suit(card)*100/3)+'%'; }
   function cardMarkup(card, cls = '', button = false) {
     const tag = button ? 'button' : 'div';
-    const position = (D.rank(card)*100/9)+'% '+(D.suit(card)*100/3)+'%';
-    return '<'+tag+' '+(button?'type="button"':'role="img"')+' class="card-face '+cls+'" style="background-position:'+position
+    return '<'+tag+' '+(button?'type="button"':'role="img"')+' class="card-face '+cls+'" style="background-position:'+cardPosition(card)
       +'" data-card="'+card+'" aria-label="'+cardName(card)+'"></'+tag+'>';
   }
   function isOut(v, seat) {
@@ -74,6 +75,7 @@
     if (v.result) return resultTitle(v);
     if (game.online && !Net2P.online()) return 'Связь с другом потеряна';
     if (game.dealing) return 'Раздача';
+    if (game.drawing) return 'Добор карт';
     if (game.paused) return v.resolved.taking ? 'Карты взяты' : 'Бито';
     if (game.pending) return 'Отправляем ход…';
     if (v.actor === game.seat) {
@@ -87,9 +89,54 @@
     if (v.phase === 'defend') return who+' отбивается';
     return who+' · подкидывание';
   }
+  function renderStock(v) {
+    const {deckCount,trumpCard} = game.stockView || v;
+    const stock = $('stock'), trump = D.SUITS[v.trump];
+    const label = (deckCount ? D.RANKS[D.rank(trumpCard)]+' ' : '')+trump;
+    stock.innerHTML = '<span class="pile-label">Козырь <b class="'+(v.trump===1||v.trump===2?'red-suit':'')+'">'+label+'</b></span>'
+      +(deckCount
+        ? '<div class="stock-art'+(deckCount>1?' piled':'')+'">'+cardMarkup(trumpCard,'stock-trump')+(deckCount>1?'<i class="card-back" aria-hidden="true"></i>':'')+'</div><span>'+cardsLabel(deckCount)+'</span>'
+        : '<span class="empty-pile" aria-hidden="true">'+trump+'</span><span>Пусто</span>');
+    stock.setAttribute('aria-label','Козырь — '+SUIT_NAME[v.trump]+'. В колоде '+cardsLabel(deckCount));
+  }
+  function canArrange() {
+    return !!game && prefs.sort === 'manual' && !game.moving && !game.pending;
+  }
+  function orderHand(v) {
+    const suitOrder = card => D.suit(card) === v.trump ? 4 : D.suit(card);
+    const bySuit = (a,b) => suitOrder(a)-suitOrder(b) || D.rank(a)-D.rank(b);
+    const byStrength = card => D.rank(card)+(D.suit(card) === v.trump ? 9 : 0);
+    if (game.manualOrder) {
+      const kept = game.manualOrder.filter(card => v.hand.includes(card));
+      game.manualOrder = kept.concat(v.hand.filter(card => !kept.includes(card)));
+    } else if (prefs.sort === 'manual') game.manualOrder = v.hand.slice().sort(bySuit);
+    if (prefs.sort === 'manual') return game.manualOrder;
+    return v.hand.slice().sort(prefs.sort === 'rank' ? (a,b) => byStrength(a)-byStrength(b) || bySuit(a,b) : bySuit);
+  }
+  function renderHand(v, act) {
+    const cards = orderHand(v), arrange = canArrange();
+    $('handInfo').textContent = cardsLabel(cards.length);
+    hand.classList.toggle('can-play',act);
+    hand.classList.toggle('can-arrange',arrange);
+    hand.classList.toggle('crowded',cards.length>6);
+    const key = cards.join(',');
+    if (hand.dataset.cards !== key) {
+      releaseDrag(false);
+      hand.dataset.cards = key;
+      hand.innerHTML = cards.length ? cards.map(card => cardMarkup(card,'',true)).join('') : '<p class="hint">На руках пусто</p>';
+    }
+    for (const button of hand.querySelectorAll('button')) {
+      button.setAttribute('aria-disabled',String(!act && !arrange));
+      if (arrange) button.setAttribute('aria-keyshortcuts','Alt+ArrowLeft Alt+ArrowRight');
+      else button.removeAttribute('aria-keyshortcuts');
+    }
+    for (const button of $('handSort').querySelectorAll('button')) {
+      button.setAttribute('aria-pressed',String(button.dataset.sort===prefs.sort));
+      button.disabled = game.moving || game.pending;
+    }
+  }
   function render() {
     if (!game) return;
-    if (drag) releaseDrag(false);
     const v = game.view, act = canAct();
     $('modeTitle').textContent = 'Подкидной · '+(game.online ? 'онлайн' : v.count+' игрока');
     $('players').innerHTML = Array.from({length:v.count-1},(_,offset) => {
@@ -101,12 +148,7 @@
     }).join('');
     $('status').textContent = currentStatus(v);
     $('status').classList.toggle('my-turn',act);
-    $('stock').innerHTML = v.deckCount
-      ? '<div class="stock-art'+(v.deckCount>1?' piled':'')+'">'+cardMarkup(v.trumpCard,'stock-trump')+(v.deckCount>1?'<i class="card-back" aria-hidden="true"></i>':'')+'</div><span>'+cardsLabel(v.deckCount)+'</span>'
-      : '<span class="empty-pile" aria-hidden="true">'+D.SUITS[v.trump]+'</span><span>Пусто</span>';
-    $('stock').setAttribute('aria-label','Козырь — '+SUIT_NAME[v.trump]+'. В колоде '+cardsLabel(v.deckCount));
-    const trumpLabel = (v.deckCount ? D.RANKS[D.rank(v.trumpCard)]+' ' : '')+D.SUITS[v.trump];
-    $('stock').insertAdjacentHTML('afterbegin','<span class="pile-label">Козырь <b class="'+(v.trump===1||v.trump===2?'red-suit':'')+'">'+trumpLabel+'</b></span>');
+    renderStock(v);
     $('discard').setAttribute('aria-label','Отбой · '+cardsLabel(v.discardCount));
     $('discard').innerHTML = '<span class="pile-label">Отбой</span>'+(v.discardCount ? '<i class="card-back" aria-hidden="true"></i>' : '<i class="empty-pile" aria-hidden="true"></i>')
       +'<span>'+v.discardCount+'</span>';
@@ -122,17 +164,7 @@
     $('takeBtn').hidden = !act || v.phase !== 'defend';
     $('passBtn').hidden = !act || v.phase !== 'throw';
     $('passBtn').textContent = v.taking ? 'Не подкидывать' : v.count === 2 ? 'Бито' : 'Не подкидывать';
-    $('handInfo').textContent = cardsLabel(v.hand.length);
-    const order = card => (D.suit(card) === v.trump ? 4 : D.suit(card))*9 + D.rank(card);
-    const hand = $('hand');
-    hand.classList.toggle('can-play',act);
-    hand.classList.toggle('crowded',v.hand.length>6);
-    const cards = v.hand.slice().sort((a,b)=>order(a)-order(b));
-    if (hand.dataset.cards !== cards.join(',')) {
-      hand.dataset.cards = cards.join(',');
-      hand.innerHTML = cards.length ? cards.map(card => cardMarkup(card,'',true)).join('') : '<p class="hint">На руках пусто</p>';
-    }
-    for (const button of hand.querySelectorAll('button')) button.setAttribute('aria-disabled',String(!act));
+    renderHand(v,act);
 
     $('endOv').hidden = !v.result;
     $('againBtn').hidden = !!v.result || (game.online && Net2P.role() === 'guest');
@@ -157,7 +189,7 @@
   function seatOrigin(seat) {
     return (seat === game.seat ? $('hand') : $('players').querySelector('[data-seat="'+seat+'"] .rival-stack'))?.getBoundingClientRect();
   }
-  function flyCard(card, origin, {duration, delay = 0, faceDown = false}) {
+  function flyCard(card, origin, {duration, delay = 0, faceDown = false, face, hideTarget = true}) {
     if (!origin || !card) return 0;
     const target = card.getBoundingClientRect();
     const width = card.offsetWidth, height = card.offsetHeight;
@@ -165,20 +197,20 @@
     const dy = target.top+target.height/2-origin.top-origin.height/2;
     const flying = document.createElement('div');
     flying.className = (faceDown?'card-back':'card-face')+' card-in-flight';
-    if (!faceDown) flying.style.backgroundPosition = card.style.backgroundPosition;
+    if (!faceDown) flying.style.backgroundPosition = face === undefined ? card.style.backgroundPosition : cardPosition(face);
     Object.assign(flying.style,{width:width+'px',height:height+'px',left:origin.left+(origin.width-width)/2+'px',top:origin.top+(origin.height-height)/2+'px'});
     motionLayer.append(flying);
-    card.classList.add('motion-hidden');
-    const scale = Math.max(.62,Math.min(1.3,origin.width/width));
+    if (hideTarget) card.classList.add('motion-hidden');
+    const scale = Math.max(.45,Math.min(2.4,origin.width/width));
     const angle = card.classList.contains('cover') ? 7 : 0;
     const frames = [
       {transform:'scale('+scale+') rotate(-8deg)',opacity:delay?0:1},
-      {transform:'translate3d('+dx*.53+'px,'+(dy*.47-22)+'px,0) scale(1.08) rotate(4deg)',opacity:1,offset:.46},
+      {transform:'translate3d('+dx*.53+'px,'+(dy*.47-22)+'px,0) scale('+Math.max(1.08,(1+scale)/2)+') rotate(4deg)',opacity:1,offset:.46},
       {transform:'translate3d('+dx+'px,'+dy+'px,0) rotate('+angle+'deg)',opacity:1}
     ];
     if (delay) frames.splice(1,0,{transform:frames[0].transform,opacity:1,offset:.035});
     const flight = flying.animate(frames,{duration,delay,fill:'both',easing:'cubic-bezier(.36,.18,.28,1)'});
-    flight.onfinish = () => { flying.remove(); card.classList.remove('motion-hidden'); };
+    flight.onfinish = () => { flying.remove(); if (hideTarget) card.classList.remove('motion-hidden'); };
     return duration+delay;
   }
   function collectTable({taking,defender}, delay) {
@@ -201,7 +233,9 @@
     const current = game;
     pauseTimer = setTimeout(() => {
       if (game !== current) return;
-      game.moving = game.paused = game.dealing = false;
+      clearTimers();
+      game.moving = game.paused = game.dealing = game.drawing = false;
+      game.stockView = null;
       render(); scheduleBot();
     },duration);
   }
@@ -218,6 +252,30 @@
     }
     afterMotion(430+step*46);
   }
+  function animateRefill(seats, ownCards, takenCards, delay) {
+    const current = game, stock = game.stockView;
+    const buttons = ids => ids.map(card => hand.querySelector('[data-card="'+card+'"]'));
+    const incoming = buttons(ownCards), taken = buttons(takenCards);
+    for (const card of incoming) card.classList.add('motion-hidden');
+
+    function draw(index) {
+      if (game !== current) return;
+      if (index === 0) {
+        game.drawing = true;
+        $('status').textContent = currentStatus(game.view);
+        for (const card of taken) card.classList.remove('motion-hidden');
+      }
+      const seat = seats[index], mine = seat === game.seat, last = stock.deckCount === 1;
+      const origin = $('stock').querySelector(last ? '.stock-trump' : '.stock-art .card-back')?.getBoundingClientRect();
+      const destination = mine ? incoming.shift() : $('players').querySelector('[data-seat="'+seat+'"] .card-back:last-child');
+      const duration = flyCard(destination,origin,{duration:460,faceDown:!last,face:stock.trumpCard,hideTarget:mine});
+      stock.deckCount--;
+      renderStock(game.view);
+      if (index+1 < seats.length) pauseTimer = setTimeout(() => draw(index+1),155);
+      else afterMotion(duration);
+    }
+    pauseTimer = setTimeout(() => draw(0),delay);
+  }
   function showView(next, animate) {
     clearTimers();
     const previous = game.view;
@@ -225,9 +283,18 @@
     const played = animate && previous.version < next.version && last?.type === 'card' && D.isCard(last.card)
       && Number.isInteger(last.seat) && (last.card !== previous.last?.card || last.seat !== previous.last.seat);
     const origin = played && (game.cardOrigin || seatOrigin(last.seat));
-    game.paused = !!(animate && !next.result && next.resolved && next.resolved.round !== previous.resolved?.round);
-    game.moving = !!(game.paused || played);
+    const resolved = animate && next.resolved && next.resolved.round !== previous.resolved?.round ? next.resolved : null;
+    const takenCards = resolved?.taking && resolved.defender === game.seat
+      ? resolved.table.flatMap(pair => pair.cover === null ? [pair.attack] : [pair.attack,pair.cover]) : [];
+    const draws = resolved?.draws || [];
+    const ownDraws = next.hand.filter(card => !previous.hand.includes(card) && !takenCards.includes(card));
+    const refill = !reducedMotion.matches && draws.length > 0 && next.version === previous.version+1
+      && draws.length === previous.deckCount-next.deckCount && ownDraws.length === draws.filter(seat => seat === game.seat).length;
+    game.stockView = refill ? {deckCount:previous.deckCount,trumpCard:previous.trumpCard} : null;
+    game.paused = !!(resolved && !next.result);
+    game.moving = !!(game.paused || played || refill);
     game.dealing = false;
+    game.drawing = false;
     game.cardOrigin = null;
     game.view = next;
     game.pending = false;
@@ -240,11 +307,16 @@
         card.animate([{opacity:0},{opacity:1}],duration);
       } else duration = flyCard(card,origin,{duration:last.seat===game.seat?380:620});
     }
-    if (game.paused) duration = collectTable(next.resolved,duration+190);
-    if (game.moving) afterMotion(duration);
+    if (game.paused) {
+      duration = collectTable(resolved,duration+190);
+      for (const card of takenCards) hand.querySelector('[data-card="'+card+'"]')?.classList.add('motion-hidden');
+    }
+    if (refill) animateRefill(draws,ownDraws,takenCards,duration);
+    else if (game.moving) afterMotion(duration);
     else scheduleBot();
   }
   function enter(options, initial) {
+    releaseDrag(false);
     clearTimers();
     const dealing = initial.version===0 && !reducedMotion.matches;
     game = {...options,view:initial,pending:false,paused:false,moving:dealing,dealing};
@@ -252,6 +324,7 @@
     if ($('restartDialog').open) $('restartDialog').close();
     $('menu').hidden = true; $('game').hidden = false;
     $('game').scrollTop = 0;
+    hand.scrollLeft = 0;
     render();
     if (dealing) {
       const current = game;
@@ -297,13 +370,80 @@
   }
   const hand = $('hand');
   const dropZone = $('pairs');
-  function overTable(e) {
-    const bounds = dropZone.getBoundingClientRect();
+  $('handSort').onclick = e => {
+    const button = e.target.closest('button[data-sort]');
+    if (!button || button.disabled || !game || button.dataset.sort === prefs.sort) return;
+    if (button.dataset.sort === 'manual' && !game.manualOrder) {
+      game.manualOrder = Array.from(hand.querySelectorAll('button'),card => Number(card.dataset.card));
+    }
+    prefs.sort = button.dataset.sort;
+    save();
+    renderHand(game.view,canAct());
+  };
+  function overArea(area,e) {
+    const bounds = area.getBoundingClientRect();
     return e.clientX >= bounds.left && e.clientX <= bounds.right && e.clientY >= bounds.top && e.clientY <= bounds.bottom;
+  }
+  function moveInHand(card, index) {
+    if (!canArrange()) return false;
+    const order = game.manualOrder, from = order.indexOf(card);
+    if (from < 0 || index < 0 || index >= order.length || from === index) return false;
+    order.splice(from,1);
+    order.splice(index,0,card);
+    renderHand(game.view,canAct());
+    return true;
+  }
+  function clearHandSlot() {
+    if (!drag.slot) return;
+    drag.slot.classList.remove('insert-before','insert-after');
+    drag.slot = null;
+  }
+  function markHandSlot(x) {
+    clearHandSlot();
+    const cards = Array.from(hand.querySelectorAll('button'));
+    let target = 0, distance = Infinity;
+    cards.forEach((card,index) => {
+      const bounds = card.getBoundingClientRect();
+      const d = Math.abs(x-(bounds.left+bounds.width/2));
+      if (d < distance) { distance = d; target = index; }
+    });
+    drag.index = target;
+    const from = cards.indexOf(drag.button);
+    if (from === target) return;
+    drag.slot = cards[target];
+    drag.slot.classList.add(target < from ? 'insert-before' : 'insert-after');
+  }
+  function scrollHandEdge() {
+    if (!drag || !drag.edge) return;
+    const before = hand.scrollLeft;
+    hand.scrollLeft += drag.edge*8;
+    if (hand.scrollLeft === before) { drag.edge = 0; return; }
+    markHandSlot(drag.handX);
+    drag.scrollFrame = requestAnimationFrame(scrollHandEdge);
+  }
+  function updateHandDrop(e) {
+    const inHand = canArrange() && overArea(hand,e);
+    if (!inHand) {
+      clearHandSlot();
+      drag.index = -1;
+      drag.edge = 0;
+      return;
+    }
+    markHandSlot(e.clientX);
+    const {left,right} = hand.getBoundingClientRect();
+    const edge = e.clientX < left+18 ? -1 : e.clientX > right-18 ? 1 : 0;
+    drag.handX = e.clientX;
+    if (edge !== drag.edge) {
+      cancelAnimationFrame(drag.scrollFrame);
+      drag.edge = edge;
+      if (edge) drag.scrollFrame = requestAnimationFrame(scrollHandEdge);
+    }
   }
   function releaseDrag(returnToHand) {
     if (!drag) return;
-    const {id, button, ghost} = drag;
+    const {id, button, ghost, scrollFrame} = drag;
+    cancelAnimationFrame(scrollFrame);
+    clearHandSlot();
     drag = null;
     dropZone.classList.remove('drag-over');
     button.classList.remove('drag-origin');
@@ -326,8 +466,8 @@
     const dx = e.clientX-drag.x, dy = e.clientY-drag.y;
     if (!drag.mode) {
       if (Math.hypot(dx,dy) < 7) return;
-      if (hand.scrollWidth > hand.clientWidth && Math.abs(dx) > Math.abs(dy)*1.25) drag.mode = 'scroll';
-      else if (canAct()) {
+      if (!canArrange() && hand.scrollWidth > hand.clientWidth && Math.abs(dx) > Math.abs(dy)*1.25) drag.mode = 'scroll';
+      else if (canAct() || canArrange()) {
         drag.mode = 'card';
         drag.bounds = drag.button.getBoundingClientRect();
         drag.ghost = drag.button.cloneNode(true);
@@ -342,13 +482,21 @@
     if (drag.mode === 'scroll') { hand.scrollLeft = drag.scroll-dx; return; }
     drag.ghost.style.left = drag.bounds.left+dx+'px';
     drag.ghost.style.top = drag.bounds.top+dy+'px';
-    dropZone.classList.toggle('drag-over',overTable(e));
+    dropZone.classList.toggle('drag-over',canAct() && overArea(dropZone,e));
+    updateHandDrop(e);
   };
   hand.onpointerup = e => {
     if (!drag || drag.id !== e.pointerId) return;
-    if (drag.mode === 'card' && overTable(e)) {
-      const card = Number(drag.button.dataset.card), origin = drag.ghost.getBoundingClientRect();
-      if (playCard(card,origin)) { releaseDrag(false); return; }
+    if (drag.mode === 'card') {
+      const card = Number(drag.button.dataset.card);
+      if (overArea(dropZone,e) && playCard(card,drag.ghost.getBoundingClientRect())) {
+        releaseDrag(false);
+        return;
+      }
+      if (canArrange() && overArea(hand,e)) {
+        markHandSlot(e.clientX);
+        if (moveInHand(card,drag.index)) return;
+      }
     }
     releaseDrag(true);
   };
@@ -357,6 +505,14 @@
     // Keyboard and assistive activation use the same validation as a drop.
     const button = e.target.closest('button[data-card]');
     if (e.detail === 0 && button) playCard(Number(button.dataset.card),button.getBoundingClientRect());
+  };
+  hand.onkeydown = e => {
+    if (!canArrange() || !e.altKey || !['ArrowLeft','ArrowRight'].includes(e.key)) return;
+    const button = e.target.closest('button[data-card]');
+    if (!button) return;
+    e.preventDefault();
+    const card = Number(button.dataset.card), index = game.manualOrder.indexOf(card);
+    if (moveInHand(card,index+(e.key==='ArrowLeft'?-1:1))) hand.querySelector('[data-card="'+card+'"]').focus();
   };
   $('takeBtn').onclick = () => act({type:'take'});
   $('passBtn').onclick = () => act({type:'pass'});

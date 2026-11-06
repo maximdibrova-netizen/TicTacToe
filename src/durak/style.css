@@ -40,7 +40,7 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
 .felt {
   --pair-card:clamp(51px,8vw,76px);
   --pile-card:clamp(33px,5vw,56px);
-  --hand-card:clamp(57px,9vw,87px);
+  --hand-card:clamp(72px,12vw,116px);
   display:grid; grid-template-rows:auto auto minmax(0,1fr) 42px auto; gap:8px;
   min-width:0; padding:16px 20px 12px; border:1px solid #53625e; border-radius:32px;
   background:repeating-linear-gradient(135deg,#ffffff02 0 1px,transparent 1px 3px),
@@ -93,17 +93,28 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
 .action-row button { min-height:40px; min-width:116px; padding:7px 18px; box-shadow:0 3px 10px #08181578; }
 .hand-section { display:grid; justify-items:center; min-width:0; }
 .hand {
-  display:flex; width:100%; overflow-x:auto; align-items:center; justify-content:safe center; gap:8px;
-  padding:6px 6px 7px; min-height:calc(var(--hand-card) * 1.43 + 13px);
+  --overlap:.32;
+  display:flex; width:100%; overflow-x:auto; align-items:center; justify-content:safe center;
+  padding:8px 6px; min-height:calc(var(--hand-card) * 1.4 + 16px);
   scrollbar-color:#6d9589 #173636; scrollbar-width:thin; overscroll-behavior-inline:contain;
 }
 .hand .card-face { flex:none; width:var(--hand-card); cursor:default; touch-action:none; user-select:none; }
-.hand.can-play .card-face { cursor:grab; }
-.hand.crowded { gap:0; }
-.hand.crowded .card-face + .card-face { margin-inline-start:calc(var(--hand-card) * -.36); }
+.hand.can-play .card-face,.hand.can-arrange .card-face { cursor:grab; }
+.hand.crowded { --overlap:.52; }
+.hand .card-face + .card-face { margin-inline-start:calc(var(--hand-card) * var(--overlap) * -1); }
+.hand .card-face:focus-visible { z-index:2; }
+.hand .insert-before::before,.hand .insert-after::before {
+  content:''; position:absolute; z-index:1; inset:5px auto 5px -4px; width:3px; border-radius:3px; background:var(--gold);
+}
+.hand .insert-after::before { left:auto; right:-4px; }
+.hand-tools { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:5px 14px; }
 .hand-caption { display:flex; align-items:center; gap:8px; color:#c0d3ca; font-size:11px; }
 .hand-caption h2 { color:#dfebe4; }
 #handInfo::before { content:'·'; margin-right:8px; }
+.hand-sort { display:flex; gap:2px; padding:3px; border:1px solid #86aa9960; border-radius:9px; background:#142e30b3; }
+.hand-sort button { padding:4px 10px; min-height:32px; border:0; border-radius:6px; background:transparent; color:#e5f1e9; font-size:11px; font-weight:800; }
+.hand-sort button[aria-pressed=true] { background:#e6ede5; color:#15352f; }
+.hand-sort button:disabled { opacity:.66; }
 .card-face { display:block; position:relative; aspect-ratio:5/7; padding:0; border:0; border-radius:6%; }
 /* Adrian Kennard's Standard deck and Goodall back, https://www.me.uk/cards/ (CC0 1.0). */
 .card-face,.card-back {
@@ -135,7 +146,7 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
   .felt {
     --pair-card:clamp(45px,13vw,64px);
     --pile-card:clamp(29px,8vw,43px);
-    --hand-card:clamp(44px,13.7vw,68px);
+    --hand-card:clamp(62px,20vw,90px);
     padding:11px 9px 9px; border-radius:23px; gap:4px;
   }
   .table-center { gap:2px; }
@@ -144,8 +155,8 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
   .pairs { gap:6px; padding:6px 0; }
   .pair { width:calc(var(--pair-card) + 10px); height:calc(var(--pair-card) * 1.4 + 17px); }
   .pair .cover { transform:translate(8px,15px) rotate(7deg); }
-  .hand { gap:4px; padding-inline:2px; }
-  .hand.crowded .card-face + .card-face { margin-inline-start:calc(var(--hand-card) * -.42); }
+  .hand { --overlap:.35; padding-inline:4px; }
+  .hand-sort button { min-height:36px; }
   .game-icon { width:53px; height:53px; }
 }
 @media(max-width:420px) {

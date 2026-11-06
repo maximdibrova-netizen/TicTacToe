@@ -42,6 +42,14 @@ test('successful defense refills attacker before defender; defender leads next',
   assert.equal(next.attacker,1);
   assert.ok(next.hands[0].includes(23));
   assert.ok(next.hands[1].includes(22));
+  assert.deepEqual(next.resolved.draws,[0,1]);
+  const guest = D.view(next,1);
+  assert.deepEqual(guest.resolved.draws,[0,1]);
+  assert.ok(D.validView(guest,1));
+  assert.ok(D.validView({...guest,resolved:{...guest.resolved,draws:undefined}},1));
+  assert.ok(!D.validView({...guest,resolved:{...guest.resolved,draws:[23,22]}},1));
+  guest.resolved.draws.pop();
+  assert.deepEqual(next.resolved.draws,[0,1]);
   assert.deepEqual(next.discard,[27,28]);
   assert.equal(s.discard.length,0);
 });

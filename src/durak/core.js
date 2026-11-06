@@ -79,12 +79,16 @@ var Durak = (function () {
   function resolve(state) {
     const {attacker, defender, table, taking} = state;
     const played = table.flatMap(pair => pair.cover === null ? [pair.attack] : [pair.attack, pair.cover]);
-    state.resolved = {round: state.round, defender, taking, table: table.map(pair => ({...pair}))};
+    const draws = [];
+    state.resolved = {round: state.round, defender, taking, table: table.map(pair => ({...pair})), draws};
     if (taking) state.hands[defender].push(...played);
     else state.discard.push(...played);
     const drawOrder = orderFrom(state.count, attacker).filter(i => i !== defender).concat(defender);
     for (const seat of drawOrder) {
-      while (state.deck.length && state.hands[seat].length < HAND) state.hands[seat].push(state.deck.pop());
+      while (state.deck.length && state.hands[seat].length < HAND) {
+        state.hands[seat].push(state.deck.pop());
+        draws.push(seat);
+      }
     }
     const remaining = state.hands.map((hand, seat) => hand.length ? seat : -1).filter(seat => seat >= 0);
     state.table = [];
@@ -158,7 +162,7 @@ var Durak = (function () {
       attacker: state.attacker, defender: state.defender, limit: state.limit, actor: state.actor,
       table: state.table.map(pair => ({...pair})), phase: state.phase, taking: state.taking,
       round: state.round, version: state.version, last: state.last && {...state.last},
-      resolved: state.resolved && {...state.resolved, table: state.resolved.table.map(pair => ({...pair}))},
+      resolved: state.resolved && {...state.resolved, table: state.resolved.table.map(pair => ({...pair})), draws:state.resolved.draws?.slice()},
       result: state.result && {...state.result}
     };
   }
@@ -177,7 +181,8 @@ var Durak = (function () {
       && ['lead','defend','throw','end'].includes(v.phase) && typeof v.taking === 'boolean'
       && (v.phase === 'end' ? v.actor === -1 && !!v.result : player(v.actor) && v.result === null)
       && table(v.table) && number(v.round,1,10000) && number(v.version,0,100000)
-      && (v.resolved === null || (v.resolved && player(v.resolved.defender) && table(v.resolved.table)))
+      && (v.resolved === null || (v.resolved && player(v.resolved.defender) && table(v.resolved.table)
+        && (v.resolved.draws === undefined || (Array.isArray(v.resolved.draws) && v.resolved.draws.length <= SIZE && v.resolved.draws.every(player)))))
       && (v.result === null || (['cards','draw','resign'].includes(v.result.reason) && (v.result.loser === null || player(v.result.loser))));
   }
 
