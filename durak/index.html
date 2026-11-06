@@ -280,6 +280,7 @@ a.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 </script>
 </head><body>
 <title>Дурак</title>
+<link rel="preload" href="cards/deck.webp" as="image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@500;700;800&display=swap">
@@ -346,24 +347,22 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
 #status { display:inline-block; padding:4px 13px; border-radius:20px; background:#142e30bf; color:#e5f1e9; font:800 12px/1.35 var(--body); }
 #status.my-turn { color:#ffe0a2; }
 .table-center {
-  display:grid; grid-template-columns:calc(var(--pile-card) + 31px) minmax(0,1fr) calc(var(--pile-card) + 31px);
+  display:grid; grid-template-columns:calc(var(--pile-card) * 1.75) minmax(0,1fr) calc(var(--pile-card) * 1.75);
   align-items:center; gap:6px; min-height:clamp(176px,29dvh,266px);
 }
 .stock,.discard { display:grid; justify-items:center; gap:5px; color:#d2e2d9; text-align:center; font-size:11px; font-weight:800; }
 .pile-label { color:#c5d9d0; font-size:10px; text-transform:uppercase; letter-spacing:.09em; }
 .pile-label b { color:#f6e8cc; font-size:15px; line-height:1; }
 .pile-label .red-suit { color:#ffaea7; }
-.stock-art { position:relative; width:var(--pile-card); height:calc(var(--pile-card) * 1.43); }
-.stock-art.piled { width:calc(var(--pile-card) + 21px); }
+.stock-art { position:relative; width:var(--pile-card); height:calc(var(--pile-card) * 1.4); }
+.stock-art.piled { width:calc(var(--pile-card) * 1.75); }
 .stock-art .card-face,.stock-art .card-back { position:absolute; top:0; left:0; width:var(--pile-card); }
-.stock-art.piled .card-face { transform:translate(-3px,4px) rotate(-13deg); }
-.stock-art .card-back { left:auto; right:0; box-shadow:2px 2px 0 #747376,4px 4px 0 #a79a7d,6px 6px 0 #16202a; }
-.card-back,.empty-pile { display:block; width:var(--pile-card); aspect-ratio:2/2.86; border-radius:7px; }
-.card-back {
-  border:2px solid #d4b985;
-  background:repeating-linear-gradient(45deg,#244063 0 4px,transparent 4px 5px),repeating-linear-gradient(-45deg,#2b466b 0 4px,#899bba 4px 5px);
-  box-shadow:inset 0 0 0 2px #1d334e,0 3px 7px #06191b91;
+.stock-art.piled .stock-trump {
+  top:calc(var(--pile-card) * .24); left:calc(var(--pile-card) * .53); transform:rotate(90deg);
 }
+.stock-art .card-back { box-shadow:1px 2px 0 #a2a49e,2px 4px 0 #d5d1c3,4px 6px 8px #091a1b9c; }
+.card-back,.empty-pile { display:block; width:var(--pile-card); aspect-ratio:5/7; border-radius:6px; }
+.card-back { background-position:100% 0; }
 .empty-pile { display:grid; place-items:center; border:1px dashed #a1bcac58; color:#b8d1c08f; font:700 25px Georgia,serif; }
 .discard .card-back { opacity:.81; transform:rotate(9deg); }
 .pairs {
@@ -371,9 +370,9 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
   align-self:stretch; position:relative; min-width:0; padding:8px 3px; border-radius:20px;
 }
 .pairs.drag-over { box-shadow:inset 0 0 0 1px #d7e3d151; background:#d8eee70b; }
-.pair { width:calc(var(--pair-card) + 14px); height:calc(var(--pair-card) * 1.43 + 16px); position:relative; }
+.pair { width:calc(var(--pair-card) + 14px); height:calc(var(--pair-card) * 1.4 + 23px); position:relative; }
 .pair .card-face { position:absolute; inset:0 auto auto 0; width:var(--pair-card); }
-.pair .cover { transform:translate(12px,13px) rotate(8deg); z-index:1; }
+.pair .cover { transform:translate(12px,21px) rotate(7deg); z-index:1; }
 .pair:has(.attack:only-child) .attack { transform:translateX(6px) rotate(-3deg); }
 .table-mark { align-self:center; width:100px; height:100px; display:grid; place-items:center; border:1px solid #b0d4b32b; border-radius:50%; color:#afd3c14d; font:700 50px Georgia,serif; box-shadow:inset 0 0 0 6px #183d3426; }
 .action-row { display:flex; justify-content:center; align-items:center; gap:8px; }
@@ -391,24 +390,17 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
 .hand-caption { display:flex; align-items:center; gap:8px; color:#c0d3ca; font-size:11px; }
 .hand-caption h2 { color:#dfebe4; }
 #handInfo::before { content:'·'; margin-right:8px; }
-.card-face {
-  display:block; position:relative; container-type:inline-size; aspect-ratio:2/2.86; padding:0;
-  border:1px solid #d3c3a5; border-radius:8px; background:linear-gradient(145deg,#fffdf6,#eee3cc);
-  color:#182637; box-shadow:inset 0 0 0 1px #fff7e9,0 3px 8px #0b131750;
-  font-family:Georgia,"Times New Roman",serif; font-weight:700;
+.card-face { display:block; position:relative; aspect-ratio:5/7; padding:0; border:0; border-radius:6%; }
+/* Adrian Kennard's Standard deck and Goodall back, https://www.me.uk/cards/ (CC0 1.0). */
+.card-face,.card-back {
+  background-color:transparent; background-image:url('cards/deck.webp'); background-repeat:no-repeat;
+  background-size:1000% 400%; box-shadow:0 3px 8px #08121360;
 }
-.card-face.red { color:#a12436; }
-.corner { position:absolute; left:7%; top:5%; display:grid; justify-items:center; line-height:.85; font-size:25cqi; }
-.corner small { margin-top:2px; font-size:.72em; }
-.corner.bottom { inset:auto 7% 5% auto; rotate:180deg; }
-.pips { position:absolute; inset:13% 26%; display:grid; grid-template:repeat(5,1fr) / repeat(3,1fr); place-items:center; }
-.pips i { font:700 20cqi/.85 Georgia,serif; }
-.ace { position:absolute; inset:0; display:grid; place-items:center; font-size:62cqi; line-height:1; }
-.court { position:absolute; width:59%; height:62%; inset:19% auto auto 20.5%; }
-.court text { fill:currentColor; font:700 9px Georgia,serif; }
-.card-defs { position:absolute; }
 .hand .card-face.drag-origin { opacity:.35; }
 .drag-card { position:fixed; z-index:80; pointer-events:none; margin:0; box-shadow:0 10px 28px #0008; }
+#cardMotion { position:fixed; inset:0; z-index:75; pointer-events:none; }
+.card-in-flight { position:absolute; margin:0; filter:drop-shadow(0 5px 5px #0007); }
+.motion-hidden { visibility:hidden; }
 .end-panel h2 { color:var(--ink); font-size:17px; text-transform:none; letter-spacing:0; }
 .btns { display:flex; gap:7px; justify-content:center; flex-wrap:wrap; }
 .btns button { flex:1; min-height:39px; padding:8px 10px; border:0; border-radius:9px; background:var(--gold); color:#231c11; font-weight:800; }
@@ -432,13 +424,12 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
     --hand-card:clamp(44px,13.7vw,68px);
     padding:11px 9px 9px; border-radius:23px; gap:4px;
   }
-  .table-center { grid-template-columns:calc(var(--pile-card) + 13px) minmax(0,1fr) calc(var(--pile-card) + 13px); gap:2px; }
-  .stock-art.piled { width:calc(var(--pile-card) + 12px); }
+  .table-center { gap:2px; }
   .pile-label { font-size:8px; letter-spacing:.04em; white-space:nowrap; }
   .pile-label b { font-size:12px; }
   .pairs { gap:6px; padding:6px 0; }
-  .pair { width:calc(var(--pair-card) + 10px); height:calc(var(--pair-card) * 1.43 + 12px); }
-  .pair .cover { transform:translate(8px,9px) rotate(7deg); }
+  .pair { width:calc(var(--pair-card) + 10px); height:calc(var(--pair-card) * 1.4 + 17px); }
+  .pair .cover { transform:translate(8px,15px) rotate(7deg); }
   .hand { gap:4px; padding-inline:2px; }
   .hand.crowded .card-face + .card-face { margin-inline-start:calc(var(--hand-card) * -.42); }
   .game-icon { width:53px; height:53px; }
@@ -490,7 +481,7 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
       <li>Если берёшь, соперники могут ещё подкинуть. После захода первым добирает тот, кто ходил, а отбивавшийся добирает последним.</li>
       <li>Когда колода пуста, игрок без карт выходит. Кто остался с картами последним, проиграл.</li>
     </ol></details>
-    <p class="hint version">Версия от 06.11.2026 11:27</p>
+    <p class="hint version">Версия от 06.11.2026 11:39</p>
   </div>
 </section>
 
@@ -524,41 +515,7 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
   </main>
 </section>
 
-<svg class="card-defs" width="0" height="0" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <g id="court-frame">
-      <rect x=".6" y=".6" width="38.8" height="52.8" rx="3" fill="#f4e8ce" stroke="currentColor" opacity=".86"/>
-      <path d="M3 45 36 10M3 36 30 7M12 48 37 22" stroke="#bf945b" stroke-width=".7" opacity=".6"/>
-    </g>
-    <g id="court-5">
-      <use href="#court-frame"/>
-      <path d="M5 43c1-11 6-15 14-17l6 4 2 15H5z" fill="currentColor"/>
-      <path d="m11 29 6 6 6-5-5 15-7-10z" fill="#d5a85f"/>
-      <path d="M15 14h10v7l-3 2v5h-6v-5l-2-3z" fill="#e8bd92" stroke="currentColor"/>
-      <path d="M12 18c-2-5 1-9 7-9 3 0 6 2 8 6l-8-1-7 4z" fill="currentColor"/>
-      <path d="M26 13c0-5 3-7 8-7-1 4-4 6-8 7Z" fill="#c89243"/>
-      <path d="m6 38 7-19m-9 15 6 2" stroke="#d0a056" stroke-width="1.5"/>
-    </g>
-    <g id="court-6">
-      <use href="#court-frame"/>
-      <path d="M7 44c1-9 5-14 12-16l7 3 4 13H7z" fill="currentColor"/>
-      <path d="m15 28 5 5 6-3-3 10-3 4-5-9z" fill="#d6aa66"/>
-      <path d="M11 28c3-5-1-15 7-16 8-1 9 8 9 16l-7-2z" fill="currentColor"/>
-      <path d="M15 16h10v6l-3 4h-4l-2-4z" fill="#e8bd92" stroke="currentColor"/>
-      <path d="m13 10 3 2 3-5 3 5 4-2-2 6h-9z" fill="#cb994f" stroke="currentColor" stroke-width=".8"/>
-      <path d="m28 33 5-14m0 1c-6 0-4-7 1-4 4-3 7 4-1 4Z" fill="#b36d63" stroke="#876340"/>
-    </g>
-    <g id="court-7">
-      <use href="#court-frame"/>
-      <path d="M5 44c2-10 7-14 14-17l8 5 2 12z" fill="currentColor"/>
-      <path d="m14 30 5 4 6-4-4 14h-5z" fill="#d4a660"/>
-      <path d="M14 16h12v8l-4 5h-5l-3-6z" fill="#e9be93" stroke="currentColor"/>
-      <path d="M14 22c2 2 3 3 5 1 3 1 4 1 7-2l-2 7-4 3-5-4z" fill="currentColor"/>
-      <path d="m12 10 4 2 3-5 3 5 5-2-2 7H14z" fill="#cb994f" stroke="currentColor" stroke-width=".8"/>
-      <path d="m29 37 5-20 1-1-2 22m-6-5 9 2" fill="#af956c" stroke="#805b33"/>
-    </g>
-  </defs>
-</svg>
+<div id="cardMotion" aria-hidden="true"></div>
 <dialog id="lobby" class="lobby" aria-labelledby="lbTitle">
   <h2 id="lbTitle">Онлайн на двоих</h2><p id="lbText"></p><div id="lbCode" class="code" hidden></div>
   <div class="join" id="lbLinkRow" hidden><input id="lbLink" aria-label="Ссылка на игру" readonly><button id="lbCopy">Копировать</button></div>
@@ -708,7 +665,7 @@ var Net2P = (function () {
 
   const SIZE = 36, HAND = 6;
   const CARDS = Array.from({length: SIZE}, (_, i) => i);
-  const RANKS = ['6','7','8','9','10','В','Д','К','Т'];
+  const RANKS = ['6','7','8','9','10','J','Q','K','A'];
   const SUITS = ['♣','♦','♥','♠'];
   const rank = card => card % 9;
   const suit = card => Math.floor(card / 9);
@@ -912,8 +869,11 @@ if (typeof module !== 'undefined') module.exports = Durak;
   const SUIT_NAME = ['трефы','бубны','червы','пики'];
   const SUIT_CARD = ['треф','бубен','червей','пик'];
   const RANK_NAME = ['6','7','8','9','10','Валет','Дама','Король','Туз'];
-  const PIPS = [[0,2,6,8,12,14],[0,2,4,6,8,12,14],[0,2,4,6,8,10,12,14],
-    [0,2,3,5,7,9,11,12,14],[0,2,3,5,6,8,9,11,12,14]];
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const motionLayer = $('cardMotion');
+  const deckImage = new Image();
+  deckImage.src = 'cards/deck.webp';
+  const artReady = deckImage.decode().catch(() => {});
   const prefs = {mode:'bot',count:2};
   try { Object.assign(prefs, JSON.parse(localStorage.getItem(ID+'-settings') || '{}')); } catch (e) {}
   if (prefs.mode !== 'net') prefs.mode = 'bot';
@@ -956,23 +916,16 @@ if (typeof module !== 'undefined') module.exports = Durak;
     return game.online ? 'Друг' : game.view.count === 2 ? 'Бот' : 'Бот '+seat;
   }
   function cardMarkup(card, cls = '', button = false) {
-    const suit = D.suit(card), glyph = D.SUITS[suit], rank = D.rank(card);
-    const corner = D.RANKS[rank]+'<small>'+glyph+'</small>';
-    const pips = PIPS[rank];
-    const art = pips ? '<span class="pips" aria-hidden="true">'+pips.map(slot =>
-      '<i style="grid-area:'+ (Math.floor(slot/3)+1) +' / '+ (slot%3+1) +'">'+glyph+'</i>').join('')+'</span>'
-      : rank === 8 ? '<span class="ace" aria-hidden="true">'+glyph+'</span>'
-      : '<svg class="court" aria-hidden="true" viewBox="0 0 40 54"><use href="#court-'+rank+'"/><text x="29" y="46">'+glyph+'</text></svg>';
     const tag = button ? 'button' : 'div';
-    return '<'+tag+' '+(button?'type="button"':'role="img"')+' class="card-face '+cls+(suit===1||suit===2?' red':'')
-      +'" data-card="'+card+'" aria-label="'+cardName(card)+'"><span class="corner" aria-hidden="true">'+corner+'</span>'
-      +art+'<span class="corner bottom" aria-hidden="true">'+corner+'</span></'+tag+'>';
+    const position = (D.rank(card)*100/9)+'% '+(D.suit(card)*100/3)+'%';
+    return '<'+tag+' '+(button?'type="button"':'role="img"')+' class="card-face '+cls+'" style="background-position:'+position
+      +'" data-card="'+card+'" aria-label="'+cardName(card)+'"></'+tag+'>';
   }
   function isOut(v, seat) {
     return !v.deckCount && !v.counts[seat] && (v.phase === 'lead' || v.phase === 'end' || seat !== v.defender);
   }
   function canAct() {
-    return !!game && !game.paused && !game.pending && !game.view.result && game.view.actor === game.seat
+    return !!game && !game.moving && !game.pending && !game.view.result && game.view.actor === game.seat
       && (!game.online || Net2P.online());
   }
   function resultTitle(v) {
@@ -983,6 +936,7 @@ if (typeof module !== 'undefined') module.exports = Durak;
   function currentStatus(v) {
     if (v.result) return resultTitle(v);
     if (game.online && !Net2P.online()) return 'Связь с другом потеряна';
+    if (game.dealing) return 'Раздача';
     if (game.paused) return v.resolved.taking ? 'Карты взяты' : 'Бито';
     if (game.pending) return 'Отправляем ход…';
     if (v.actor === game.seat) {
@@ -1011,18 +965,23 @@ if (typeof module !== 'undefined') module.exports = Durak;
     $('status').textContent = currentStatus(v);
     $('status').classList.toggle('my-turn',act);
     $('stock').innerHTML = v.deckCount
-      ? '<div class="stock-art'+(v.deckCount>1?' piled':'')+'">'+cardMarkup(v.trumpCard)+(v.deckCount>1?'<i class="card-back" aria-hidden="true"></i>':'')+'</div><span>'+cardsLabel(v.deckCount)+'</span>'
+      ? '<div class="stock-art'+(v.deckCount>1?' piled':'')+'">'+cardMarkup(v.trumpCard,'stock-trump')+(v.deckCount>1?'<i class="card-back" aria-hidden="true"></i>':'')+'</div><span>'+cardsLabel(v.deckCount)+'</span>'
       : '<span class="empty-pile" aria-hidden="true">'+D.SUITS[v.trump]+'</span><span>Пусто</span>';
     $('stock').setAttribute('aria-label','Козырь — '+SUIT_NAME[v.trump]+'. В колоде '+cardsLabel(v.deckCount));
-    $('stock').insertAdjacentHTML('afterbegin','<span class="pile-label">Козырь <b class="'+(v.trump===1||v.trump===2?'red-suit':'')+'">'+D.SUITS[v.trump]+'</b></span>');
+    const trumpLabel = (v.deckCount ? D.RANKS[D.rank(v.trumpCard)]+' ' : '')+D.SUITS[v.trump];
+    $('stock').insertAdjacentHTML('afterbegin','<span class="pile-label">Козырь <b class="'+(v.trump===1||v.trump===2?'red-suit':'')+'">'+trumpLabel+'</b></span>');
     $('discard').setAttribute('aria-label','Отбой · '+cardsLabel(v.discardCount));
     $('discard').innerHTML = '<span class="pile-label">Отбой</span>'+(v.discardCount ? '<i class="card-back" aria-hidden="true"></i>' : '<i class="empty-pile" aria-hidden="true"></i>')
       +'<span>'+v.discardCount+'</span>';
 
     const past = (game.paused || (v.result && !v.table.length)) && v.resolved;
     const table = past ? past.table : v.table;
-    $('pairs').innerHTML = table.length ? table.map(pair => '<div class="pair">'+cardMarkup(pair.attack,'attack')
-      +(pair.cover===null?'':cardMarkup(pair.cover,'cover'))+'</div>').join('') : '<div class="table-mark" aria-hidden="true">♠</div>';
+    const pairs = $('pairs'), tableKey = table.map(pair => pair.attack+':'+pair.cover).join(',');
+    if (pairs.dataset.cards !== tableKey) {
+      pairs.dataset.cards = tableKey;
+      pairs.innerHTML = table.length ? table.map(pair => '<div class="pair">'+cardMarkup(pair.attack,'attack')
+        +(pair.cover===null?'':cardMarkup(pair.cover,'cover'))+'</div>').join('') : '<div class="table-mark" aria-hidden="true">♠</div>';
+    }
     $('takeBtn').hidden = !act || v.phase !== 'defend';
     $('passBtn').hidden = !act || v.phase !== 'throw';
     $('passBtn').textContent = v.taking ? 'Не подкидывать' : v.count === 2 ? 'Бито' : 'Не подкидывать';
@@ -1052,30 +1011,75 @@ if (typeof module !== 'undefined') module.exports = Durak;
   function clearTimers() {
     clearTimeout(botTimer); clearTimeout(pauseTimer);
     botTimer = pauseTimer = 0;
+    for (const layer of [motionLayer,$('pairs')]) {
+      layer.getAnimations({subtree:true}).forEach(animation => animation.cancel());
+    }
+    motionLayer.replaceChildren();
+    for (const card of $('game').querySelectorAll('.motion-hidden')) card.classList.remove('motion-hidden');
   }
   function seatOrigin(seat) {
     return (seat === game.seat ? $('hand') : $('players').querySelector('[data-seat="'+seat+'"] .rival-stack'))?.getBoundingClientRect();
   }
-  function animateCard(card, origin, duration) {
-    if (!origin || !card || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  function flyCard(card, origin, {duration, delay = 0, faceDown = false}) {
+    if (!origin || !card) return 0;
     const target = card.getBoundingClientRect();
-    const dx = origin.left + (origin.width - target.width)/2 - target.left;
-    const dy = origin.top + (origin.height - target.height)/2 - target.top;
-    card.animate([{translate:dx+'px '+dy+'px',scale:.88},{translate:'0 0',scale:1}],
-      {duration,easing:'cubic-bezier(.22,.78,.3,1)'});
+    const width = card.offsetWidth, height = card.offsetHeight;
+    const dx = target.left+target.width/2-origin.left-origin.width/2;
+    const dy = target.top+target.height/2-origin.top-origin.height/2;
+    const flying = document.createElement('div');
+    flying.className = (faceDown?'card-back':'card-face')+' card-in-flight';
+    if (!faceDown) flying.style.backgroundPosition = card.style.backgroundPosition;
+    Object.assign(flying.style,{width:width+'px',height:height+'px',left:origin.left+(origin.width-width)/2+'px',top:origin.top+(origin.height-height)/2+'px'});
+    motionLayer.append(flying);
+    card.classList.add('motion-hidden');
+    const scale = Math.max(.62,Math.min(1.3,origin.width/width));
+    const angle = card.classList.contains('cover') ? 7 : 0;
+    const frames = [
+      {transform:'scale('+scale+') rotate(-8deg)',opacity:delay?0:1},
+      {transform:'translate3d('+dx*.53+'px,'+(dy*.47-22)+'px,0) scale(1.08) rotate(4deg)',opacity:1,offset:.46},
+      {transform:'translate3d('+dx+'px,'+dy+'px,0) rotate('+angle+'deg)',opacity:1}
+    ];
+    if (delay) frames.splice(1,0,{transform:frames[0].transform,opacity:1,offset:.035});
+    const flight = flying.animate(frames,{duration,delay,fill:'both',easing:'cubic-bezier(.36,.18,.28,1)'});
+    flight.onfinish = () => { flying.remove(); card.classList.remove('motion-hidden'); };
+    return duration+delay;
   }
-  function collectTable({taking,defender}) {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const target = taking ? seatOrigin(defender) : $('discard').getBoundingClientRect();
-    if (!target) return;
+  function collectTable({taking,defender}, delay) {
+    const target = taking ? seatOrigin(defender) : $('discard').querySelector('.card-back,.empty-pile')?.getBoundingClientRect();
+    if (!target) return delay;
     const cards = $('pairs').querySelectorAll('.card-face');
+    const duration = reducedMotion.matches ? 140 : 440;
     cards.forEach((card,index) => {
       const r = card.getBoundingClientRect();
       const x = target.left + (target.width-r.width)/2 - r.left;
       const y = target.top + (target.height-r.height)/2 - r.top;
-      card.animate([{translate:'0 0',scale:1,opacity:1},{translate:x+'px '+y+'px',scale:.38,opacity:0}],
-        {delay:370 + index*5,duration:230,fill:'forwards',easing:'cubic-bezier(.48,0,.76,.5)'});
+      const base = getComputedStyle(card).transform;
+      const end = reducedMotion.matches ? base : 'translate3d('+x+'px,'+y+'px,0) scale(.42) '+(base==='none'?'':base);
+      card.animate([{transform:base,opacity:1},{transform:end,opacity:0}],
+        {delay:delay + index*10,duration,fill:'forwards',easing:'cubic-bezier(.48,0,.76,.5)'});
     });
+    return delay+duration+cards.length*10;
+  }
+  function afterMotion(duration) {
+    const current = game;
+    pauseTimer = setTimeout(() => {
+      if (game !== current) return;
+      game.moving = game.paused = game.dealing = false;
+      render(); scheduleBot();
+    },duration);
+  }
+  function dealCards() {
+    const stock = $('stock').querySelector('.stock-art .card-back')?.getBoundingClientRect();
+    const hand = $('hand').querySelectorAll('button');
+    const opponents = Array.from($('players').querySelectorAll('.rival-stack'), stack => stack.children);
+    const destinations = [...opponents,hand];
+    let step = 0;
+    for (let index=0;index<hand.length;index++) {
+      for (const cards of destinations) {
+        if (cards[index]) flyCard(cards[index],stock,{duration:430,delay:step++*46,faceDown:true});
+      }
+    }
+    afterMotion(430+step*46);
   }
   function showView(next, animate) {
     clearTimers();
@@ -1085,28 +1089,37 @@ if (typeof module !== 'undefined') module.exports = Durak;
       && Number.isInteger(last.seat) && (last.card !== previous.last?.card || last.seat !== previous.last.seat);
     const origin = played && (game.cardOrigin || seatOrigin(last.seat));
     game.paused = !!(animate && !next.result && next.resolved && next.resolved.round !== previous.resolved?.round);
+    game.moving = !!(game.paused || played);
+    game.dealing = false;
     game.cardOrigin = null;
     game.view = next;
     game.pending = false;
     render();
-    if (game.paused) {
-      collectTable(next.resolved);
-      const current = game;
-      pauseTimer = setTimeout(() => {
-        if (game !== current) return;
-        game.paused = false; render(); scheduleBot();
-      },660);
-    } else scheduleBot();
-    if (played) animateCard($('pairs').querySelector('[data-card="'+last.card+'"]'),origin,last.seat===game.seat?210:340);
+    let duration = 0;
+    if (played) {
+      const card = $('pairs').querySelector('[data-card="'+last.card+'"]');
+      if (card && reducedMotion.matches) {
+        duration = 150;
+        card.animate([{opacity:0},{opacity:1}],duration);
+      } else duration = flyCard(card,origin,{duration:last.seat===game.seat?380:620});
+    }
+    if (game.paused) duration = collectTable(next.resolved,duration+190);
+    if (game.moving) afterMotion(duration);
+    else scheduleBot();
   }
   function enter(options, initial) {
     clearTimers();
-    game = {...options,view:initial,pending:false,paused:false};
+    const dealing = initial.version===0 && !reducedMotion.matches;
+    game = {...options,view:initial,pending:false,paused:false,moving:dealing,dealing};
     if ($('lobby').open) $('lobby').close();
     if ($('restartDialog').open) $('restartDialog').close();
     $('menu').hidden = true; $('game').hidden = false;
     $('game').scrollTop = 0;
-    render(); scheduleBot();
+    render();
+    if (dealing) {
+      const current = game;
+      artReady.then(() => { if (game === current && game.dealing) dealCards(); });
+    } else scheduleBot();
   }
   function sendState() {
     return Net2P.send({t:'state',id:game.id,view:D.view(game.state,1)});
@@ -1120,13 +1133,13 @@ if (typeof module !== 'undefined') module.exports = Durak;
   }
   function scheduleBot() {
     clearTimeout(botTimer);
-    if (!game || game.online || game.paused || game.view.result || game.state.actor === game.seat) return;
+    if (!game || game.online || game.moving || game.view.result || game.state.actor === game.seat) return;
     const current = game, state = game.state;
     botTimer = setTimeout(() => {
-      if (game !== current || game.state !== state || game.paused) return;
+      if (game !== current || game.state !== state || game.moving) return;
       const seat = state.actor;
       update(D.play(state,seat,D.bot(D.view(state,seat))));
-    },isOut(game.view,game.seat)?260:460);
+    },isOut(game.view,game.seat)?180:300);
   }
   function act(action) {
     if (!canAct()) return false;
@@ -1159,7 +1172,7 @@ if (typeof module !== 'undefined') module.exports = Durak;
     button.classList.remove('drag-origin');
     if (hand.hasPointerCapture(id)) hand.releasePointerCapture(id);
     if (!ghost) return;
-    if (!returnToHand || matchMedia('(prefers-reduced-motion: reduce)').matches) { ghost.remove(); return; }
+    if (!returnToHand || reducedMotion.matches) { ghost.remove(); return; }
     const target = button.getBoundingClientRect();
     const animation = ghost.animate([{left:ghost.style.left,top:ghost.style.top}, {left:target.left+'px',top:target.top+'px'}],
       {duration:180,easing:'ease-out'});
@@ -1273,7 +1286,7 @@ if (typeof module !== 'undefined') module.exports = Durak;
   function hostData(d) {
     if (match.receive(d,1) || !game || !game.online || !game.state || d.t !== 'try') return;
     if (d.id !== game.id || d.version !== game.state.version) { sendState(); return; }
-    const next = !game.paused && D.play(game.state,1,d.action);
+    const next = D.play(game.state,1,d.action);
     if (!update(next)) Net2P.send({t:'nack',id:game.id});
   }
   function guestData(d) {

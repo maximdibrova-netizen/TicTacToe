@@ -3,7 +3,7 @@ var Durak = (function () {
 
   const SIZE = 36, HAND = 6;
   const CARDS = Array.from({length: SIZE}, (_, i) => i);
-  const RANKS = ['6','7','8','9','10','В','Д','К','Т'];
+  const RANKS = ['6','7','8','9','10','J','Q','K','A'];
   const SUITS = ['♣','♦','♥','♠'];
   const rank = card => card % 9;
   const suit = card => Math.floor(card / 9);

@@ -6,8 +6,11 @@
   const SUIT_NAME = ['трефы','бубны','червы','пики'];
   const SUIT_CARD = ['треф','бубен','червей','пик'];
   const RANK_NAME = ['6','7','8','9','10','Валет','Дама','Король','Туз'];
-  const PIPS = [[0,2,6,8,12,14],[0,2,4,6,8,12,14],[0,2,4,6,8,10,12,14],
-    [0,2,3,5,7,9,11,12,14],[0,2,3,5,6,8,9,11,12,14]];
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const motionLayer = $('cardMotion');
+  const deckImage = new Image();
+  deckImage.src = 'cards/deck.webp';
+  const artReady = deckImage.decode().catch(() => {});
   const prefs = {mode:'bot',count:2};
   try { Object.assign(prefs, JSON.parse(localStorage.getItem(ID+'-settings') || '{}')); } catch (e) {}
   if (prefs.mode !== 'net') prefs.mode = 'bot';
@@ -50,23 +53,16 @@
     return game.online ? 'Друг' : game.view.count === 2 ? 'Бот' : 'Бот '+seat;
   }
   function cardMarkup(card, cls = '', button = false) {
-    const suit = D.suit(card), glyph = D.SUITS[suit], rank = D.rank(card);
-    const corner = D.RANKS[rank]+'<small>'+glyph+'</small>';
-    const pips = PIPS[rank];
-    const art = pips ? '<span class="pips" aria-hidden="true">'+pips.map(slot =>
-      '<i style="grid-area:'+ (Math.floor(slot/3)+1) +' / '+ (slot%3+1) +'">'+glyph+'</i>').join('')+'</span>'
-      : rank === 8 ? '<span class="ace" aria-hidden="true">'+glyph+'</span>'
-      : '<svg class="court" aria-hidden="true" viewBox="0 0 40 54"><use href="#court-'+rank+'"/><text x="29" y="46">'+glyph+'</text></svg>';
     const tag = button ? 'button' : 'div';
-    return '<'+tag+' '+(button?'type="button"':'role="img"')+' class="card-face '+cls+(suit===1||suit===2?' red':'')
-      +'" data-card="'+card+'" aria-label="'+cardName(card)+'"><span class="corner" aria-hidden="true">'+corner+'</span>'
-      +art+'<span class="corner bottom" aria-hidden="true">'+corner+'</span></'+tag+'>';
+    const position = (D.rank(card)*100/9)+'% '+(D.suit(card)*100/3)+'%';
+    return '<'+tag+' '+(button?'type="button"':'role="img"')+' class="card-face '+cls+'" style="background-position:'+position
+      +'" data-card="'+card+'" aria-label="'+cardName(card)+'"></'+tag+'>';
   }
   function isOut(v, seat) {
     return !v.deckCount && !v.counts[seat] && (v.phase === 'lead' || v.phase === 'end' || seat !== v.defender);
   }
   function canAct() {
-    return !!game && !game.paused && !game.pending && !game.view.result && game.view.actor === game.seat
+    return !!game && !game.moving && !game.pending && !game.view.result && game.view.actor === game.seat
       && (!game.online || Net2P.online());
   }
   function resultTitle(v) {
@@ -77,6 +73,7 @@
   function currentStatus(v) {
     if (v.result) return resultTitle(v);
     if (game.online && !Net2P.online()) return 'Связь с другом потеряна';
+    if (game.dealing) return 'Раздача';
     if (game.paused) return v.resolved.taking ? 'Карты взяты' : 'Бито';
     if (game.pending) return 'Отправляем ход…';
     if (v.actor === game.seat) {
@@ -105,18 +102,23 @@
     $('status').textContent = currentStatus(v);
     $('status').classList.toggle('my-turn',act);
     $('stock').innerHTML = v.deckCount
-      ? '<div class="stock-art'+(v.deckCount>1?' piled':'')+'">'+cardMarkup(v.trumpCard)+(v.deckCount>1?'<i class="card-back" aria-hidden="true"></i>':'')+'</div><span>'+cardsLabel(v.deckCount)+'</span>'
+      ? '<div class="stock-art'+(v.deckCount>1?' piled':'')+'">'+cardMarkup(v.trumpCard,'stock-trump')+(v.deckCount>1?'<i class="card-back" aria-hidden="true"></i>':'')+'</div><span>'+cardsLabel(v.deckCount)+'</span>'
       : '<span class="empty-pile" aria-hidden="true">'+D.SUITS[v.trump]+'</span><span>Пусто</span>';
     $('stock').setAttribute('aria-label','Козырь — '+SUIT_NAME[v.trump]+'. В колоде '+cardsLabel(v.deckCount));
-    $('stock').insertAdjacentHTML('afterbegin','<span class="pile-label">Козырь <b class="'+(v.trump===1||v.trump===2?'red-suit':'')+'">'+D.SUITS[v.trump]+'</b></span>');
+    const trumpLabel = (v.deckCount ? D.RANKS[D.rank(v.trumpCard)]+' ' : '')+D.SUITS[v.trump];
+    $('stock').insertAdjacentHTML('afterbegin','<span class="pile-label">Козырь <b class="'+(v.trump===1||v.trump===2?'red-suit':'')+'">'+trumpLabel+'</b></span>');
     $('discard').setAttribute('aria-label','Отбой · '+cardsLabel(v.discardCount));
     $('discard').innerHTML = '<span class="pile-label">Отбой</span>'+(v.discardCount ? '<i class="card-back" aria-hidden="true"></i>' : '<i class="empty-pile" aria-hidden="true"></i>')
       +'<span>'+v.discardCount+'</span>';
 
     const past = (game.paused || (v.result && !v.table.length)) && v.resolved;
     const table = past ? past.table : v.table;
-    $('pairs').innerHTML = table.length ? table.map(pair => '<div class="pair">'+cardMarkup(pair.attack,'attack')
-      +(pair.cover===null?'':cardMarkup(pair.cover,'cover'))+'</div>').join('') : '<div class="table-mark" aria-hidden="true">♠</div>';
+    const pairs = $('pairs'), tableKey = table.map(pair => pair.attack+':'+pair.cover).join(',');
+    if (pairs.dataset.cards !== tableKey) {
+      pairs.dataset.cards = tableKey;
+      pairs.innerHTML = table.length ? table.map(pair => '<div class="pair">'+cardMarkup(pair.attack,'attack')
+        +(pair.cover===null?'':cardMarkup(pair.cover,'cover'))+'</div>').join('') : '<div class="table-mark" aria-hidden="true">♠</div>';
+    }
     $('takeBtn').hidden = !act || v.phase !== 'defend';
     $('passBtn').hidden = !act || v.phase !== 'throw';
     $('passBtn').textContent = v.taking ? 'Не подкидывать' : v.count === 2 ? 'Бито' : 'Не подкидывать';
@@ -146,30 +148,75 @@
   function clearTimers() {
     clearTimeout(botTimer); clearTimeout(pauseTimer);
     botTimer = pauseTimer = 0;
+    for (const layer of [motionLayer,$('pairs')]) {
+      layer.getAnimations({subtree:true}).forEach(animation => animation.cancel());
+    }
+    motionLayer.replaceChildren();
+    for (const card of $('game').querySelectorAll('.motion-hidden')) card.classList.remove('motion-hidden');
   }
   function seatOrigin(seat) {
     return (seat === game.seat ? $('hand') : $('players').querySelector('[data-seat="'+seat+'"] .rival-stack'))?.getBoundingClientRect();
   }
-  function animateCard(card, origin, duration) {
-    if (!origin || !card || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  function flyCard(card, origin, {duration, delay = 0, faceDown = false}) {
+    if (!origin || !card) return 0;
     const target = card.getBoundingClientRect();
-    const dx = origin.left + (origin.width - target.width)/2 - target.left;
-    const dy = origin.top + (origin.height - target.height)/2 - target.top;
-    card.animate([{translate:dx+'px '+dy+'px',scale:.88},{translate:'0 0',scale:1}],
-      {duration,easing:'cubic-bezier(.22,.78,.3,1)'});
+    const width = card.offsetWidth, height = card.offsetHeight;
+    const dx = target.left+target.width/2-origin.left-origin.width/2;
+    const dy = target.top+target.height/2-origin.top-origin.height/2;
+    const flying = document.createElement('div');
+    flying.className = (faceDown?'card-back':'card-face')+' card-in-flight';
+    if (!faceDown) flying.style.backgroundPosition = card.style.backgroundPosition;
+    Object.assign(flying.style,{width:width+'px',height:height+'px',left:origin.left+(origin.width-width)/2+'px',top:origin.top+(origin.height-height)/2+'px'});
+    motionLayer.append(flying);
+    card.classList.add('motion-hidden');
+    const scale = Math.max(.62,Math.min(1.3,origin.width/width));
+    const angle = card.classList.contains('cover') ? 7 : 0;
+    const frames = [
+      {transform:'scale('+scale+') rotate(-8deg)',opacity:delay?0:1},
+      {transform:'translate3d('+dx*.53+'px,'+(dy*.47-22)+'px,0) scale(1.08) rotate(4deg)',opacity:1,offset:.46},
+      {transform:'translate3d('+dx+'px,'+dy+'px,0) rotate('+angle+'deg)',opacity:1}
+    ];
+    if (delay) frames.splice(1,0,{transform:frames[0].transform,opacity:1,offset:.035});
+    const flight = flying.animate(frames,{duration,delay,fill:'both',easing:'cubic-bezier(.36,.18,.28,1)'});
+    flight.onfinish = () => { flying.remove(); card.classList.remove('motion-hidden'); };
+    return duration+delay;
   }
-  function collectTable({taking,defender}) {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const target = taking ? seatOrigin(defender) : $('discard').getBoundingClientRect();
-    if (!target) return;
+  function collectTable({taking,defender}, delay) {
+    const target = taking ? seatOrigin(defender) : $('discard').querySelector('.card-back,.empty-pile')?.getBoundingClientRect();
+    if (!target) return delay;
     const cards = $('pairs').querySelectorAll('.card-face');
+    const duration = reducedMotion.matches ? 140 : 440;
     cards.forEach((card,index) => {
       const r = card.getBoundingClientRect();
       const x = target.left + (target.width-r.width)/2 - r.left;
       const y = target.top + (target.height-r.height)/2 - r.top;
-      card.animate([{translate:'0 0',scale:1,opacity:1},{translate:x+'px '+y+'px',scale:.38,opacity:0}],
-        {delay:370 + index*5,duration:230,fill:'forwards',easing:'cubic-bezier(.48,0,.76,.5)'});
+      const base = getComputedStyle(card).transform;
+      const end = reducedMotion.matches ? base : 'translate3d('+x+'px,'+y+'px,0) scale(.42) '+(base==='none'?'':base);
+      card.animate([{transform:base,opacity:1},{transform:end,opacity:0}],
+        {delay:delay + index*10,duration,fill:'forwards',easing:'cubic-bezier(.48,0,.76,.5)'});
     });
+    return delay+duration+cards.length*10;
+  }
+  function afterMotion(duration) {
+    const current = game;
+    pauseTimer = setTimeout(() => {
+      if (game !== current) return;
+      game.moving = game.paused = game.dealing = false;
+      render(); scheduleBot();
+    },duration);
+  }
+  function dealCards() {
+    const stock = $('stock').querySelector('.stock-art .card-back')?.getBoundingClientRect();
+    const hand = $('hand').querySelectorAll('button');
+    const opponents = Array.from($('players').querySelectorAll('.rival-stack'), stack => stack.children);
+    const destinations = [...opponents,hand];
+    let step = 0;
+    for (let index=0;index<hand.length;index++) {
+      for (const cards of destinations) {
+        if (cards[index]) flyCard(cards[index],stock,{duration:430,delay:step++*46,faceDown:true});
+      }
+    }
+    afterMotion(430+step*46);
   }
   function showView(next, animate) {
     clearTimers();
@@ -179,28 +226,37 @@
       && Number.isInteger(last.seat) && (last.card !== previous.last?.card || last.seat !== previous.last.seat);
     const origin = played && (game.cardOrigin || seatOrigin(last.seat));
     game.paused = !!(animate && !next.result && next.resolved && next.resolved.round !== previous.resolved?.round);
+    game.moving = !!(game.paused || played);
+    game.dealing = false;
     game.cardOrigin = null;
     game.view = next;
     game.pending = false;
     render();
-    if (game.paused) {
-      collectTable(next.resolved);
-      const current = game;
-      pauseTimer = setTimeout(() => {
-        if (game !== current) return;
-        game.paused = false; render(); scheduleBot();
-      },660);
-    } else scheduleBot();
-    if (played) animateCard($('pairs').querySelector('[data-card="'+last.card+'"]'),origin,last.seat===game.seat?210:340);
+    let duration = 0;
+    if (played) {
+      const card = $('pairs').querySelector('[data-card="'+last.card+'"]');
+      if (card && reducedMotion.matches) {
+        duration = 150;
+        card.animate([{opacity:0},{opacity:1}],duration);
+      } else duration = flyCard(card,origin,{duration:last.seat===game.seat?380:620});
+    }
+    if (game.paused) duration = collectTable(next.resolved,duration+190);
+    if (game.moving) afterMotion(duration);
+    else scheduleBot();
   }
   function enter(options, initial) {
     clearTimers();
-    game = {...options,view:initial,pending:false,paused:false};
+    const dealing = initial.version===0 && !reducedMotion.matches;
+    game = {...options,view:initial,pending:false,paused:false,moving:dealing,dealing};
     if ($('lobby').open) $('lobby').close();
     if ($('restartDialog').open) $('restartDialog').close();
     $('menu').hidden = true; $('game').hidden = false;
     $('game').scrollTop = 0;
-    render(); scheduleBot();
+    render();
+    if (dealing) {
+      const current = game;
+      artReady.then(() => { if (game === current && game.dealing) dealCards(); });
+    } else scheduleBot();
   }
   function sendState() {
     return Net2P.send({t:'state',id:game.id,view:D.view(game.state,1)});
@@ -214,13 +270,13 @@
   }
   function scheduleBot() {
     clearTimeout(botTimer);
-    if (!game || game.online || game.paused || game.view.result || game.state.actor === game.seat) return;
+    if (!game || game.online || game.moving || game.view.result || game.state.actor === game.seat) return;
     const current = game, state = game.state;
     botTimer = setTimeout(() => {
-      if (game !== current || game.state !== state || game.paused) return;
+      if (game !== current || game.state !== state || game.moving) return;
       const seat = state.actor;
       update(D.play(state,seat,D.bot(D.view(state,seat))));
-    },isOut(game.view,game.seat)?260:460);
+    },isOut(game.view,game.seat)?180:300);
   }
   function act(action) {
     if (!canAct()) return false;
@@ -253,7 +309,7 @@
     button.classList.remove('drag-origin');
     if (hand.hasPointerCapture(id)) hand.releasePointerCapture(id);
     if (!ghost) return;
-    if (!returnToHand || matchMedia('(prefers-reduced-motion: reduce)').matches) { ghost.remove(); return; }
+    if (!returnToHand || reducedMotion.matches) { ghost.remove(); return; }
     const target = button.getBoundingClientRect();
     const animation = ghost.animate([{left:ghost.style.left,top:ghost.style.top}, {left:target.left+'px',top:target.top+'px'}],
       {duration:180,easing:'ease-out'});
@@ -367,7 +423,7 @@
   function hostData(d) {
     if (match.receive(d,1) || !game || !game.online || !game.state || d.t !== 'try') return;
     if (d.id !== game.id || d.version !== game.state.version) { sendState(); return; }
-    const next = !game.paused && D.play(game.state,1,d.action);
+    const next = D.play(game.state,1,d.action);
     if (!update(next)) Net2P.send({t:'nack',id:game.id});
   }
   function guestData(d) {
