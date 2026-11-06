@@ -19,3 +19,4 @@ body.view-no-history:not(.view-analysis) #abMain{display:block;max-width:620px}b
 .end-panel h2 { color: var(--ink); font-size: 16px; letter-spacing: 0; text-transform: none; }
 .end-panel p { color: var(--ink-dim); font-size: 13px; }
 .end-panel button { font-size: 13px; padding: 9px; }
+#board [data-falling] { pointer-events: none; }

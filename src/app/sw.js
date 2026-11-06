@@ -46,7 +46,8 @@ function networkFirst(req) {
       fromCache(req).then(function (r) { if (r && !done) { done = true; resolve(r); } });
     };
     var t = setTimeout(fallback, 4000);           // плохая сеть — не ждём бесконечно
-    fetch(req).then(function (r) {
+    // Revalidate documents instead of reusing an older HTTP cache entry.
+    fetch(req, req.mode === 'navigate' ? { cache: 'no-cache' } : undefined).then(function (r) {
       clearTimeout(t);
       if (r && r.ok && r.type === 'basic') { var cp = r.clone(); caches.open(CACHE).then(function (c) { c.put(req.url.split('?')[0].split('#')[0], cp); }); }
       if (!done) { done = true; resolve(r); }

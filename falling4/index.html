@@ -304,6 +304,7 @@ body.view-no-history:not(.view-analysis) #abMain{display:block;max-width:620px}b
 .end-panel h2 { color: var(--ink); font-size: 16px; letter-spacing: 0; text-transform: none; }
 .end-panel p { color: var(--ink-dim); font-size: 13px; }
 .end-panel button { font-size: 13px; padding: 9px; }
+#board [data-falling] { pointer-events: none; }
 </style>
 <section id="menu" class="screen">
  <div class="col">
@@ -315,7 +316,7 @@ body.view-no-history:not(.view-analysis) #abMain{display:block;max-width:620px}b
   <div class="card" id="netCard" hidden><h2>Онлайн с другом</h2><div class="seg" style="--cols:2"><button id="netCreate">Создать игру</button><button id="netJoinBtn">Войти по коду</button></div><div class="join" id="joinRow" hidden><input id="joinCode" maxlength="5" placeholder="КОД" aria-label="Код игры" autocomplete="off" spellcheck="false"><button id="joinGo">Войти</button></div><p class="hint">Хозяин выбирает расстановку и время. Другу достаточно ссылки или кода.</p></div>
   <button class="play" id="playBtn">Играть</button><button class="secondary" id="analyzeBtn">Анализ позиции</button>
   <details class="card rules"><summary>Как играть</summary><p>Поле 7 × 6. Нажми на колонку: фишка падает на самое нижнее свободное место. Игроки ходят по очереди. Собери четыре своих фишки по горизонтали, вертикали или диагонали. Если поле заполнено и линии нет — ничья.</p></details>
-  <p class="hint version">Версия от 06.11.2026 08:58</p>
+  <p class="hint version">Версия от 06.11.2026 09:17</p>
  </div>
 </section>
 <section id="game" class="screen" hidden>
@@ -981,7 +982,7 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FallingFour;
  function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(function(){$('toast').hidden=true;},2600);}
  function net(){return Net2P.active();}
  function mySide(){return G.kind[1]==='me'&&G.kind[2]!=='me'?1:G.kind[2]==='me'&&G.kind[1]!=='me'?2:0;}
- function boardMarkup(s,hint){
+ function boardMarkup(s,hint,drop){
   var out=['<rect x="10" y="18" width="460" height="384" rx="22" fill="#22539a" stroke="#6b91c6" stroke-width="3"/>'];
   for(var row=0;row<6;row++)for(var col=0;col<7;col++){
     var i=row*7+col,x=45+col*65,y=54+row*60,disc=s.b[i];
@@ -989,7 +990,9 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FallingFour;
     if(disc){
       var winning=s.win.includes(i);
       var mark=winning?' class="winning-disc"':s.win.length?' class="other-disc"':'';
-      out.push('<circle data-disc="'+disc+'"'+mark+' cx="'+x+'" cy="'+y+'" r="23" fill="'+(disc===1?'#e95850':'#f7d069')+'" stroke="#0004" stroke-width="2"/>');
+      var falling=drop&&i===s.lastCell;
+      if(falling)y=drop.y;
+      out.push('<circle data-disc="'+disc+'"'+(falling?' data-falling=""':'')+mark+' cx="'+x+'" cy="'+y+'" r="23" fill="'+(disc===1?'#e95850':'#f7d069')+'" stroke="#0004" stroke-width="2"/>');
     }
     out.push('</g>');
   }
@@ -1014,7 +1017,7 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FallingFour;
  }
  function startLocal(){Net2P.close();var kind={1:'me',2:'me'};if(S.mode==='bot')kind[3-S.side]='bot';newGame(kind);}
  function engineAllowed(){return !!G&&(!net()||G.over)&&(G.evalOn||G.analysis||G.over);}
- function canTap(){return !!G&&!G.over&&!G.busy&&!G.animating&&!G.netPending&&!G.vote&&G.kind[G.s.turn]==='me'&&!RV.viewing();}
+ function canTap(){return !!G&&!G.over&&!G.busy&&!G.drop&&!G.netPending&&!G.vote&&G.kind[G.s.turn]==='me'&&!RV.viewing();}
  var RV=Review({
   mount:$('rvMount'),status:$('status'),line:function(){return G?G.line:[{s:A.create(0),mv:null,by:0}];},
   play:function(s,m){return A.play(s,m);},over:function(s){return !!s.winner;},toMove:function(s){return s.turn;},me:function(){return mySide()||1;},meName:function(){return mySide()?'Ты':'Красные';},side:function(side){return NAME[side]||'';},same:function(a,b){return a===b;},moveText:function(e){return A.notation(e.mv);},overText:function(s){return s.winner===3?'Ничья':NAME[s.winner]+' победили';},engine:engineAllowed,evalOn:function(){return !!G&&(G.evalOn||G.analysis||G.over);},
@@ -1024,14 +1027,16 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FallingFour;
  function render(){
     BoardView.refresh('falling4');
   if(!G)return;if(GC)GC.sync();if(CONT)CONT.refresh();var d=RV.display(),s=d.s;
-  if(G.drawnPosition!==s||!G.animating&&G.drawnHint!==d.hint){
-    $('board').innerHTML=boardMarkup(s,d.hint);
+  var drop=s===G.s?G.drop:null;
+  if(G.drawnPosition!==s||G.drawnDrop!==drop||!drop&&G.drawnHint!==d.hint){
+    $('board').innerHTML=boardMarkup(s,d.hint,drop);
     G.drawnPosition=s;
     G.drawnHint=d.hint;
+    G.drawnDrop=drop;
   }
   $('setupTitle').textContent=A.setups[G.setup].name;$('modeTitle').textContent=G.analysis?'Анализ без часов':net()?'Онлайн':mySide()?'С ботом':'Вдвоём';
   [1,2].forEach(function(side){var id=side===1?'Black':'White',kind=G.kind[side];$('name'+id).textContent=(kind==='bot'?'Бот · ':kind==='net'?'Друг · ':mySide()?'Ты · ':'')+NAME[side].toLowerCase();$('score'+id).textContent='Фишек осталось: '+(21-Array.from(s.b).filter(function(v){return v===side;}).length);$('rack'+id).innerHTML=Array.from({length:6},function(_,i){return'<i class="'+(i<s.lost[3-side]?'full':'')+'"></i>';}).join('');$('pl'+id).classList.toggle('turn',!s.winner&&s.turn===side);});
-  if(d.mode==='live')$('status').textContent=G.vote?'Ждём согласия на отмену хода':G.animating?'Фишка падает…':G.analysis?(s.winner?'Анализ · финальная позиция':'Анализ · ходят '+NAME[s.turn].toLowerCase()):G.over?'Партия завершена':G.busy?'Бот думает…':G.kind[s.turn]==='net'?'Ходит друг…':'Ходят '+NAME[s.turn].toLowerCase();
+  if(d.mode==='live')$('status').textContent=G.vote?'Ждём согласия на отмену хода':G.drop?'Фишка падает…':G.analysis?(s.winner?'Анализ · финальная позиция':'Анализ · ходят '+NAME[s.turn].toLowerCase()):G.over?'Партия завершена':G.busy?'Бот думает…':G.kind[s.turn]==='net'?'Ходит друг…':'Ходят '+NAME[s.turn].toLowerCase();
   $('hintBtn').hidden=!engineAllowed();$('hintBtn').disabled=!!s.winner;$('againBtn').hidden=net()&&Net2P.role()==='guest';$('undoBtn').disabled=!!G.vote||(d.mode==='live'?undoTarget()<0:false);renderNotation();renderEngine();renderResult();
  }
  function renderNotation(){if(!G)return;var d=RV.display(),at=d.s.path.length,html='<button data-go="0">Начало</button>';G.line.slice(1).forEach(function(e,i){html+='<button data-go="'+(i+1)+'" class="'+(d.mode!=='var'&&at===i+1?'current':'')+'">'+(i%2===0?(i/2+1)+'. ':'')+A.notation(e.mv)+'</button>';});if(d.mode==='var')html+='<div class="branch">Вариант: '+RV.pathHere().map(A.notation).join(' · ')+'</div>';$('notation').innerHTML=html;}
@@ -1045,20 +1050,18 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FallingFour;
  function submit(key){if(!GC.before())return;if(net()&&Net2P.role()==='guest'){G.netPending=true;Net2P.send({t:'try',key:key,n:G.moves.length});render();}else decide(key);}
  function decide(key){if(!GC.before())return;var m=A.legal(G.s,key);if(!m)return;if(net()&&Net2P.role()==='host')Net2P.send({t:'move',key:m.key,n:G.moves.length});apply(m.key);}
  function settleDrop(){
-  if(!G.animating)return;
+  if(!G.drop)return;
   // Move the clock baseline to the end of the pause before resuming it.
   GC.sync();
-  G.animating=false;
+  G.drop=null;
  }
  function apply(key){
-  if(!G||G.over||G.animating||!GC.before())return;
+  if(!G||G.over||G.drop||!GC.before())return;
   var next=A.play(G.s,key);
   if(!next)return;
   var by=G.s.turn,game=G,moveToken=token;
-  var reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // In a network game keep the same turn handoff on both sides, even if
-  // one player has reduced motion enabled or is viewing the move history.
-  G.animating=net()||!reduced;
+  var drop={y:-24};
+  G.drop=drop;
   G.s=next;
   G.moves.push(next.last);
   G.line.push({s:next,mv:next.last,by:by});
@@ -1071,29 +1074,34 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FallingFour;
   if(G.over&&RV.viewing())RV.go(-1);
   else render();
 
+  var row=Math.floor(next.lastCell/7),landingY=54+row*60;
+  var duration=460+row*52,start=performance.now();
+  var timer=setInterval(frame,16);
+
+  function current(){return G===game&&token===moveToken&&G.drop===drop;}
   function landed(){
-    if(G!==game||token!==moveToken)return;
+    clearInterval(timer);
+    if(!current())return;
     settleDrop();
     render();
     if(G.over){
       if(net()&&Net2P.role()==='host')GC.publish();
     }else turnLoop();
   }
+  function frame(){
+    if(!current()){clearInterval(timer);return;}
+    var progress=Math.min(1,(performance.now()-start)/duration);
+    if(progress===1){landed();return;}
 
-  if(!G.animating){landed();return;}
-  var duration=200+Math.floor(next.lastCell/7)*36;
-  var cell=A.cells[next.lastCell].name;
-  var disc=!reduced&&!RV.viewing()&&$('board').querySelector('[data-name="'+cell+'"] [data-disc]');
-  if(disc&&disc.animate){
-    var distance=Number(disc.getAttribute('cy'))+24;
-    disc.animate([
-      {transform:'translateY(-'+distance+'px)'},
-      {transform:'translateY(0)'}
-    ],{duration:duration,easing:'cubic-bezier(.5,0,.9,.7)'}).finished.then(landed,landed);
-  }else setTimeout(landed,duration);
+    // Update the SVG coordinate directly. This movement is game feedback,
+    // independent of CSS animation support and the system motion setting.
+    drop.y=-24+(landingY+24)*progress*(.28+.72*progress);
+    var disc=$('board').querySelector('[data-falling]');
+    if(disc)disc.setAttribute('cy',drop.y);
+  }
  }
  function turnLoop(){
-  if(!G||G.over||G.analysis||G.busy||G.animating||G.vote||RV.viewing()&&!net()||G.kind[G.s.turn]!=='bot'||net()&&Net2P.role()!=='host')return;
+  if(!G||G.over||G.analysis||G.busy||G.drop||G.vote||RV.viewing()&&!net()||G.kind[G.s.turn]!=='bot'||net()&&Net2P.role()!=='host')return;
   var g=G,my=token,n=G.moves.length,s=G.s;G.busy=true;render();var ck=GC.info(),budget=A.levels[G.level].ms;if(ck)budget=Math.max(30,Math.min(budget,ck.left[s.turn-1]/25));
   ask(bot,s,G.level,budget,function(r){if(G!==g||token!==my||G.over||G.moves.length!==n)return;G.busy=false;var key=r&&r.best;if(!key){var legal=A.moves(G.s);key=legal[0]&&legal[0].key;}if(key)decide(key);else render();});
  }
@@ -1107,7 +1115,7 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FallingFour;
  function endVote(ok){if(!G||!G.vote)return;var vote=G.vote,valid=ok&&vote.n===G.moves.length;clearVote();if(valid){Net2P.send({t:'undo',to:vote.to});restoreAt(vote.to);}else{Net2P.send({t:'undoNo'});render();}}
  $('askYes').onclick=function(){if(Net2P.role()==='host')endVote(true);else Net2P.send({t:'undoVote',ok:true});};$('askNo').onclick=function(){if(Net2P.role()==='host')endVote(false);else Net2P.send({t:'undoVote',ok:false});};$('askText').textContent='Вернуть партию к позиции перед последним ходом друга?';$('undoBtn').onclick=askUndo;
  function renderResult(){
-  var show=G.over&&!G.animating&&!G.analysis;
+  var show=G.over&&!G.drop&&!G.analysis;
   $('endOv').hidden=!show;
   if(!show)return;
   var result=G.adjudication,winner=G.s.winner;
@@ -1134,7 +1142,7 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FallingFour;
   clearVote();
   Net2P.close();
   G.analysis=true;
-  G.animating=false;
+  G.drop=null;
   G.evalOn=true;
   G.kind={1:'me',2:'me'};
   G.over=!!G.s.winner;
@@ -1152,7 +1160,7 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FallingFour;
  function hostGame(){lastJoin=null;hostSide=0;lobby('Создаю игру','Подключаюсь к серверу связи…');Net2P.host({prefix:'falling4-v1-',onReady:function(code,link){lobby('Игра создана','Отправь другу ссылку или код. Партия начнётся, как только он зайдёт.',{code:code,link:link});},onJoin:function(o){if(o.returning&&G&&!pendingContinuation){Net2P.send(packet());GC.publish();}else hostStart(false);},onPeer:function(on){if(G)render();if(!on&&G&&G.vote)endVote(false);},onLeave:function(){toast('Друг вышел из игры.');},onData:hostData,onFail:function(m){lobby('Онлайн с другом','',{err:m});}});}
  function hostStart(swap){if(!hostSide)hostSide=S.side;else if(swap)hostSide=3-hostSide;var seed=pendingContinuation||{setup:swap&&G?G.setup:S.setup,moves:[]};Net2P.send({t:'start',side:hostSide,seed:seed});var kind={};kind[hostSide]='me';kind[3-hostSide]='net';newGame(kind,seed);GC.publish();}
  function hostData(d){
-    if(MA&&MA.receive(d,3-hostSide))return;if(!d||typeof d!=='object'||GC.receive(d))return;if(d.t==='try'){if(!GC.before())return;var ok=G&&!G.over&&!G.animating&&!G.vote&&G.kind[G.s.turn]==='net'&&d.n===G.moves.length&&A.legal(G.s,d.key);if(ok)decide(ok.key);else Net2P.send({t:'nack'});}else if(d.t==='undoReq')startVote('friend');else if(d.t==='undoVote')endVote(!!d.ok);else if(d.t==='needsync'&&G){Net2P.send(packet());GC.publish();}}
+    if(MA&&MA.receive(d,3-hostSide))return;if(!d||typeof d!=='object'||GC.receive(d))return;if(d.t==='try'){if(!GC.before())return;var ok=G&&!G.over&&!G.drop&&!G.vote&&G.kind[G.s.turn]==='net'&&d.n===G.moves.length&&A.legal(G.s,d.key);if(ok)decide(ok.key);else Net2P.send({t:'nack'});}else if(d.t==='undoReq')startVote('friend');else if(d.t==='undoVote')endVote(!!d.ok);else if(d.t==='needsync'&&G){Net2P.send(packet());GC.publish();}}
  function joinGame(code){lastJoin=code;lobby('Онлайн с другом','Подключаюсь к игре '+Net2P.cleanCode(code)+'…');Net2P.join(code,{prefix:'falling4-v1-',onOpen:function(){lobby('Онлайн с другом','Подключено. Ждём начала…');},onPeer:function(){if(G)render();},onData:guestData,onFail:function(m){lobby('Онлайн с другом','',{err:m});}});}
  function guestData(d){
     if(MA&&MA.receive(d,null))return;
@@ -1167,7 +1175,7 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FallingFour;
   else if(d.t==='undo'&&Number.isInteger(d.to)&&d.to>=0&&d.to<=G.moves.length)restoreAt(d.to);
  }
  $('netCreate').onclick=hostGame;$('netJoinBtn').onclick=function(){$('joinRow').hidden=!$('joinRow').hidden;if(!$('joinRow').hidden)$('joinCode').focus();};$('joinCode').oninput=function(){this.value=Net2P.cleanCode(this.value);};$('joinCode').onkeydown=function(e){if(e.key==='Enter')$('joinGo').click();};$('joinGo').onclick=function(){var code=Net2P.cleanCode($('joinCode').value);if(code.length===5)joinGame(code);};$('lbCancel').onclick=toMenu;$('lbRetry').onclick=function(){if(lastJoin)joinGame(lastJoin);else hostGame();};$('lbCopy').onclick=function(){if(navigator.clipboard)navigator.clipboard.writeText($('lbLink').value).catch(function(){$('lbLink').select();});else $('lbLink').select();};
- var GC=GameClock.attach({id:'falling4',resultModal:false,labels:['Красные','Жёлтые'],state:function(){return G&&!G.analysis?{game:G,turn:G.s.turn-1,moves:G.moves.length,over:G.over,ready:true,paused:!!G.animating}:null;},role:function(){return Net2P.role();},send:function(m){Net2P.send(m);},menu:toMenu,analyze:analyzeFinished,expire:function(i){finishGame({title:NAME[2-i]+' победили',description:NAME[i+1]+' — время вышло.'});}});
+ var GC=GameClock.attach({id:'falling4',resultModal:false,labels:['Красные','Жёлтые'],state:function(){return G&&!G.analysis?{game:G,turn:G.s.turn-1,moves:G.moves.length,over:G.over,ready:true,paused:!!G.drop}:null;},role:function(){return Net2P.role();},send:function(m){Net2P.send(m);},menu:toMenu,analyze:analyzeFinished,expire:function(i){finishGame({title:NAME[2-i]+' победили',description:NAME[i+1]+' — время вышло.'});}});
  CONT=ContinueGame.attach({mount:$('game'),clock:GC,available:function(){return !!G&&!$('game').hidden&&(!net()||G.over)&&(G.analysis||G.over||RV.viewing());},evalOn:function(){return S.evalOn;},level:function(){return S.level;},levels:A.levels.map(function(l){return{label:l.name};}),sides:function(){return[{value:1,label:'Красные'},{value:2,label:'Жёлтые'}];},notify:toast,capture:function(){if(RV.display().s.winner)throw Error('Позиция завершена. Вернись на ход назад в анализе.');return{setup:G.setup,moves:RV.pathHere().slice()};},start:function(seed,o){token++;settleDrop();Net2P.close();G.analysis=true;G.busy=false;GC.sync();S.mode=o.mode;S.side=+o.side;S.level=o.level;S.evalOn=o.evalOn;S.setup=seed.setup;save();if(o.mode==='net'){pendingContinuation=seed;hostGame();return;}var kind={1:'me',2:'me'};if(o.mode==='bot')kind[3-S.side]='bot';newGame(kind,seed);}});
  renderMenu();if(window.GAMES_ONLINE&&Net2P.hashCode()){S.mode='net';renderMenu();joinGame(Net2P.hashCode());}
 
