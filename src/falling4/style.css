@@ -9,6 +9,13 @@
 
 @media(min-width:700px) and (max-height:520px){#game{gap:6px}.match-head{font-size:10px}.player{padding:5px 9px}.marble{width:22px;height:22px}#status{min-height:20px;font-size:12px}#abMain{grid-template-columns:minmax(0,1fr) 240px;max-width:940px;gap:12px}#sidePanel{display:flex}#board{max-height:calc(100dvh - 170px);min-height:180px}.control-card .hint{font-size:10px}.direction-pad{grid-template-columns:repeat(3,34px);grid-template-rows:repeat(3,30px)}}
 
-.marble.black{background:#e95850}.marble.white{background:#f7d069}.capture-rack{display:none}#board{overflow:visible;touch-action:manipulation}#sidePanel{display:flex}#board [role=button]{cursor:pointer}.new-disc{animation:fallingDrop .38s cubic-bezier(.3,.7,.5,1)}@keyframes fallingDrop{from{translate:0 calc(-1 * var(--fall))}to{translate:0 0}}.local-mirrored text{scale:-1 1;transform-box:fill-box;transform-origin:center}
+.marble.black{background:#e95850}.marble.white{background:#f7d069}.capture-rack{display:none}#board{overflow:visible;touch-action:manipulation}#sidePanel{display:flex}#board [role=button]{cursor:pointer}.local-mirrored text{scale:-1 1;transform-box:fill-box;transform-origin:center}
 
 body.view-no-history:not(.view-analysis) #abMain{display:block;max-width:620px}body.view-no-history:not(.view-analysis) #sidePanel{margin-top:12px}
+
+#board .winning-disc { stroke: #fff5dc; stroke-width: 5; filter: drop-shadow(0 0 4px #fff5dc9e); }
+#board .other-disc { opacity: .62; }
+.end-panel { gap: 8px; padding: 12px; }
+.end-panel h2 { color: var(--ink); font-size: 16px; letter-spacing: 0; text-transform: none; }
+.end-panel p { color: var(--ink-dim); font-size: 13px; }
+.end-panel button { font-size: 13px; padding: 9px; }

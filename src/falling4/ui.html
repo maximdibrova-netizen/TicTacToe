@@ -20,11 +20,15 @@
  <div class="match-head"><span class="eyebrow" id="setupTitle"></span><span id="modeTitle"></span></div>
  <div class="players"><div id="plBlack" class="player"><i class="marble black"></i><div><strong id="nameBlack">Красные</strong><span id="scoreBlack">Фишек: 21</span></div><div class="capture-rack" id="rackBlack"></div></div><div id="plWhite" class="player"><i class="marble white"></i><div><strong id="nameWhite">Жёлтые</strong><span id="scoreWhite">Фишек: 21</span></div><div class="capture-rack" id="rackWhite"></div></div></div>
  <div id="status" role="status"></div>
- <div id="abMain"><div id="boardColumn"><svg id="board" viewBox="0 0 480 425" aria-label="Доска Четыре в ряда"></svg><div id="rvMount"></div><div class="toolbar"><button id="homeBtn">⌂ <span>Меню</span></button><button id="againBtn">↻ <span>Заново</span></button><button id="undoBtn">↶ <span>Отменить</span></button><button id="hintBtn">✦ <span>Подсказка</span></button></div></div>
+ <div id="abMain"><div id="boardColumn"><svg id="board" viewBox="0 0 480 425" aria-label="Доска Четыре в ряда"></svg>
+  <section class="card end-panel" id="endOv" aria-labelledby="endTitle" hidden>
+   <h2 id="endTitle"></h2><p id="endText"></p>
+   <div class="btns"><button id="endLook">Анализ</button><button id="endAgain">Ещё раз</button><button id="endMenu" class="alt">В меню</button></div>
+  </section>
+  <div id="rvMount"></div><div class="toolbar"><button id="homeBtn">⌂ <span>Меню</span></button><button id="againBtn">↻ <span>Заново</span></button><button id="undoBtn">↶ <span>Отменить</span></button><button id="hintBtn">✦ <span>Подсказка</span></button></div></div>
  <aside id="sidePanel"><div id="enginePanel" class="control-card"><div class="section-head"><h2>Движок</h2><strong id="engineScore">…</strong></div><p id="engineNote">Анализирую позицию…</p><button id="bestMove" disabled>Лучший ход…</button><p class="hint">Плюс — преимущество красных. Оценка встроенного движка, в условных единицах.</p></div>
  <div class="notation-card"><h2>Нотация</h2><div id="notation"></div></div></aside></div>
 </section>
-<div class="ov" id="endOv" hidden><div class="dlg"><h2 id="endTitle"></h2><p id="endText"></p><div class="btns"><button id="endLook">Анализ</button><button id="endAgain">Ещё раз</button><button id="endMenu" class="alt">В меню</button></div></div></div>
 <div class="ov" id="lobbyOv" hidden><div class="dlg"><h2 id="lbTitle"></h2><p id="lbText"></p><div id="lbCode" class="code" hidden></div><div id="lbLinkRow" class="join" hidden><input id="lbLink" readonly aria-label="Ссылка для друга"><button id="lbCopy">Копировать</button></div><p id="lbErr" role="alert" hidden></p><div class="btns"><button id="lbRetry" hidden>Повторить</button><button id="lbCancel" class="alt">Отмена</button></div></div></div>
 <div class="ov" id="askOv" hidden><div class="dlg"><h2>Вернуть ход?</h2><p id="askText"></p><div class="btns"><button id="askYes">Согласен</button><button id="askNo" class="alt">Нет</button></div></div></div>
 <div id="toast" class="toast" role="status" hidden></div>

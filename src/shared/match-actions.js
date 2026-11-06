@@ -54,7 +54,7 @@ var MatchActions = (function () {
         el('matchResultTitle').textContent = r.title;
         el('matchResultText').textContent = r.type === 'draw' ? 'Ничья по соглашению игроков.' : r.winnerLabel ? 'Победа: ' + r.winnerLabel + '.' : 'Партия завершена.';
         el('matchAgain').hidden = !a.again || role() === 'guest';
-        closeQuestion(); if (!result.open) result.showModal();
+        closeQuestion(); if (a.resultModal !== false && !result.open) result.showModal();
       } else note(r.title + '. Остальные продолжают игру.');
     }
     function commit(type, seat) {
@@ -101,7 +101,7 @@ var MatchActions = (function () {
           if (s && role() === 'host') bind();
         }
         wasOver = !!s && s.over;
-        var visible = active(s) && local(s).length > 0, ended = !!(s && s.over && !s.analysis && finalResult && !mount.hidden), shown = visible || ended, changed = row.hidden === shown;
+        var visible = active(s) && local(s).length > 0, ended = !!(a.resultModal !== false && s && s.over && !s.analysis && finalResult && !mount.hidden), shown = visible || ended, changed = row.hidden === shown;
         row.hidden = !shown; mount.classList.toggle('match-actions-active', shown);
         el('surrenderBtn').hidden = el('offerDrawBtn').hidden = !visible;
         el('matchReview').hidden = el('matchSummary').hidden = !ended;

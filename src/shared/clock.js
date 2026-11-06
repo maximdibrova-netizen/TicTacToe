@@ -111,7 +111,7 @@ var GameClock = (function () {
     function guest() { return a.role() === 'guest'; }
     function expire() {
       if (!model || model.flag === null || ended) return;
-      ended = true; a.expire(model.flag); result.querySelector('p').textContent = a.labels[model.flag] + ' — поражение по времени. Партия окончена.'; result.hidden = false;
+      ended = true; a.expire(model.flag); result.querySelector('p').textContent = a.labels[model.flag] + ' — поражение по времени. Партия окончена.'; result.hidden = a.resultModal === false;
     }
     function packet() { return model ? { left: model.left.slice(), inc: model.inc.slice(), turn: model.turn, running: model.running && !paused, flag: model.flag } : null; }
     function publish() { if (a.role() === 'host') { a.send({ t: 'clock-v1', clock: packet() }); lastSend = Date.now(); } }
