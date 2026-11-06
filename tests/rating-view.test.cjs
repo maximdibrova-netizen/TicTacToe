@@ -1,0 +1,8 @@
+const{test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');const p=path.join(__dirname,'../src/ratings/view-core.cjs'),R=fs.existsSync(p)?require(p):{};
+test('rating mode helpers exist',()=>assert.equal(typeof R.bundleScore,'function'));
+if(R.bundleScore){
+test('only three or four different allowed games form a bundle',()=>{assert.equal(R.validBundle(['go','ttt','lava']),true);assert.equal(R.validBundle(['go','ttt','lava','checkers']),true);assert.equal(R.validBundle(['go','go','lava']),false);assert.equal(R.validBundle(['chess','go','ttt']),false);});
+test('series finishes only when every board has a result; draws count half',()=>{assert.equal(R.bundleScore([1,null,.5]),null);assert.deepEqual(R.bundleScore([1,0,.5]),{scores:[1.5,1.5],ranks:[0,0]});assert.deepEqual(R.bundleScore([1,1,0,1]),{scores:[3,1],ranks:[0,1]});});
+test('all participants receive canonical ranks regardless who reports',()=>{assert.deepEqual(R.ranksFromResult(['a','b','c'],{draw:false,winners:['b']}),[1,0,1]);assert.deepEqual(R.ranksFromResult([1,2],{draw:true,winners:[]}),[0,0]);});
+test('bots are estimates, and assisted/imported/local games are not secretly rated',()=>{assert.match(R.botEstimate('go',2,5).label,/≈/);assert.equal(R.eligibility({mode:'bot'}).ok,false);assert.equal(R.eligibility({mode:'local'}).ok,false);assert.equal(R.eligibility({mode:'online',evaluationEnabled:true}).ok,false);assert.equal(R.eligibility({mode:'online',continued:true}).ok,false);assert.equal(R.eligibility({mode:'online',players:[{kind:'human'},{kind:'remote'}],mine:[1]}).ok,true);});
+}

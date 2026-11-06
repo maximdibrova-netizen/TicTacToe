@@ -3,6 +3,7 @@ var MatchActions = (function () {
   var CHANNEL = 'match-actions-v1';
   function attach(a) {
     var ref = null, gameId = null, log = [], applied = {}, offer = null, sentVotes = {}, lastHello = 0, updating = false, dialogKey = '', answer = null, wasOver = false, finalResult = null;
+    var telemetry = typeof GameEvents !== 'undefined' ? GameEvents.attach(a, { token: function () { return gameId; } }) : null;
     var mount = document.getElementById('game'), row = document.createElement('div');
     row.className = 'match-actions'; row.hidden = true;
     row.innerHTML = '<button type="button" id="surrenderBtn">Сдаться</button><button type="button" id="offerDrawBtn">Предложить ничью</button><button type="button" id="matchReview" hidden>Анализ</button><button type="button" id="matchSummary" hidden>Результат</button><span id="matchWait" role="status"></span>';
@@ -43,11 +44,12 @@ var MatchActions = (function () {
     function local(s) { return s.players.filter(function (p) { return s.mine.indexOf(p.id) >= 0; }); }
     function actor(s) { var mine = local(s); return mine.find(function (p) { return p.id === s.turn; }) || mine[0]; }
     function cancel(notify) { if (!offer) return; offer = null; sentVotes = {}; closeQuestion(); if (notify && role() === 'host') send({ kind: 'cancel' }); }
-    function bind() { send({ kind: 'bind', log: log }); }
+    function bind() { send({ kind: 'bind', log: log, origin: telemetry ? telemetry.origin() : null }); }
     function apply(r) {
       if (applied[r.id]) return;
       applied[r.id] = true;
       a.finish(r);
+      if (telemetry) telemetry.adjudicate(r);
       var s = state();
       if (s && s.over) {
         finalResult = r;
@@ -121,10 +123,12 @@ var MatchActions = (function () {
             ask('vote:' + offer.id + ':' + seat, 'Согласиться на ничью?', (p ? p.label + ': ' : '') + 'соперник предлагает завершить партию вничью.', 'Принять ничью', 'Отклонить', function (ok) { vote(seat, ok); });
           } else if (dialogKey.indexOf('vote:') === 0) closeQuestion();
         }
+        if (telemetry) telemetry.refresh();
       } finally { updating = false; }
     }
     function receive(d, from) {
-      if (!d || d.t !== CHANNEL) return false;
+      if (typeof GameEvents !== 'undefined' && GameEvents.receive(d, from)) return true;
+      if (!d || d.t !== CHANNEL) { if (telemetry) telemetry.refresh(); Promise.resolve().then(refresh); return false; }
       refresh(); var s = state(); if (!s) return true;
       if (role() === 'host') {
         if (!s.players.some(function (p) { return p.id === from && p.kind === 'remote'; }) && d.kind !== 'hello') return true;
@@ -136,6 +140,7 @@ var MatchActions = (function () {
         if (d.kind === 'bind') {
           if (gameId && gameId !== d.game) { applied = {}; log = []; cancel(false); }
           gameId = d.game;
+          if (telemetry) telemetry.setOrigin(d.origin);
           if (Array.isArray(d.log)) d.log.forEach(function (r) { apply(r); });
         } else if (gameId && d.game === gameId) {
           if (d.kind === 'commit' && d.result) { cancel(false); apply(d.result); }

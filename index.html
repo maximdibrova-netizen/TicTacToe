@@ -20,6 +20,10 @@
 @media(max-width:480px){.account-card{display:grid;grid-template-columns:42px minmax(0,1fr);gap:10px}.account-avatar{align-self:start}.account-card-buttons{grid-column:2;margin-left:0}.account-dialog{padding:23px 20px}.account-dialog h2{font-size:20px}}
 @media(prefers-reduced-motion:reduce){.account-dialog::backdrop{backdrop-filter:none}}
 
+.rating-panel{border:1px solid var(--line,#344056);border-radius:16px;padding:16px;background:var(--bg-2,#1a2136)}.rating-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.rating-heading h2{margin:0 0 6px;font:800 17px/1.3 var(--display,system-ui)}.rating-heading p,.rating-note{font:600 12px/1.5 var(--body,system-ui);color:var(--ink-dim,#a7b0c2);margin:0}.rating-choice{display:flex;align-items:center;gap:9px;margin:14px 0 8px;font:700 14px var(--body,system-ui);cursor:pointer}.rating-choice input{width:18px;height:18px;accent-color:var(--gold,#ffd166)}.rating-choice input:disabled{opacity:.4}.rating-status{font:700 13px/1.5 var(--body,system-ui);color:var(--gold,#ffd166);margin:10px 0 0}.rating-status:empty{display:none}.rating-card-badge{color:var(--gold,#ffd166)}
+.rating-dialog{box-sizing:border-box;width:min(640px,calc(100vw - 28px));max-height:calc(100dvh - 28px);overflow:auto;border:1px solid var(--line,#344056);border-radius:18px;padding:25px;background:var(--bg-2,#1a2136);color:var(--ink,#eef1fb);font:14px/1.5 var(--body,system-ui)}.rating-dialog::backdrop{background:#060a15c7;backdrop-filter:blur(4px)}.rating-dialog h2{margin:0 30px 15px 0;font:800 22px/1.3 var(--display,system-ui)}.rating-close{position:absolute;right:12px;top:10px;border:0;background:transparent;color:inherit;font-size:26px;cursor:pointer}.rating-tabs{display:flex;gap:6px;margin-bottom:14px}.rating-tabs button{border:1px solid var(--line,#344056);border-radius:8px;padding:9px 10px;background:var(--btn,#2b354a);color:inherit;font:700 12px var(--body,system-ui);cursor:pointer}.rating-tabs [aria-pressed=true]{border-color:var(--gold,#ffd166);color:var(--gold,#ffd166)}.rating-dialog label{display:flex;gap:10px;align-items:center;margin-bottom:14px}.rating-dialog select{max-width:100%;padding:9px;background:var(--bg,#121726);color:inherit;border:1px solid var(--line,#344056);border-radius:8px}.rating-table{width:100%;border-collapse:collapse;margin-top:15px;font-size:12px}.rating-table th,.rating-table td{padding:10px 7px;text-align:left;border-bottom:1px solid var(--line,#344056)}.rating-table th{color:var(--ink-dim,#a7b0c2);font-weight:600}.rating-table td strong{font-size:16px;color:var(--gold,#ffd166);font-variant-numeric:tabular-nums}.rating-table .positive{color:#82d5a7}.rating-table .negative{color:#ff9c94}.rating-table small{display:block;color:var(--ink-dim,#a7b0c2)}.rating-setup h2{margin:0 0 9px}.rating-setup{margin-bottom:10px}.rating-setup .rating-note{margin:8px 0 0}.rating-setup button,.rating-setup a{font:700 12px var(--body,system-ui);color:var(--gold,#ffd166)}
+.rating-pill{position:fixed;z-index:66;top:8px;left:50%;transform:translateX(-50%);border:1px solid #a58d55;border-radius:9px;padding:7px 9px;background:#172238ed;color:#ffe2a3;font:700 11px/1.3 system-ui;pointer-events:none;max-width:calc(100vw - 240px);text-align:center}.rating-pill[hidden]{display:none}.rating-gate{position:fixed;inset:48px 8px 8px;z-index:110;background:#101727e8;backdrop-filter:blur(4px);display:grid;place-items:center;border-radius:14px;padding:24px;color:#f1eee6;text-align:center;font:700 14px/1.6 system-ui}.rating-gate>div{max-width:350px}.rating-gate button{margin-top:15px;padding:10px 16px;border:1px solid #ffd166;border-radius:9px;background:#ffd166;color:#211a10;font:700 13px system-ui;cursor:pointer}.rating-gate[hidden]{display:none}.rating-end-toast{position:fixed;z-index:120;left:50%;top:48px;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 24px);padding:10px 16px;background:#213b32;color:#d8ffde;border:1px solid #71b18a;border-radius:10px;font:700 13px/1.5 system-ui;box-shadow:0 8px 20px #0005}.rating-end-toast[hidden]{display:none}@media(max-width:480px){.rating-heading{align-items:flex-start;flex-wrap:wrap}.rating-heading>.btn{font-size:12px}.rating-dialog{padding:21px 14px}.rating-tabs{gap:4px}.rating-tabs button{padding:8px;font-size:11px}.rating-table th,.rating-table td{padding:9px 4px}}
+
 /* Layout: a shelf of game boxes under a "room" card; once a game is picked it fills the screen under a thin room bar. */
 :root { color-scheme: dark; --bg: #121726; --bg-2: #1a2136; --line: #2d3757; --ink: #eef1fb; --ink-dim: #9aa5c7; --gold: #ffd166; --ok: #5fd38a; --bad: #ff7a6b;
   --display: "Unbounded", "Trebuchet MS", system-ui, sans-serif; --body: "Manrope", "Segoe UI", system-ui, sans-serif; }
@@ -95,6 +99,12 @@ a.game.current::after { content: "сейчас играете"; position: absolu
 .choice .decline { border:1px solid var(--line); }
 .choice .choice-note { margin-bottom:0; font-size:12px; }
 @media(prefers-reduced-motion:reduce){.choice::backdrop{backdrop-filter:none}}
+.multi-card .multi-art{display:grid;grid-template-columns:repeat(2,15px);gap:4px;flex:none}.multi-art i{display:block;width:15px;height:15px;border:1px solid #ffd16685;border-radius:4px;background:#ffd16620}
+.multi-card h2{justify-content:space-between}.multi-card p{max-width:70ch}.multi-picker{display:flex;flex-direction:column;gap:10px;margin:16px 0}.multi-picker label{display:flex;align-items:center;gap:10px;min-height:42px;padding:9px 12px;background:#11182780;border:1px solid var(--line);border-radius:10px;font-size:14px}.multi-picker input{width:18px;height:18px;accent-color:var(--gold)}.multi-count{display:flex;align-items:center;gap:12px;margin-top:16px;font-weight:700}.multi-count select{border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--bg);color:var(--ink);font:inherit}.multi-picker label:has(input:disabled){opacity:.5}
+.multi-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 12px;background:var(--bg-2);border-bottom:1px solid var(--line);flex:none}.multi-toolbar .btn{font-size:12px;padding:9px 12px}.multi-score{font:800 17px var(--display);white-space:nowrap}.multi-summary{flex:1;font:700 12px/1.4 var(--body);color:var(--ink-dim);min-width:130px}.multi-tabs{display:flex;gap:6px;overflow-x:auto;flex:none;padding:7px 10px;background:#121726}.multi-tabs button{flex:none;min-height:36px;border:1px solid var(--line);border-radius:9px;background:#202943;padding:7px 10px;font:700 12px var(--body);white-space:nowrap}.multi-tabs button[aria-selected=true]{border-color:var(--gold);color:var(--gold)}.multi-tabs button.your-turn::before{content:'●';color:var(--gold);margin-right:5px}.multi-tabs button.done{color:var(--ok)}
+#multiPanels{position:relative;flex:1;min-height:0;overflow:hidden;background:#0d1120}.multi-panel{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;z-index:0;background:var(--bg)}.multi-panel.active{opacity:1;pointer-events:auto;z-index:1}.multi-panel header{display:flex;gap:8px;align-items:center;flex:none;padding:6px 10px;background:#172039;border-bottom:1px solid var(--line);font:700 11px var(--body)}.multi-panel header strong{flex:1;min-width:0}.multi-panel header span{color:var(--ink-dim)}.multi-panel header button{border:0;border-radius:6px;background:#2a3456;padding:4px 7px;font:700 11px var(--body)}.multi-panel iframe{width:100%;height:100%;flex:1;min-height:0;border:0;background:var(--bg)}#stage.multi-mode>#frame{display:none}.multi-toolbar[hidden],.multi-tabs[hidden],#multiPanels[hidden]{display:none!important}
+@media(min-width:1100px) and (min-height:720px){#stage.multi-mode:not([data-multi-view=tabs]) #multiPanels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:2px}#stage.multi-mode:not([data-multi-view=tabs]) .multi-panel{position:relative;inset:auto;opacity:1;pointer-events:auto;z-index:1;min-height:0;min-width:0;overflow:hidden}#stage.multi-mode:not([data-multi-view=tabs]) .multi-panel header{height:30px;box-sizing:border-box;z-index:2}#stage.multi-mode:not([data-multi-view=tabs]) .multi-panel iframe{position:absolute;left:0;top:30px;width:150%;height:calc((100% - 30px)*1.5);max-width:none;flex:none;transform:scale(.6666667);transform-origin:top left}#stage.multi-mode:not([data-multi-view=tabs]) .multi-panel.active header{box-shadow:inset 0 2px var(--gold)}}
+@media(max-width:1099px),(max-height:719px){#multiGrid{display:none}.multi-panel header button{display:none}.multi-toolbar{gap:7px}.multi-toolbar .multi-summary{font-size:11px}.sbar .who{font-size:10px}}
 </style>
 
 <div id="home">
@@ -127,7 +137,18 @@ a.game.current::after { content: "сейчас играете"; position: absolu
 </dialog>
 
 
+  <section class="rating-panel" aria-label="Рейтинг игроков">
+  <div class="rating-heading"><div><h2>Рейтинг</h2><p id="ratingSummary">Начальный рейтинг 1200 · отдельно для каждой игры</p></div><button type="button" class="btn" id="ratingDetails">Мои результаты</button></div>
+  <label class="rating-choice"><input type="checkbox" id="ratingToggle"><span>Играть на рейтинг с другом</span></label>
+  <p class="rating-note" id="ratingHelp">Войдите в аккаунт. Рейтинг учитывается в онлайне между людьми; боты играют без изменения рейтинга.</p>
+  <p id="ratingSessionStatus" class="rating-status" role="status" aria-live="polite"></p>
+</section>
+<dialog id="ratingDialog" class="rating-dialog" aria-labelledby="ratingTitle"><button type="button" id="ratingClose" class="rating-close" aria-label="Закрыть">×</button><h2 id="ratingTitle">Мой рейтинг</h2><div class="rating-tabs"><button type="button" id="ratingMineTab" aria-pressed="true">Мой рейтинг</button><button type="button" id="ratingLeadersTab">Лидеры</button><button type="button" id="ratingHistoryTab">История</button></div><label id="ratingPoolRow" hidden>Игра<select id="ratingPool"></select></label><p class="rating-note">Glicko · первые 10 партий — предварительный рейтинг. Сила ботов указывается приблизительно.</p><div id="ratingTable" role="status"></div></dialog>
+
+
   <section class="room" id="room" aria-live="polite"></section>
+
+  <section class="room multi-card" aria-labelledby="multiHeading"><h2 id="multiHeading"><span class="multi-art" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Несколько игр одновременно</h2><p>Выберите три или четыре разные игры и играйте с другом параллельно. Каждая доска сохраняет свой ход, а победитель набора определяется по общей сумме очков.</p><div class="row"><button type="button" id="multiOpen" class="btn main">Выбрать игры</button><span class="pill">3 или 4 доски</span></div></section>
 
   <div class="games" id="games">
     <a class="game" href="durak/" data-g="durak" data-name="Дурак">
@@ -240,7 +261,7 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     <div><b>Играть без интернета</b><p id="instText"></p></div>
     <button class="btn main" id="instBtn" hidden>Установить</button>
   </section>
-  <p class="foot">Версия от 06.11.2026 22:32<span id="offState"></span></p>
+  <p class="foot">Версия от 06.11.2026 23:31<span id="offState"></span></p>
 </main>
 </div>
 
@@ -250,6 +271,9 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     <span class="ttl" id="stTitle"></span>
     <span class="who" id="stWho"></span>
   </div>
+  <div id="multiToolbar" class="multi-toolbar" hidden><strong id="multiScore" class="multi-score">0 : 0</strong><span id="multiSummary" class="multi-summary" role="status">Подготовьте игры и начните набор.</span><button type="button" id="multiStart" class="btn main">Начать все</button><button type="button" id="multiNew" class="btn main" hidden>Новый набор</button><button type="button" id="multiGrid" class="btn">Одна доска</button></div>
+  <div id="multiTabs" class="multi-tabs" role="tablist" aria-label="Параллельные партии" hidden></div>
+  <div id="multiPanels" hidden></div>
   <iframe id="frame" title="Игра" allow="autoplay; clipboard-write"></iframe>
 </div>
 <div class="toast" id="toast" hidden></div>
@@ -260,6 +284,7 @@ a.game.current::after { content: "сейчас играете"; position: absolu
   <div class="row"><button class="btn decline" id="choiceDecline" autofocus>Отклонить</button><button class="btn main" id="choiceAccept">Принять</button><button class="btn" id="choiceCancel">Отменить запрос</button></div>
   <p class="choice-note">Запрос действует 30 секунд. Текущая партия продолжится, пока вы оба не согласитесь сменить игру.</p>
 </dialog>
+<dialog id="multiDialog" class="choice" aria-labelledby="multiDialogTitle"><h2 id="multiDialogTitle">Выбрать игры для набора</h2><label class="multi-count">Число досок<select id="multiCount"><option value="3">3 игры</option><option value="4">4 игры</option></select></label><div id="multiPicker" class="multi-picker"></div><p id="multiMessage" role="status"></p><div class="row"><button type="button" id="multiCancel" class="btn">Отмена</button><button type="button" id="multiPropose" class="btn main">Предложить набор</button></div></dialog>
 
 <script src="account.js" defer></script>
 <script>// ===== Онлайн на двоих: прямое соединение браузеров через PeerJS =====
@@ -401,16 +426,33 @@ var Net2P = (function () {
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var NAMES = {}; Array.prototype.forEach.call(document.querySelectorAll('a.game'), function (a) { NAMES[a.dataset.g] = a.dataset.name; });
+  NAMES.multi = 'Несколько игр';
+  var MULTI_GAMES = ['tochki','ttt','go','checkers','battleship','quoridor','lava'];
   var toastT = null;
   function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 2600); }
 
   // ================= room =================
   // R.state: idle | creating | waiting (host, no friend yet) | joining | live | error
-  var R = { state: 'idle', role: null, code: null, link: '', err: '', inst: null, game: null, seq: 0, retry: 0 };
+  var R = { state: 'idle', role: null, code: null, link: '', err: '', inst: null, game: null, seq: 0, retry: 0, slots:[], multi:false, peerUid:null, peerName:'', ranked:false, ratedSession:null };
   var PREFIX = 'room-games-v1-';
   var choice = null, choiceTimer = null, choiceSeq = 0;
+  var roomFingerprint = '', ratingRevision = 0, multiActive = 0, multiView = 'grid', bundleEnded = false;
 
-  function validChoice(m) { return m && typeof m.id === 'string' && m.id.length > 0 && m.id.length <= 100 && Object.prototype.hasOwnProperty.call(NAMES,m.g); }
+  function validGames(games) { return Array.isArray(games) && (games.length === 3 || games.length === 4) && games.every(function(g,i){return MULTI_GAMES.indexOf(g)>=0 && games.indexOf(g)===i;}); }
+  function slotFor(win) { return R.slots.find(function(s){return s.frame && s.frame.contentWindow === win;}) || null; }
+  function roomContext() { return {role:R.role,code:R.code,online:Net2P.online(),peerUid:R.peerUid,peerName:R.peerName,instance:R.inst,game:R.game,slots:R.slots.map(function(s){return {game:s.game,id:s.id,index:s.index,frame:s.frame,score:s.score,phase:s.phase};}),multi:R.multi,ranked:R.ranked,ratedSession:R.ratedSession}; }
+  function frameContext(win) { var slot=slotFor(win); return slot ? Object.assign({},roomContext(),{slot:{game:slot.game,id:slot.id,index:slot.index,frame:slot.frame},game:slot.game,id:slot.id,index:slot.index}) : null; }
+  function changed(reason) {
+    var key=JSON.stringify([R.state,R.role,R.code,Net2P.online(),R.peerUid,R.peerName,R.inst,R.ranked,ratingRevision,R.slots.map(function(s){return[s.id,s.score,s.phase];})]);
+    if(key===roomFingerprint)return;roomFingerprint=key;
+    dispatchEvent(new CustomEvent('room:changed',{detail:{context:roomContext(),reason:reason||'state'}}));
+  }
+  function identity() { var u=window.GameAccount && window.GameAccount.currentUser(); return {uid:u&&typeof u.uid==='string'?u.uid:null,name:u&&typeof u.displayName==='string'?u.displayName.slice(0,64):''}; }
+  function sendIdentity() { if(R.state==='live'||R.state==='waiting'){var u=identity();rsend({t:'identity',uid:u.uid,name:u.name});}changed('account'); }
+  addEventListener('account:changed',sendIdentity);
+  function allowInvite(p) { if(!p.ranked)return true;var result=window.RatingUI&&window.RatingUI.checkInvite?window.RatingUI.checkInvite(p):{ok:false,reason:'Для рейтинговой игры оба участника должны войти в аккаунт.'};if(!result.ok){toast(result.reason||'Рейтинговая игра пока недоступна.');return false;}return true; }
+
+  function validChoice(m) { return m && typeof m.id === 'string' && m.id.length > 0 && m.id.length <= 100 && Object.prototype.hasOwnProperty.call(NAMES,m.g) && (m.g!=='multi'||validGames(m.games)); }
   function clearChoice() {
     clearTimeout(choiceTimer); choiceTimer = null; choice = null;
     if ($('choiceDialog').open) $('choiceDialog').close();
@@ -423,9 +465,11 @@ var Net2P = (function () {
     $('choiceAccept').disabled = false;
     var mine = p.by === R.role, art = document.querySelector('a.game[data-g="'+p.g+'"] .art');
     $('choiceTitle').textContent = mine ? 'Предложение отправлено' : 'Друг предлагает игру';
-    $('choiceName').textContent = NAMES[p.g];
-    $('choiceArt').innerHTML = art.innerHTML; $('choiceArt').style.cssText = art.style.cssText;
-    $('choiceText').textContent = mine ? 'Ждём согласия второго игрока. Игра откроется у обоих после подтверждения.' : 'Перейти в эту игру вместе? При согласии открытая партия будет заменена.';
+    $('choiceName').textContent = p.g==='multi'?p.games.length+' игры одновременно':NAMES[p.g];
+    if(art){$('choiceArt').innerHTML=art.innerHTML;$('choiceArt').style.cssText=art.style.cssText;}else{$('choiceArt').innerHTML='<svg viewBox="0 0 72 60" aria-hidden="true"><g fill="#ffd16630" stroke="#ffd166"><rect x="7" y="4" width="25" height="22" rx="4"/><rect x="39" y="4" width="25" height="22" rx="4"/><rect x="7" y="34" width="25" height="22" rx="4"/><rect x="39" y="34" width="25" height="22" rx="4"/></g></svg>';$('choiceArt').style.background='#263149';}
+    var text=mine?'Ждём согласия второго игрока. Игра откроется у обоих после подтверждения.':'Перейти в эту игру вместе? При согласии открытая партия будет заменена.';
+    if(p.g==='multi')text=p.games.map(function(g){return NAMES[g];}).join(', ')+'. '+text;
+    $('choiceText').textContent=(p.ranked?(p.g==='multi'?'Рейтинговая связка. ':'Рейтинговая партия. '):'Без рейтинга. ')+text;
     $('choiceAccept').hidden = $('choiceDecline').hidden = mine;
     $('choiceCancel').hidden = !mine;
     $('choiceDialog').showModal();
@@ -444,14 +488,16 @@ var Net2P = (function () {
   }
   function acceptChoice() {
     if (!choice || choice.by === R.role) return;
+    if (!allowInvite(choice)) return;
     if (!Net2P.online()) { clearChoice(); toast('Нет связи с другом. Выберите игру после подключения.'); return; }
     if (R.role === 'host') commitChoice();
     else { rsend({t:'answer',id:choice.id,accept:true}); $('choiceAccept').disabled = true; $('choiceText').textContent = 'Открываем игру у обоих…'; }
   }
   function commitChoice() {
     if (!choice || R.role !== 'host' || !Net2P.online()) return;
+    if (!allowInvite(choice)) return;
     var p = choice, inst = R.code + '-' + (++R.seq) + '-' + Date.now().toString(36);
-    clearChoice(); rsend({t:'pick',id:p.id,inst:inst,g:p.g}); loadGame(p.g,inst,false);
+    clearChoice(); rsend({t:'pick',id:p.id,inst:inst,g:p.g,games:p.games,ranked:!!p.ranked}); loadGame(p.g,inst,false,p.games,!!p.ranked);
   }
   $('choiceAccept').onclick = acceptChoice;
   $('choiceDecline').onclick = function(){cancelChoice();};
@@ -470,12 +516,13 @@ var Net2P = (function () {
   BConn.prototype.send = function (d) { if (!this.open) return; rsend({ t: 'b', k: 'data', inst: this.inst, id: this.id, d: d }); };
   BConn.prototype.close = function () { if (!conns[this.id] && !pending[this.id]) return; delete conns[this.id]; delete pending[this.id]; var was = this.open; this.open = false; rsend({ t: 'b', k: 'close', inst: this.inst, id: this.id }); if (was) this._emit('close'); };
   function peerFor(win) {
+    var frameSlot=slotFor(win), frameInstance=frameSlot?frameSlot.id:R.inst;
     function BPeer(id, opts) {
       if (!(this instanceof BPeer)) return new BPeer(id, opts);
       Emitter.call(this);
       if (id && typeof id === 'object') id = null;
       var self = this;
-      this.win = win; this.inst = R.inst; this.destroyed = false; this.id = id || ('g' + Math.random().toString(36).slice(2, 9));
+      this.win = win; this.inst = frameInstance; this.destroyed = false; this.id = id || ('g' + Math.random().toString(36).slice(2, 9));
       if (id) { listening[this.inst] = this; rsend({ t: 'b', k: 'listen', inst: this.inst }); }
       setTimeout(function () { if (!self.destroyed) self._emit('open', self.id); }, 0);
     }
@@ -496,7 +543,7 @@ var Net2P = (function () {
     return BPeer;
   }
   function onBridge(m) {
-    if (m.inst !== R.inst) return;
+    if (!R.slots.some(function(s){return s.id===m.inst;})) return;
     if (m.k === 'listen') {
       remoteListen[m.inst] = true;
       Object.keys(pending).forEach(function (k) { var c = pending[k]; if (c.inst === m.inst) rsend({ t: 'b', k: 'conn', inst: c.inst, id: c.id }); });
@@ -508,12 +555,12 @@ var Net2P = (function () {
       rsend({ t: 'b', k: 'accept', inst: m.inst, id: m.id });
       setTimeout(function () { c._emit('open'); }, 0);
     } else if (m.k === 'accept') {
-      var pc = pending[m.id]; if (!pc) return;
+      var pc = pending[m.id]; if (!pc || pc.inst!==m.inst) return;
       delete pending[m.id]; conns[m.id] = pc; pc.open = true; pc._emit('open');
     } else if (m.k === 'data') {
-      var dc = conns[m.id]; if (dc && dc.open) dc._emit('data', cloneInto(dc.peer.win, m.d));
+      var dc = conns[m.id]; if (dc && dc.inst===m.inst && dc.open) dc._emit('data', cloneInto(dc.peer.win, m.d));
     } else if (m.k === 'close') {
-      var cc = conns[m.id] || pending[m.id]; if (!cc) return;
+      var cc = conns[m.id] || pending[m.id]; if (!cc || cc.inst!==m.inst) return;
       delete conns[m.id]; delete pending[m.id]; var was = cc.open; cc.open = false; if (was) cc._emit('close');
     }
   }
@@ -527,7 +574,19 @@ var Net2P = (function () {
   window.ROOM = {
     active: function () { return R.state === 'live' || R.state === 'waiting'; },
     peerFor: peerFor,
-    home: function () { showHome(); }
+    home: function () { showHome(); },
+    context: roomContext,
+    frameContext: frameContext,
+    gameEvent: function(win,event){
+      var slot=slotFor(win);if(!slot||!event||typeof event!=='object')return;
+      slot.phase=event.phase;slot.yourTurn=!event.over&&Array.isArray(event.mine)&&event.mine.indexOf(event.turn)>=0;
+      if(event.mode==='online'&&(event.phase==='start'||event.phase==='update'))slot.started=true;
+      if(R.multi && event.mode==='online' && event.phase==='result' && [0,.5,1].indexOf(event.score)>=0 && slot.localScore===undefined){slot.localScore=R.role==='host'?event.score:1-event.score;rsend({t:'bundle-result',inst:R.inst,id:slot.id,score:slot.localScore});updateSlotScore(slot);}
+      renderMulti();changed('game');
+      dispatchEvent(new CustomEvent('room:game-event',{detail:{context:roomContext(),slot:{game:slot.game,id:slot.id,index:slot.index,frame:slot.frame},event:event}}));
+    },
+    sendService: function(data){return Net2P.send({t:'service',data:data});},
+    setRatingContext: function(context){if(R.ratedSession===context)return;R.ratedSession=context||null;ratingRevision++;changed('rating');}
   };
 
   // ---- room connection ----
@@ -544,8 +603,10 @@ var Net2P = (function () {
         clearChoice();
         R.state = 'live'; renderRoom(); dropBridge(false);
         toast(o.returning ? 'Друг вернулся в комнату' : 'Друг в комнате! Выбирайте игру');
-        rsend({ t: 'pick', inst: R.inst, g: R.game });          // what's open now (or nothing)
+        sendIdentity();
+        rsend({ t: 'pick', inst: R.inst, g: R.game, games:R.multi?R.slots.map(function(s){return s.game;}):undefined,ranked:R.ranked });
         Object.keys(listening).forEach(function (inst) { rsend({ t: 'b', k: 'listen', inst: inst }); });
+        R.slots.forEach(function(s){if(s.localScore!==undefined)rsend({t:'bundle-result',inst:R.inst,id:s.id,score:s.localScore});});
       },
       onPeer: function (on) { if (!on) clearChoice(); renderRoom(); },
       onLeave: function () { clearChoice(); toast('Друг вышел из комнаты'); renderRoom(); },
@@ -556,7 +617,7 @@ var Net2P = (function () {
   function joinRoom(code) {
     R = Object.assign(R, { state: 'joining', role: 'guest', code: Net2P.cleanCode(code), err: '' }); renderRoom();
     Net2P.join(code, { prefix: PREFIX,
-      onOpen: function () { R.state = 'live'; R.retry = 0; renderRoom(); toast('Ты в комнате друга'); },
+      onOpen: function () { R.state = 'live'; R.retry = 0; renderRoom(); sendIdentity(); toast('Ты в комнате друга'); },
       onPeer: function (on) { if (!on) clearChoice(); renderRoom(); },
       onData: onRoomData,
       onFail: function (m) {
@@ -573,46 +634,100 @@ var Net2P = (function () {
   function leaveRoom() {
     clearChoice();
     Net2P.close(); try { sessionStorage.removeItem('room-host-code'); } catch (e) {}
-    R = { state: 'idle', role: null, code: null, link: '', err: '', inst: null, game: null, seq: R.seq, retry: 0 };
+    R = { state: 'idle', role: null, code: null, link: '', err: '', inst: null, game: null, seq: R.seq, retry: 0,slots:[],multi:false,peerUid:null,peerName:'',ranked:false,ratedSession:null };
     dropBridge(true); unloadGame(); history.replaceState(null, '', location.pathname); renderRoom(); showHome();
   }
   function onRoomData(m) {
     if (!m || typeof m !== 'object') return;
     if (m.t === 'b') { onBridge(m); return; }
-    if (m.t === 'pick' && R.role === 'guest') { clearChoice(); if (Object.prototype.hasOwnProperty.call(NAMES,m.g) && typeof m.inst === 'string') loadGame(m.g, m.inst, true); else if (!m.g && R.game) { unloadGame(); showHome(); } }
+    if(m.t==='identity'){R.peerUid=typeof m.uid==='string'&&m.uid.length<=128?m.uid:null;R.peerName=typeof m.name==='string'?m.name.slice(0,64):'';changed('peer');return;}
+    if(m.t==='service'){if(m.data&&typeof m.data==='object')dispatchEvent(new CustomEvent('room:service',{detail:{context:roomContext(),data:m.data}}));return;}
+    if(m.t==='bundle-result'){if(R.multi&&m.inst===R.inst&&[0,.5,1].indexOf(m.score)>=0){var slot=R.slots.find(function(s){return s.id===m.id;});if(slot){slot.remoteScore=m.score;updateSlotScore(slot);renderMulti();changed('score');}}return;}
+    if (m.t === 'pick' && R.role === 'guest') { clearChoice(); if (Object.prototype.hasOwnProperty.call(NAMES,m.g) && typeof m.inst === 'string' && (m.g!=='multi'||validGames(m.games))) loadGame(m.g, m.inst, true,m.games,!!m.ranked); else if (!m.g && R.game) { unloadGame(); showHome(); } }
     else if (m.t === 'want' && R.role === 'host' && validChoice(m) && Net2P.online()) {
       if (choice) rsend({t:'offer-end',id:m.id,reason:'busy'});
-      else showChoice({id:m.id,g:m.g,by:'guest'});
+      else showChoice({id:m.id,g:m.g,games:m.games,ranked:!!m.ranked,by:'guest'});
     } else if (m.t === 'offer' && R.role === 'guest' && validChoice(m) && Net2P.online()) {
       if (choice) rsend({t:'answer',id:m.id,accept:false});
-      else showChoice({id:m.id,g:m.g,by:'host'});
+      else showChoice({id:m.id,g:m.g,games:m.games,ranked:!!m.ranked,by:'host'});
     } else if (m.t === 'answer' && R.role === 'host' && choice && choice.by === 'host' && m.id === choice.id) {
       if (m.accept === true) commitChoice(); else endChoice('declined');
     } else if (m.t === 'offer-cancel' && R.role === 'host' && choice && choice.by === 'guest' && m.id === choice.id) endChoice('cancelled');
     else if (m.t === 'offer-end' && R.role === 'guest' && choice && m.id === choice.id) { clearChoice(); toast(choiceMessage(m.reason)); }
   }
-  function pick(g) {
+  function pick(g,games) {
     if (!Object.prototype.hasOwnProperty.call(NAMES,g) || R.state !== 'live') return;
+    if(g==='multi'&&!validGames(games))return;
     if (!Net2P.online()) { toast('Нет связи с другом. Предложите игру после подключения.'); return; }
     if (choice) { toast('Сначала дождитесь ответа на текущий запрос.'); return; }
     var id = R.role + '-' + Date.now().toString(36) + '-' + (++choiceSeq);
-    showChoice({id:id,g:g,by:R.role});
-    rsend({t:R.role === 'host'?'offer':'want',id:id,g:g});
+    var p={id:id,g:g,games:games,ranked:!!(window.RatingUI&&window.RatingUI.wantRated&&window.RatingUI.wantRated()),by:R.role};if(!allowInvite(p))return;
+    showChoice(p);
+    rsend({t:R.role === 'host'?'offer':'want',id:id,g:g,games:games,ranked:p.ranked});
   }
 
-  // ---- game frame ----
-  function loadGame(g, inst, announced) {
+  // ---- parallel game selection and independent frames ----
+  MULTI_GAMES.forEach(function(g,i){var label=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.dataset.multiGame=g;input.checked=i<3;input.onchange=paintMultiPicker;label.append(input,document.createTextNode(NAMES[g]));$('multiPicker').appendChild(label);});
+  function selectedGames(){return Array.prototype.filter.call($('multiPicker').querySelectorAll('input'),function(x){return x.checked;}).map(function(x){return x.dataset.multiGame;});}
+  function paintMultiPicker(){var count=+$('multiCount').value,selected=selectedGames(),ready=R.state==='live'&&Net2P.online();Array.prototype.forEach.call($('multiPicker').querySelectorAll('input'),function(x){x.disabled=!x.checked&&selected.length>=count;});$('multiPropose').disabled=selected.length!==count||!ready;$('multiMessage').textContent=!ready?'Создайте комнату и дождитесь друга. Затем можно предложить набор.':'Выбрано '+selected.length+' из '+count+'. Друг подтвердит набор перед началом.';}
+  function openMulti(){paintMultiPicker();if(!$('multiDialog').open)$('multiDialog').showModal();}
+  $('multiOpen').onclick=$('multiNew').onclick=openMulti;
+  $('multiCancel').onclick=function(){$('multiDialog').close();};
+  $('multiCount').onchange=function(){var count=+this.value,inputs=Array.prototype.slice.call($('multiPicker').querySelectorAll('input')),chosen=inputs.filter(function(x){return x.checked;});while(chosen.length>count)chosen.pop().checked=false;while(chosen.length<count){var next=inputs.find(function(x){return !x.checked;});if(!next)break;next.checked=true;chosen.push(next);}paintMultiPicker();};
+  $('multiPropose').onclick=function(){var games=selectedGames();if(!validGames(games)||games.length!==+$('multiCount').value)return;$('multiDialog').close();pick('multi',games);};
+  function updateSlotScore(slot){if(slot.localScore!==undefined&&slot.remoteScore!==undefined&&slot.localScore===slot.remoteScore)slot.score=slot.localScore;}
+  function selectPanel(index){multiActive=index;renderMulti();}
+  function renderMulti(){
+    if(!R.multi)return;
+    var total=R.slots.length,complete=R.slots.filter(function(s){return s.score!==undefined;}),hostPoints=complete.reduce(function(n,s){return n+s.score;},0),mine=R.role==='host'?hostPoints:complete.length-hostPoints,theirs=complete.length-mine;
+    $('multiScore').textContent=String(mine).replace('.',',')+' : '+String(theirs).replace('.',',');
+    $('multiSummary').textContent=complete.length===total?'Все партии завершены. '+(mine===theirs?'Ничья в наборе.':mine>theirs?'Вы победили в наборе.':'Друг победил в наборе.'):'Завершено '+complete.length+' из '+total+'. '+(R.slots.some(function(s){return s.phase==='start'||s.phase==='update';})?'Переключайтесь между досками — партии продолжаются.':'Настройте доски и нажмите «Начать все».');
+    $('multiStart').hidden=R.role!=='host'||R.slots.every(function(s){return !!s.started;});$('multiStart').disabled=!Net2P.online()||R.slots.some(function(s){return !s.ready;});$('multiStart').textContent=R.slots.some(function(s){return !!s.started;})?'Начать остальные':'Начать все';$('multiNew').hidden=complete.length!==total;
+    $('stage').dataset.multiView=multiView;$('multiGrid').textContent=multiView==='grid'?'Развернуть доску':'Показать все доски';
+    R.slots.forEach(function(s,i){var active=i===multiActive,tab=$('multiTabs').querySelector('[data-slot="'+i+'"]');if(tab){tab.setAttribute('aria-selected',String(active));tab.classList.toggle('done',s.score!==undefined);tab.classList.toggle('your-turn',!!s.yourTurn&&s.score===undefined);tab.textContent=NAMES[s.game]+(s.score!==undefined?' · '+(s.score===.5?'½':(R.role==='host'?s.score:1-s.score)):s.yourTurn?' · ваш ход':'');}if(s.panel){s.panel.classList.toggle('active',active);s.panel.dataset.active=String(active);var all=multiView==='grid'&&matchMedia('(min-width:1100px) and (min-height:720px)').matches;s.panel.inert=!active&&!all;s.panel.setAttribute('aria-hidden',String(!active&&!all));s.status.textContent=s.score!==undefined?'Партия завершена':s.localScore!==undefined||s.remoteScore!==undefined?'Ждём подтверждения':s.yourTurn?'Ваш ход':s.started?'Игра идёт':s.ready?'Готова к началу':'Загружается';}});
+    if(complete.length===total&&!bundleEnded){bundleEnded=true;dispatchEvent(new CustomEvent('room:bundle-finished',{detail:{context:roomContext(),hostScore:hostPoints,guestScore:complete.length-hostPoints}}));}
+  }
+  $('multiGrid').onclick=function(){multiView=multiView==='grid'?'tabs':'grid';renderMulti();};
+  addEventListener('resize',function(){if(R.multi)renderMulti();});
+  function prepareSlot(slot){
+    if(!R.slots.some(function(s){return s===slot;}))return;
+    var doc;try{doc=slot.frame.contentDocument;}catch(e){return;}if(!doc||!doc.getElementById('menu'))return;
+    slot.ready=true;
+    var style=doc.createElement('style');style.textContent='#againBtn,#endAgain,#resultAgain,#matchAgain,#modeSeg,#playBtn,#quickCard{display:none!important}#game{justify-content:flex-start!important;overflow-y:auto!important}body.view-no-history:not(.view-analysis) #ckStudy{display:none!important}'+(['ttt','go','checkers'].indexOf(slot.game)>=0?'#game{gap:6px!important}':'');doc.head.appendChild(style);
+    doc.addEventListener('click',function(e){if(!e.target.closest)return;if(e.target.closest('#againBtn,#endAgain,#resultAgain,#matchAgain')){e.preventDefault();e.stopImmediatePropagation();toast('Для реванша выберите новый набор. Остальные партии продолжаются.');}else if(R.role==='host'&&e.target.closest('#onCreate')){var preset=slot.game==='tochki'?doc.querySelector('#presets [data-n="2"]'):slot.game==='lava'?doc.getElementById('m-net'):null;if(preset)preset.click();}},true);
+    if(R.role==='host'){var preset=slot.game==='tochki'?doc.querySelector('#presets [data-n="2"]'):slot.game==='lava'?doc.getElementById('m-net'):null;if(preset)preset.click();}
+    renderMulti();changed('frames');
+  }
+  $('multiStart').onclick=function(){
+    if(!R.multi||R.role!=='host'||!Net2P.online())return;
+    var before=new CustomEvent('room:request-start',{cancelable:true,detail:{context:roomContext()}});if(!dispatchEvent(before))return;
+    R.slots.forEach(function(slot){if(slot.started||!slot.ready)return;var doc=slot.frame.contentDocument,create=doc.getElementById('netCreate')||doc.getElementById('onCreate');if(create&&!create.disabled){slot.started=true;create.click();if(slot.game==='tochki'){var inst=R.inst,tries=0,timer=setInterval(function(){if(R.inst!==inst||++tries>150){clearInterval(timer);return;}var start=doc.getElementById('lbStart');if(start&&!start.hidden&&!start.disabled){start.click();clearInterval(timer);}},200);}}});renderMulti();
+  };
+
+  // ---- game frame; the ordinary #frame remains unchanged for single games ----
+  function loadGame(g, inst, announced, games, ranked) {
     if (R.inst !== inst) { dropBridge(true); }
-    R.inst = inst; R.game = g;
+    var fresh=R.inst!==inst;
+    R.inst = inst; R.game = g;R.multi=g==='multi';R.ranked=!!ranked;if(fresh)R.ratedSession=null;
+    bundleEnded=false;multiActive=0;
+    $('stage').classList.toggle('multi-mode',R.multi);$('multiToolbar').hidden=$('multiTabs').hidden=$('multiPanels').hidden=!R.multi;
+    $('multiPanels').replaceChildren();$('multiTabs').replaceChildren();R.slots=[];
+    if(R.multi){
+      $('frame').src='about:blank';
+      R.slots=games.map(function(game,index){return{game:game,id:inst+':'+index,index:index,frame:document.createElement('iframe'),ready:false,started:false};});
+      R.slots.forEach(function(slot,index){var panel=document.createElement('section'),head=document.createElement('header'),title=document.createElement('strong'),status=document.createElement('span'),expand=document.createElement('button'),tab=document.createElement('button');panel.className='multi-panel';panel.setAttribute('role','tabpanel');panel.id='multi-panel-'+index;title.textContent=NAMES[slot.game];expand.type='button';expand.textContent='Развернуть';expand.onclick=function(){multiActive=index;multiView='tabs';renderMulti();};head.append(title,status,expand);slot.panel=panel;slot.status=status;slot.frame.id='multi-frame-'+index;slot.frame.title=NAMES[slot.game];slot.frame.allow='autoplay; clipboard-write';slot.frame.onload=function(){prepareSlot(slot);};slot.frame.src=slot.game+'/'+(R.role==='guest'?'#'+R.code:'');panel.append(head,slot.frame);$('multiPanels').appendChild(panel);tab.type='button';tab.dataset.slot=index;tab.setAttribute('role','tab');tab.setAttribute('aria-controls',panel.id);tab.onclick=function(){selectPanel(index);};$('multiTabs').appendChild(tab);});
+      $('stTitle').textContent=(R.ranked?'Рейтинговая связка · ':'')+games.length+' игры';renderMulti();showStage();renderRoom();changed('pick');return;
+    }
+    R.slots=[{game:g,id:inst,index:0,frame:$('frame')}];
     var src = g + '/' + (R.role === 'guest' ? '#' + R.code : '');
     $('frame').src = 'about:blank';
     setTimeout(function () { $('frame').src = src; }, 30);
-    $('stTitle').textContent = NAMES[g] || g;
+    $('stTitle').textContent = (R.ranked?'Рейтинговая партия · ':'')+(NAMES[g] || g);
     showStage();
     if (announced && R.role === 'guest') toast('Друг открыл «' + (NAMES[g] || g) + '»');
     renderRoom();
   }
-  function unloadGame() { $('frame').src = 'about:blank'; R.game = null; R.inst = null; $('stage').hidden = true; }
+  function unloadGame() { $('frame').src = 'about:blank';$('multiPanels').replaceChildren();$('multiTabs').replaceChildren();R.slots=[];R.multi=false;R.ranked=false;R.ratedSession=null;R.game = null; R.inst = null; $('stage').hidden = true;changed('unload'); }
   function showStage() { $('stage').hidden = false; $('home').hidden = true; renderWho(); }
   function showHome() { $('home').hidden = false; renderRoom(); }
   $('backBtn').onclick = showHome;
@@ -657,6 +772,7 @@ var Net2P = (function () {
     on('copyBtn', function () { copy(this); }); on('copyBtn2', function () { copy(this); });
     Array.prototype.forEach.call(document.querySelectorAll('a.game'), function (a) { a.classList.toggle('current', a.dataset.g === R.game && s === 'live'); });
     renderWho();
+    paintMultiPicker();renderMulti();changed('room');
   }
   // a game card: inside a room it opens the game for both; otherwise it's a normal link (solo play)
   Array.prototype.forEach.call(document.querySelectorAll('a.game'), function (a) {

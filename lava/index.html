@@ -13,6 +13,7 @@
 .local-views{position:fixed;top:8px;right:8px;z-index:65;display:flex;gap:4px;background:#111827ed;border:1px solid #586176;border-radius:10px;padding:3px;color:#f1eee8}.local-views button{min-width:34px;height:30px;padding:3px 7px;border:0;border-radius:6px;color:inherit;background:transparent;font:800 12px system-ui;cursor:pointer}.local-views button[aria-pressed=true]{background:#eac17c;color:#211a10}.local-views button:focus-visible{outline:2px solid #eac17c}.local-rotated{rotate:180deg}.local-mirrored{scale:-1 1}.local-rotated :is(.coord,.lab,.cd){rotate:180deg;transform-box:fill-box;transform-origin:center}.view-no-coords :is(.coord,.cd,.ab-axis,.view-axis-label){display:none!important}.view-no-coords .grid .lab{visibility:hidden}.view-no-history :is(#nota,#notation,#ckNotation,.notation-card){display:none!important}.view-no-history:not(.view-analysis) :is(.rv-nav,#replay){display:none!important}.view-axis-label{position:absolute;pointer-events:none;color:#c6cbd4;font:700 11px system-ui}.local-rotated .view-axis-label{rotate:180deg}html.in-room #game{padding-top:42px!important}
 
 body:has(#replay) .local-views{right:calc(50% - 66px)}html:not(.in-room) body.in-game:has(#replay) .local-views{top:48px}html:not(.in-room) body.in-game:has(#replay) .topbar{top:86px}html:not(.in-room) body.in-game:has(#replay) .gc-bar{top:86px}html:not(.in-room) body.in-game.gc-timed:has(#replay) .topbar{top:148px}html:not(.in-room) body.in-game:has(#replay) #boardWrap{top:194px}html:not(.in-room) body.in-game.gc-timed:has(#replay) #boardWrap{top:256px}
+html.in-room body:has(#ckStudy) #toast{top:calc(env(safe-area-inset-top,0px) + 52px)}
 
 .match-actions{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:8px 12px;margin:0 auto;flex-shrink:0;z-index:8}
 .match-actions button,.match-dialog button{min-height:40px;border:1px solid #ffffff36;border-radius:10px;padding:8px 16px;font:600 13px system-ui;cursor:pointer}
@@ -37,6 +38,10 @@ body.no-eval #game[data-match-actions=tochki].match-actions-active #boardWrap{bo
 body.in-game:has(#game[data-match-actions=tochki].match-actions-active) .corner[data-p="2"],body.in-game:has(#game[data-match-actions=tochki].match-actions-active) .corner[data-p="3"]{bottom:calc(10px + var(--match-height) + env(safe-area-inset-bottom,0px))}
 .match-actions #matchReview,.match-actions #matchSummary{background:var(--btn,#25303c);color:var(--ink,#f2f1eb)}
 #game[data-match-actions=chess]{overflow-y:auto}
+
+.rating-panel{border:1px solid var(--line,#344056);border-radius:16px;padding:16px;background:var(--bg-2,#1a2136)}.rating-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.rating-heading h2{margin:0 0 6px;font:800 17px/1.3 var(--display,system-ui)}.rating-heading p,.rating-note{font:600 12px/1.5 var(--body,system-ui);color:var(--ink-dim,#a7b0c2);margin:0}.rating-choice{display:flex;align-items:center;gap:9px;margin:14px 0 8px;font:700 14px var(--body,system-ui);cursor:pointer}.rating-choice input{width:18px;height:18px;accent-color:var(--gold,#ffd166)}.rating-choice input:disabled{opacity:.4}.rating-status{font:700 13px/1.5 var(--body,system-ui);color:var(--gold,#ffd166);margin:10px 0 0}.rating-status:empty{display:none}.rating-card-badge{color:var(--gold,#ffd166)}
+.rating-dialog{box-sizing:border-box;width:min(640px,calc(100vw - 28px));max-height:calc(100dvh - 28px);overflow:auto;border:1px solid var(--line,#344056);border-radius:18px;padding:25px;background:var(--bg-2,#1a2136);color:var(--ink,#eef1fb);font:14px/1.5 var(--body,system-ui)}.rating-dialog::backdrop{background:#060a15c7;backdrop-filter:blur(4px)}.rating-dialog h2{margin:0 30px 15px 0;font:800 22px/1.3 var(--display,system-ui)}.rating-close{position:absolute;right:12px;top:10px;border:0;background:transparent;color:inherit;font-size:26px;cursor:pointer}.rating-tabs{display:flex;gap:6px;margin-bottom:14px}.rating-tabs button{border:1px solid var(--line,#344056);border-radius:8px;padding:9px 10px;background:var(--btn,#2b354a);color:inherit;font:700 12px var(--body,system-ui);cursor:pointer}.rating-tabs [aria-pressed=true]{border-color:var(--gold,#ffd166);color:var(--gold,#ffd166)}.rating-dialog label{display:flex;gap:10px;align-items:center;margin-bottom:14px}.rating-dialog select{max-width:100%;padding:9px;background:var(--bg,#121726);color:inherit;border:1px solid var(--line,#344056);border-radius:8px}.rating-table{width:100%;border-collapse:collapse;margin-top:15px;font-size:12px}.rating-table th,.rating-table td{padding:10px 7px;text-align:left;border-bottom:1px solid var(--line,#344056)}.rating-table th{color:var(--ink-dim,#a7b0c2);font-weight:600}.rating-table td strong{font-size:16px;color:var(--gold,#ffd166);font-variant-numeric:tabular-nums}.rating-table .positive{color:#82d5a7}.rating-table .negative{color:#ff9c94}.rating-table small{display:block;color:var(--ink-dim,#a7b0c2)}.rating-setup h2{margin:0 0 9px}.rating-setup{margin-bottom:10px}.rating-setup .rating-note{margin:8px 0 0}.rating-setup button,.rating-setup a{font:700 12px var(--body,system-ui);color:var(--gold,#ffd166)}
+.rating-pill{position:fixed;z-index:66;top:8px;left:50%;transform:translateX(-50%);border:1px solid #a58d55;border-radius:9px;padding:7px 9px;background:#172238ed;color:#ffe2a3;font:700 11px/1.3 system-ui;pointer-events:none;max-width:calc(100vw - 240px);text-align:center}.rating-pill[hidden]{display:none}.rating-gate{position:fixed;inset:48px 8px 8px;z-index:110;background:#101727e8;backdrop-filter:blur(4px);display:grid;place-items:center;border-radius:14px;padding:24px;color:#f1eee6;text-align:center;font:700 14px/1.6 system-ui}.rating-gate>div{max-width:350px}.rating-gate button{margin-top:15px;padding:10px 16px;border:1px solid #ffd166;border-radius:9px;background:#ffd166;color:#211a10;font:700 13px system-ui;cursor:pointer}.rating-gate[hidden]{display:none}.rating-end-toast{position:fixed;z-index:120;left:50%;top:48px;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 24px);padding:10px 16px;background:#213b32;color:#d8ffde;border:1px solid #71b18a;border-radius:10px;font:700 13px/1.5 system-ui;box-shadow:0 8px 20px #0005}.rating-end-toast[hidden]{display:none}@media(max-width:480px){.rating-heading{align-items:flex-start;flex-wrap:wrap}.rating-heading>.btn{font-size:12px}.rating-dialog{padding:21px 14px}.rating-tabs{gap:4px}.rating-tabs button{padding:8px;font-size:11px}.rating-table th,.rating-table td{padding:9px 4px}}
 </style><script>// Подключение игры к «комнате» (главная страница). Работает, только если игра открыта внутри главной.
 // Подменяет PeerJS мостом комнаты и подстраивает интерфейс: код не нужен, друг подключается сам.
 (function () {
@@ -93,6 +98,161 @@ var BoardView=(function(){
  return{defaults:defaults,attach:attach,isFlipped:function(id){return !!views[id]&&views[id].flipped();},refresh:function(id){if(views[id])views[id].refresh();}};
 })();
 
+// Structured lifecycle facts shared by the catalogue, simultaneous games and ratings.
+// This module never decides rating changes and never exposes private board/hand data.
+var GameEvents = (function () {
+  function copy(value) { return value == null ? value : JSON.parse(JSON.stringify(value)); }
+  function freeze(value) { if (value && typeof value === 'object') { Object.keys(value).forEach(function (key) { freeze(value[key]); }); Object.freeze(value); } return value; }
+  function publish(event) {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent('game:state', { detail: event }));
+    try { if (window.parent !== window && window.parent.ROOM && window.parent.ROOM.gameEvent) window.parent.ROOM.gameEvent(window, event); } catch (_) {}
+  }
+  function service(event) { if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('game:service', { detail: event })); }
+  function create(emit, emitService) {
+    emit = emit || publish; emitService = emitService || service;
+    var providers = [], clocks = {}, latest = null, policy = { rated: false, ready: true, session: null };
+    function attach(a, options) {
+      options = options || {}; var contexts = Object.create(null), context = null, origins = Object.create(null), pendingOrigin = null, pendingResults = Object.create(null), pendingEliminations = Object.create(null);
+      var meta = a.events || {};
+      function getState() { return a.state ? a.state() : null; }
+      function getToken() { return options.token ? options.token() : null; }
+      function normalize(result, roster) {
+        if (!result) return null;
+        if (result.draw) return { draw: true, winners: [], reason: result.reason || 'draw' };
+        var winners = Array.isArray(result.winners) ? result.winners : result.winner !== undefined && result.winner !== null ? [result.winner] : [];
+        winners = winners.filter(function (id, i) { return winners.indexOf(id) === i && roster.some(function (p) { return p.id === id; }); });
+        return winners.length ? { draw: false, winners: winners, reason: result.reason || 'normal' } : null;
+      }
+      function refresh() {
+        var s = getState(), token = getToken();
+        if (!s || s.analysis || s.ready === false || !token) { if (context && latest && latest.token === context.token) latest = null; return null; }
+        token = String(token);
+        context = contexts[token];
+        if (!context) {
+          var players = (meta.fullPlayers ? meta.fullPlayers(s) : s.players || []).map(function (p) { return { id: p.id, kind: p.kind, label: p.label || String(p.id) }; });
+          var origin = origins[token] || pendingOrigin || {};
+          pendingOrigin = null;
+          var online = !!(a.role && a.role()) || players.some(function (p) { return p.kind === 'remote'; });
+          context = contexts[token] = {
+            token: token, players: copy(players), mine: copy(s.mine || []),
+            mode: online ? 'online' : players.some(function (p) { return p.kind === 'bot'; }) ? 'bot' : 'local',
+            continued: typeof origin.continued === 'boolean' ? origin.continued : !!(meta.continued && meta.continued(s)),
+            evaluationEnabled: typeof origin.evaluationEnabled === 'boolean' ? origin.evaluationEnabled : !!(meta.evaluation && meta.evaluation(s)),
+            botLevel: meta.botLevel ? meta.botLevel(s) : null,
+            clock: copy(origin.clock || clocks[a.id] || { enabled: false, left: [], inc: [] }),
+            eliminated: copy(origin.eliminated || pendingEliminations[token] || []),
+            started: false, done: false, signature: '', override: pendingResults[token] || null, clockLoser: undefined
+          };
+        }
+        if (!s.over && meta.eliminated) (meta.eliminated(s) || []).forEach(function (id) { if (context.eliminated.indexOf(id) < 0) context.eliminated.push(id); });
+        var result = null;
+        if (s.over) {
+          result = normalize(context.override || (meta.result && meta.result(s)), context.players);
+          if (context.clockLoser !== undefined) {
+            result = result || normalize({ winners: context.players.filter(function (p) { return p.id !== context.clockLoser; }).map(function (p) { return p.id; }) }, context.players);
+            if (result) result.reason = 'time';
+          }
+        }
+        if (result && result.draw && context.eliminated.length) result.eliminated = context.eliminated.slice();
+        if (context.done) result = context.result;
+        var score = result && context.mine.length === 1 ? result.draw ? result.eliminated && result.eliminated.indexOf(context.mine[0]) >= 0 ? 0 : .5 : result.winners.indexOf(context.mine[0]) >= 0 ? 1 : 0 : null;
+        var event = {
+          game: a.id, token: token, phase: !context.started ? 'start' : result && !context.done ? 'result' : 'update',
+          mode: context.mode, players: copy(context.players), mine: copy(context.mine),
+          version: s.version, turn: s.turn, over: !!s.over, result: result,
+          score: score, evaluationEnabled: context.evaluationEnabled, continued: context.continued,
+          botLevel: context.botLevel == null ? null : copy(context.botLevel),
+          clock: copy(context.clock)
+        };
+        var signature = JSON.stringify([event.version, event.turn, event.over, event.result, event.clock, event.evaluationEnabled]);
+        latest = freeze(copy(event));
+        if (!context.started) {
+          context.started = true; context.signature = signature; emit(latest);
+          if (result) { event.phase = 'result'; context.done = true; context.result = copy(result); latest = freeze(copy(event)); emit(latest); }
+        } else if (!context.done && (event.phase === 'result' || signature !== context.signature)) {
+          context.signature = signature;
+          if (event.phase === 'result') { context.done = true; context.result = copy(result); }
+          emit(latest);
+        }
+        return latest;
+      }
+      function origin() {
+        refresh();
+        return context ? { continued: context.continued, evaluationEnabled: context.evaluationEnabled, clock: copy(context.clock), eliminated: context.eliminated.slice() } : null;
+      }
+      function setOrigin(value) { if (!value || typeof value !== 'object') return; var token = getToken(); if (token) origins[String(token)] = copy(value); else pendingOrigin = copy(value); }
+      function adjudicate(result) {
+        var s = getState(), token = getToken();
+        if (!s || !token || !result) return;
+        var prior = contexts[String(token)];
+        if (result.type === 'resign' && result.winner == null) {
+          var eliminated = prior ? prior.eliminated : pendingEliminations[String(token)] || (pendingEliminations[String(token)] = []);
+          if (eliminated.indexOf(result.actor) < 0) eliminated.push(result.actor);
+          return;
+        }
+        if (!s.over || result.type !== 'draw' && result.winner == null) return;
+        var value = result.type === 'draw' ? { draw: true, winners: [], reason: 'agreement' } : { draw: false, winners: [result.winner], reason: result.type || 'resign' };
+        var ctx = contexts[String(token)]; if (!ctx) { pendingResults[String(token)] = value; return; }
+        if (!ctx.done) ctx.override = value;
+      }
+      function expire(index) {
+        refresh(); var token = getToken(), ctx = token && contexts[String(token)];
+        if (!ctx || ctx.done) return;
+        var seats = meta.clockSeats ? meta.clockSeats() : ctx.players.map(function (p) { return p.id; });
+        ctx.clockLoser = seats[index];
+      }
+      var provider = { refresh: refresh, origin: origin, setOrigin: setOrigin, adjudicate: adjudicate, expire: expire, adapter: a };
+      providers.push(provider); return provider;
+    }
+    function flush() { providers.forEach(function (p) { p.refresh(); }); return latest; }
+    function current() { return latest ? freeze(copy(latest)) : null; }
+    function clock(id, value) { clocks[id] = { enabled: !!value.enabled, left: (value.left || []).slice(), inc: (value.inc || []).slice() }; }
+    function expire(id, index) { providers.filter(function (p) { return p.adapter.id === id; }).forEach(function (p) { p.expire(index); }); }
+    function configure(value) { policy = { rated: !!(value && value.rated), ready: !value || value.ready !== false, session: value && value.session || null }; return freeze(copy(policy)); }
+    function waiting() { return policy.rated && !policy.ready; }
+    function role() { for (var i = providers.length - 1; i >= 0; i--) { var a = providers[i].adapter; if (a.role && a.role()) return a.role(); } return null; }
+    function allows(action) {
+      if (!policy.rated || ['undo', 'rematch', 'hint'].indexOf(action) < 0) return true;
+      var s = providers.length ? providers[providers.length - 1].adapter.state() : null;
+      if (action === 'hint' && s && (s.over || s.analysis)) return true;
+      if (action === 'undo' && s && s.analysis) return true;
+      return false;
+    }
+    function send(data) {
+      for (var i = providers.length - 1; i >= 0; i--) {
+        var a = providers[i].adapter;
+        if (a.role && a.role() && a.send) { a.send({ t: 'ratings-v1', data: data }); return true; }
+      }
+      return false;
+    }
+    function receive(message, from) { if (!message || message.t !== 'ratings-v1') return false; emitService({ data: message.data, from: from }); return true; }
+    return { attach: attach, current: current, flush: flush, clock: clock, expire: expire, configure: configure, setPolicy: configure, policy: function () { return freeze(copy(policy)); }, waiting: waiting, role: role, allows: allows, send: send, receive: receive };
+  }
+  var api = create(); api.create = create;
+  try { if (typeof window !== 'undefined' && window.parent !== window && window.parent.ROOM && window.parent.ROOM.context && window.parent.ROOM.context().ranked) api.configure({ rated: true, ready: false }); } catch (_) {}
+  if (typeof document !== 'undefined') {
+    var undo = '#undoBtn,#endUndo', rematch = '#againBtn,#endAgain,#resultAgain,#matchAgain', hints = '#hintBtn,#bestMove,#ckBestMove,#hintArrowsToggle';
+    var scheduled = false;
+    function later() { if (scheduled) return; scheduled = true; Promise.resolve().then(function () { scheduled = false; api.flush(); }); }
+    function capture(event) {
+      api.flush();
+      var target = event.target && event.target.closest ? event.target : null;
+      if (api.waiting() && target && target.closest('#board,#big,#tiles,#myGrid,#enGrid,#passBtn,#stayBtn,#hand,#dropZone')) { event.preventDefault(); event.stopImmediatePropagation(); return; }
+      var action = target && target.closest(undo) ? 'undo' : target && target.closest(rematch) ? 'rematch' : target && target.closest(hints) ? 'hint' : 'move';
+      if (event.type === 'click' && !api.allows(action)) {
+        event.preventDefault(); event.stopImmediatePropagation();
+        window.dispatchEvent(new CustomEvent('game:policy', { detail: { action: action, session: api.policy().session } })); return;
+      }
+      if (event.type === 'keydown' && api.policy().rated && (event.ctrlKey || event.metaKey) && /^[zZяЯ]$/.test(event.key)) { event.preventDefault(); event.stopImmediatePropagation(); return; }
+      later();
+    }
+    ['pointerdown', 'click', 'keydown'].forEach(function (name) { document.addEventListener(name, capture, true); });
+  }
+  return api;
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = GameEvents;
+
 // Consent is independent of game rules and engine strength.
 var MatchVote = (function () {
   function create(players, proposer, version, id) {
@@ -114,6 +274,7 @@ var MatchActions = (function () {
   var CHANNEL = 'match-actions-v1';
   function attach(a) {
     var ref = null, gameId = null, log = [], applied = {}, offer = null, sentVotes = {}, lastHello = 0, updating = false, dialogKey = '', answer = null, wasOver = false, finalResult = null;
+    var telemetry = typeof GameEvents !== 'undefined' ? GameEvents.attach(a, { token: function () { return gameId; } }) : null;
     var mount = document.getElementById('game'), row = document.createElement('div');
     row.className = 'match-actions'; row.hidden = true;
     row.innerHTML = '<button type="button" id="surrenderBtn">Сдаться</button><button type="button" id="offerDrawBtn">Предложить ничью</button><button type="button" id="matchReview" hidden>Анализ</button><button type="button" id="matchSummary" hidden>Результат</button><span id="matchWait" role="status"></span>';
@@ -154,11 +315,12 @@ var MatchActions = (function () {
     function local(s) { return s.players.filter(function (p) { return s.mine.indexOf(p.id) >= 0; }); }
     function actor(s) { var mine = local(s); return mine.find(function (p) { return p.id === s.turn; }) || mine[0]; }
     function cancel(notify) { if (!offer) return; offer = null; sentVotes = {}; closeQuestion(); if (notify && role() === 'host') send({ kind: 'cancel' }); }
-    function bind() { send({ kind: 'bind', log: log }); }
+    function bind() { send({ kind: 'bind', log: log, origin: telemetry ? telemetry.origin() : null }); }
     function apply(r) {
       if (applied[r.id]) return;
       applied[r.id] = true;
       a.finish(r);
+      if (telemetry) telemetry.adjudicate(r);
       var s = state();
       if (s && s.over) {
         finalResult = r;
@@ -232,10 +394,12 @@ var MatchActions = (function () {
             ask('vote:' + offer.id + ':' + seat, 'Согласиться на ничью?', (p ? p.label + ': ' : '') + 'соперник предлагает завершить партию вничью.', 'Принять ничью', 'Отклонить', function (ok) { vote(seat, ok); });
           } else if (dialogKey.indexOf('vote:') === 0) closeQuestion();
         }
+        if (telemetry) telemetry.refresh();
       } finally { updating = false; }
     }
     function receive(d, from) {
-      if (!d || d.t !== CHANNEL) return false;
+      if (typeof GameEvents !== 'undefined' && GameEvents.receive(d, from)) return true;
+      if (!d || d.t !== CHANNEL) { if (telemetry) telemetry.refresh(); Promise.resolve().then(refresh); return false; }
       refresh(); var s = state(); if (!s) return true;
       if (role() === 'host') {
         if (!s.players.some(function (p) { return p.id === from && p.kind === 'remote'; }) && d.kind !== 'hello') return true;
@@ -247,6 +411,7 @@ var MatchActions = (function () {
         if (d.kind === 'bind') {
           if (gameId && gameId !== d.game) { applied = {}; log = []; cancel(false); }
           gameId = d.game;
+          if (telemetry) telemetry.setOrigin(d.origin);
           if (Array.isArray(d.log)) d.log.forEach(function (r) { apply(r); });
         } else if (gameId && d.game === gameId) {
           if (d.kind === 'commit' && d.result) { cancel(false); apply(d.result); }
@@ -481,7 +646,7 @@ dialog p{margin:0 0 10px;color:#d8c8bd}
     </div>
 
     <details class="card rules"><summary><h2>Как играть</h2></summary><div class="rules-body" id="rulesMenu"></div></details>
-    <p class="version">Версия от 06.11.2026 22:32</p>
+    <p class="version">Версия от 06.11.2026 23:31</p>
   </div>
 </section>
 
@@ -1878,6 +2043,7 @@ var Review = function (o) {
   if (hash) join(hash[1]);
 
  var MA = MatchActions.attach({id:'lava',
+  events:{eliminated:function(){return state?state.players.map(function(p,i){return p.alive?-1:i;}).filter(function(i){return i>=0;}):[];},fullPlayers:function(){return state?state.players.map(function(p,i){return {id:i,label:C[p.corner].name,kind:roles[i]==='bot'?'bot':net()&&net().role==='guest'?i===net().seat?'human':'remote':roles[i]==='net'?'remote':'human'};}):[];},result:function(){return state&&state.over?{draw:state.draw||state.winner===null,winners:state.winner===null?[]:[state.winner],reason:state.settlement?state.settlement.type:'normal'}:null;},evaluation:function(){return !!S.evalOn;},continued:function(){return !!state&&state.ply>0;},clockSeats:function(){return [];},botLevel:function(){return null;}},
   state:function(){return state?{ref:net()?'net:'+net().code+':'+netRound:gameSetup,version:state.ply,turn:state.turn,over:state.over,analysis:false,players:state.players.map(function(p,i){return{id:i,label:C[p.corner].name,kind:roles[i]==='bot'?'bot':roles[i]==='net'?'remote':'human'};}).filter(function(p){return state.players[p.id].alive;}),mine:state.players.map(function(p,i){return i;}).filter(function(i){return state.players[i].alive&&(net()&&net().role==='guest'?i===net().seat:roles[i]==='human');})}:null;},
   role:function(){return net()&&net().role;},send:function(m){if(net()&&net().role==='host')LavaLink.tellAll(m);else LavaLink.tell(m);},online:function(){return LavaLink.ready();},notify:toast,menu:home,again:restart,
   analyze:function(){if($('result').open)$('result').close();rv.go(0);render();},
@@ -1887,5 +2053,5 @@ var Review = function (o) {
   BoardView.attach({id:'lava',ref:function(){return state?(net()?'net:'+net().code+':'+netRound:gameSetup):null;},boards:['board'],axes:6,autoFlip:function(){var n=LavaLink.current(),i=n&&n.role==='guest'?n.seat:roles.indexOf('human');return state&&i>=0&&state.players[i].corner<2;},coords:function(){return S.coords;},setCoords:function(v){S.coords=v;savePrefs();},analysis:function(){return state&&state.over;}});
 })();
 </script>
-
+<script src="../game-rating.js" defer></script>
 </body></html>

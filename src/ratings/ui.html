@@ -1,0 +1,7 @@
+<section class="rating-panel" aria-label="Рейтинг игроков">
+  <div class="rating-heading"><div><h2>Рейтинг</h2><p id="ratingSummary">Начальный рейтинг 1200 · отдельно для каждой игры</p></div><button type="button" class="btn" id="ratingDetails">Мои результаты</button></div>
+  <label class="rating-choice"><input type="checkbox" id="ratingToggle"><span>Играть на рейтинг с другом</span></label>
+  <p class="rating-note" id="ratingHelp">Войдите в аккаунт. Рейтинг учитывается в онлайне между людьми; боты играют без изменения рейтинга.</p>
+  <p id="ratingSessionStatus" class="rating-status" role="status" aria-live="polite"></p>
+</section>
+<dialog id="ratingDialog" class="rating-dialog" aria-labelledby="ratingTitle"><button type="button" id="ratingClose" class="rating-close" aria-label="Закрыть">×</button><h2 id="ratingTitle">Мой рейтинг</h2><div class="rating-tabs"><button type="button" id="ratingMineTab" aria-pressed="true">Мой рейтинг</button><button type="button" id="ratingLeadersTab">Лидеры</button><button type="button" id="ratingHistoryTab">История</button></div><label id="ratingPoolRow" hidden>Игра<select id="ratingPool"></select></label><p class="rating-note">Glicko · первые 10 партий — предварительный рейтинг. Сила ботов указывается приблизительно.</p><div id="ratingTable" role="status"></div></dialog>

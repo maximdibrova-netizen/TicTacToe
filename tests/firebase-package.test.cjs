@@ -6,7 +6,7 @@ test('Firebase publishes only the built site, with all eleven games and engine a
  const pub=path.join(root,cfg.hosting.public);
  for(const g of ['chess','checkers','go','ttt','tochki','battleship','lava','abalone','falling4','quoridor','durak'])assert.ok(fs.existsSync(path.join(pub,g,'index.html')),g);
  for(const name of ['src','tests','node_modules','.git','package.json','firebase-debug.log','firebase.json'])assert.equal(fs.existsSync(path.join(pub,name)),false,name+' stays private');
- for(const name of ['account.js','sw.js','manifest.webmanifest','chess/sf/stockfish-19-lite-single.wasm','durak/cards/deck-full.webp'])assert.ok(fs.existsSync(path.join(pub,name)),name);
+ for(const name of ['account.js','game-rating.js','sw.js','manifest.webmanifest','chess/sf/stockfish-19-lite-single.wasm','durak/cards/deck-full.webp'])assert.ok(fs.existsSync(path.join(pub,name)),name);
  assert.match(fs.readFileSync(path.join(pub,'index.html'),'utf8'),/accountOpen/);
  assert.ok(cfg.hosting.headers.some(h=>h.source==='/sw.js'&&h.headers.some(x=>x.key==='Cache-Control'&&x.value.includes('no-cache'))));
 });

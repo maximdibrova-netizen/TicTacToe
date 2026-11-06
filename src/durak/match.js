@@ -1,5 +1,6 @@
 const match = MatchActions.attach({
   id:ID, resultModal:false,
+  events:{fullPlayers:()=>game?game.view.counts.map((_,id)=>({id,label:playerName(id),kind:id===game.seat?'human':game.online?'remote':'bot'})):[],result:()=>game&&game.view.result?{draw:game.view.result.loser===null,winners:game.view.result.loser===null?[]:game.view.counts.map((_,i)=>i).filter(i=>i!==game.view.result.loser),reason:game.view.result.reason}:null,evaluation:()=>false,continued:()=>!!game&&game.view.version>0,clockSeats:()=>[],botLevel:()=>null},
   state:() => {
     if (!game) return null;
     const v = game.view;

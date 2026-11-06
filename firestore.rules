@@ -1,0 +1,155 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Assumed models. Prototype rules: verify with the emulator and review before
+    // broad release. They validate identity, consent and Glicko calculations, not
+    // the legal move sequence of eleven P2P games or collusion between accounts.
+    // ratingProfiles/{uid}: {name:string1..32, updatedAt:timestamp}, owner writes.
+    // ratingPools/{pool}/players/{uid}: {v:1,r:int10000..500000,rd:int3000..35000,
+    // games,wins,draws,losses:int0..1e8,lastMatch:string<=128,updatedAt:timestamp}.
+    // r/rd are centipoints. Only an atomic settled match may alter rating values.
+    // ratedMatches/{id}: {v:1,pool:enum,players:unique UID list2..4,names:list1..32,
+    // config:string<=2000,createdAt:timestamp,accepted:UID->bool,reports:UID->ranks,
+    // status:waiting|playing|settled|cancelled,settledAt:null|timestamp,changes:list}.
+    // Config, participants and names are immutable. Each UID signs its own
+    // report once; all reports must already agree before rating settlement.
+    // ratedMatches/{id}/checks/{uid}: {base:list of current rating docs in player
+    // order,next:computed rating without updatedAt,updatedAt:timestamp}. Each
+    // proof is separately validated to stay under the 1000-expression limit.
+    // Settlement is still one atomic match+all-ratings transaction; proofs must
+    // share an identical base snapshot and each rating update verifies its base.
+
+    function signed(){return request.auth != null;}
+    function id(s){return s is string && s.matches('^[A-Za-z0-9_-]{1,128}$');}
+    function pool(p){return p in ['chess','checkers','go','ttt','tochki','battleship','lava','abalone','falling4','quoridor','durak','multi3','multi4'];}
+    function name(s){return s is string && s.size()>0 && s.size()<=32;}
+    function validProfile(p){return p.keys().hasAll(['name','updatedAt']) && p.keys().hasOnly(['name','updatedAt']) && name(p.name) && p.updatedAt is timestamp;}
+    function natural(n){return n is int && n>=0 && n<=100000000;}
+    function validValues(p){return p.v==1 && p.r is int && p.r>=10000 && p.r<=500000 && p.rd is int && p.rd>=3000 && p.rd<=35000 && natural(p.games) && natural(p.wins) && natural(p.draws) && natural(p.losses) && p.games==p.wins+p.draws+p.losses && p.lastMatch is string && p.lastMatch.size()<=128;}
+    function validStats(p){return p.keys().hasAll(['v','r','rd','games','wins','draws','losses','lastMatch']) && p.keys().hasOnly(['v','r','rd','games','wins','draws','losses','lastMatch']) && validValues(p);}
+    function validRating(p,fresh){
+      return !fresh?(p.v is int && p.r is int && p.rd is int && p.games is int && p.wins is int && p.draws is int && p.losses is int)
+        :p.keys().hasAll(['v','r','rd','games','wins','draws','losses','lastMatch','updatedAt'])
+        && p.keys().hasOnly(['v','r','rd','games','wins','draws','losses','lastMatch','updatedAt'])
+        && validValues(p) && p.updatedAt is timestamp;
+    }
+    function fixedInitial(p){return p.r==120000 && p.rd==35000 && p.games==0 && p.wins==0 && p.draws==0 && p.losses==0 && p.lastMatch=='' && p.updatedAt==request.time;}
+    function participants(p){return p is list && p.size()>=2 && p.size()<=4 && p.toSet().size()==p.size() && id(p[0]) && id(p[1]) && (p.size()<3 || id(p[2])) && (p.size()<4 || id(p[3]));}
+    function ranks(r,n){return r is list && r.size()==n && r[0] is int && r[0]>=0 && r[0]<n && r[1] is int && r[1]>=0 && r[1]<n && (n<3 || (r[2] is int && r[2]>=0 && r[2]<n)) && (n<4 || (r[3] is int && r[3]>=0 && r[3]<n)) && r.hasAny([0]);}
+    function accepted(m){let p=m.players;return m.accepted[p[0]] && m.accepted[p[1]] && (p.size()<3 || m.accepted[p[2]]) && (p.size()<4 || m.accepted[p[3]]);}
+    function validMatch(m,fresh){
+      let p=m.players;
+      return m.keys().hasAll(['v','pool','players','names','config','createdAt','accepted','reports','status','settledAt','changes'])
+        && m.keys().hasOnly(['v','pool','players','names','config','createdAt','accepted','reports','status','settledAt','changes'])
+        && (!fresh || (m.v==1 && pool(m.pool) && participants(p)
+        && m.names is list && m.names.size()==p.size() && name(m.names[0]) && name(m.names[1]) && (p.size()<3 || name(m.names[2])) && (p.size()<4 || name(m.names[3]))
+        && m.config is string && m.config.size()<=2000 && m.createdAt is timestamp
+        && m.accepted is map && m.accepted.keys().hasAll(p) && m.accepted.keys().hasOnly(p)
+        && m.accepted[p[0]] is bool && m.accepted[p[1]] is bool && (p.size()<3 || m.accepted[p[2]] is bool) && (p.size()<4 || m.accepted[p[3]] is bool)
+        && m.reports is map && m.reports.keys().hasOnly(p)))
+        && m.status in ['waiting','playing','settled','cancelled'] && m.changes is list
+        && ((m.status!='settled' && m.settledAt==null && m.changes.size()==0) || (m.status=='settled' && m.settledAt is timestamp && m.changes.size()==p.size()));
+    }
+    function fixedMatch(m){return m.players[0]==request.auth.uid && m.createdAt==request.time && m.status=='waiting' && m.accepted[m.players[0]]==true && m.accepted[m.players[1]]==false && (m.players.size()<3 || m.accepted[m.players[2]]==false) && (m.players.size()<4 || m.accepted[m.players[3]]==false) && m.reports.size()==0;}
+    function accepting(){
+      let before=resource.data; let after=request.resource.data; let uid=request.auth.uid;
+      return before.status=='waiting' && before.accepted[uid]==false && after.accepted[uid]==true
+        && after.diff(before).affectedKeys().hasOnly(['accepted','status']) && after.accepted.diff(before.accepted).affectedKeys().hasOnly([uid])
+        && after.status==(accepted(after)?'playing':'waiting');
+    }
+    function reporting(){
+      let before=resource.data; let after=request.resource.data; let uid=request.auth.uid;
+      return before.status=='playing' && accepted(before) && !(uid in before.reports) && uid in after.reports
+        && after.diff(before).affectedKeys().hasOnly(['reports']) && after.reports.diff(before.reports).affectedKeys().hasOnly([uid])
+        && ranks(after.reports[uid],before.players.size());
+    }
+    function cancelling(){return resource.data.status=='waiting' && request.resource.data.status=='cancelled' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);}
+    function agreed(m){let p=m.players;return m.reports.keys().hasAll(p) && m.reports[p[0]]==m.reports[p[1]] && (p.size()<3 || m.reports[p[0]]==m.reports[p[2]]) && (p.size()<4 || m.reports[p[0]]==m.reports[p[3]]);}
+    function draw(r){return r[0]==r[1] && (r.size()<3 || r[0]==r[2]) && (r.size()<4 || r[0]==r[3]);}
+    function pair(me,op,score){let gg=1.0 / math.sqrt(1.0+0.0000000010072398601963978*op.rd*op.rd);let e=1.0 / (1.0+math.pow(10.0,-gg*(me.r-op.r) / 40000.0));return {'w':gg*gg*e*(1.0-e),'s':gg*(score-e)};}
+    function clampR(raw){return math.round(raw<10000.0?10000.0:raw>500000.0?500000.0:raw);}
+    function clampRd(raw){return math.round(raw<3000.0?3000.0:raw>35000.0?35000.0:raw);}
+    function computed(old,n,i,r,mid,profiles){
+      let tied=draw(r); let won=!tied && r[i]==0;
+      let rank=r[i];
+      let a=i==0?{'w':0.0,'s':0.0}:pair(old,profiles[0],rank<r[0]?1.0:rank==r[0]?0.5:0.0);
+      let b=i==1?{'w':0.0,'s':0.0}:pair(old,profiles[1],rank<r[1]?1.0:rank==r[1]?0.5:0.0);
+      let c=r.size()<3 || i==2?{'w':0.0,'s':0.0}:pair(old,profiles[2],rank<r[2]?1.0:rank==r[2]?0.5:0.0);
+      let d=r.size()<4 || i==3?{'w':0.0,'s':0.0}:pair(old,profiles[3],rank<r[3]?1.0:rank==r[3]?0.5:0.0);
+      let prec=10000.0 / (old.rd*old.rd)+0.000033136863190489995*(a.w+b.w+c.w+d.w);
+      let nr=clampR(old.r+0.5756462732485115 / prec*(a.s+b.s+c.s+d.s));let nrd=clampRd(100.0*math.sqrt(1.0 / prec));
+      return n.r==nr && n.rd==nrd
+        && n.games==old.games+1 && n.wins==old.wins+(won?1:0) && n.draws==old.draws+(tied?1:0) && n.losses==old.losses+(!tied && !won?1:0)
+        && n.lastMatch==mid;
+    }
+    function oldRating(pool,uid){return get(/databases/$(database)/documents/ratingPools/$(pool)/players/$(uid)).data;}
+    function newRating(pool,uid){return getAfter(/databases/$(database)/documents/ratingPools/$(pool)/players/$(uid)).data;}
+    function check(mid,uid){return get(/databases/$(database)/documents/ratedMatches/$(mid)/checks/$(uid)).data;}
+    function place(uid,p){return p[0]==uid?0:p[1]==uid?1:p.size()>2 && p[2]==uid?2:3;}
+    function validProof(mid,uid){
+      let m=get(/databases/$(database)/documents/ratedMatches/$(mid)).data;let p=request.resource.data;let i=place(uid,m.players);
+      let a=oldRating(m.pool,m.players[0]);let b=oldRating(m.pool,m.players[1]);let c=m.players.size()>2?oldRating(m.pool,m.players[2]):a;let d=m.players.size()>3?oldRating(m.pool,m.players[3]):a;
+      let profiles=[a,b,c,d];let r=m.reports[m.players[0]];
+      return signed() && request.auth.uid in m.players && uid in m.players && m.status=='playing' && agreed(m)
+        && p.keys().hasAll(['base','next','updatedAt']) && p.keys().hasOnly(['base','next','updatedAt']) && p.updatedAt==request.time
+        && p.base is list && p.base.size()==m.players.size() && p.base[0]==a && p.base[1]==b && (m.players.size()<3 || p.base[2]==c) && (m.players.size()<4 || p.base[3]==d)
+        && p.next is map && validStats(p.next) && computed(p.base[i],p.next,i,r,mid,profiles);
+    }
+    function history(proof,i){return {'beforeR':proof.base[i].r,'afterR':proof.next.r,'beforeRd':proof.base[i].rd,'afterRd':proof.next.rd};}
+    function matchesProof(n,proof){return n.diff(proof.next).affectedKeys().hasOnly(['updatedAt']) && n.updatedAt==request.time;}
+    // games is a monotonic version: rating creates are fixed, every permitted
+    // update increments games exactly once, and deletes/resets are forbidden.
+    function epoch(proof){let b=proof.base;return [b[0].games,b[1].games,b.size()>2?b[2].games:0,b.size()>3?b[3].games:0];}
+    function settling(mid){
+      let before=resource.data; let m=request.resource.data;
+      let a=check(mid,m.players[0]);let b=check(mid,m.players[1]);let c=m.players.size()>2?check(mid,m.players[2]):a;let d=m.players.size()>3?check(mid,m.players[3]):a;
+      let version=epoch(a);
+      let changes=m.players.size()==2?[history(a,0),history(b,1)]:m.players.size()==3?[history(a,0),history(b,1),history(c,2)]:[history(a,0),history(b,1),history(c,2),history(d,3)];
+      // Existing certified proofs already require complete agreed reports; those
+      // reports are immutable. Every actual rating write matches its proof.
+      return before.status=='playing' && m.status=='settled' && m.settledAt==request.time
+        && m.diff(before).affectedKeys().hasOnly(['status','settledAt','changes'])
+        && version==epoch(b) && version==epoch(c) && version==epoch(d) && m.changes==changes
+        && newRating(m.pool,m.players[0]).lastMatch==mid && newRating(m.pool,m.players[1]).lastMatch==mid
+        && (m.players.size()<3 || newRating(m.pool,m.players[2]).lastMatch==mid) && (m.players.size()<4 || newRating(m.pool,m.players[3]).lastMatch==mid);
+    }
+    function atomicRatingUpdate(pool,uid){
+      let mid=request.resource.data.lastMatch;
+      let before=get(/databases/$(database)/documents/ratedMatches/$(mid)).data;
+      let after=getAfter(/databases/$(database)/documents/ratedMatches/$(mid)).data;
+      let i=place(uid,before.players);let proof=check(mid,uid);
+      return id(mid) && request.auth.uid in before.players && uid in before.players && before.pool==pool
+        && before.status=='playing' && after.status=='settled' && after.settledAt==request.time
+        && resource.data==proof.base[i] && matchesProof(request.resource.data,proof);
+    }
+    match /ratingProfiles/{uid}{
+      allow read: if signed();
+      allow create,update: if signed() && request.auth.uid==uid && validProfile(request.resource.data) && request.resource.data.updatedAt==request.time;
+      allow delete: if false;
+    }
+    match /ratingPools/{poolId}/players/{uid}{
+      allow read: if signed() && pool(poolId);
+      allow create: if signed() && request.auth.uid==uid && pool(poolId) && validRating(request.resource.data,true) && fixedInitial(request.resource.data);
+      // On update, matchesProof enforces every certified field/key and the
+      // timestamp; this validator additionally prevents int→double corruption.
+      allow update: if signed() && pool(poolId) && validRating(request.resource.data,false) && atomicRatingUpdate(poolId,uid);
+      allow delete: if false;
+    }
+    match /ratedMatches/{mid}{
+      allow read: if signed() && request.auth.uid in resource.data.players;
+      allow create: if signed() && id(mid) && validMatch(request.resource.data,true) && fixedMatch(request.resource.data);
+      // The narrow transition functions freeze every prevalidated field except
+      // their own specific slots; revalidating immutable names/UIDs on every
+      // update would waste the request's 1000-expression budget.
+      allow update: if signed() && request.auth.uid in resource.data.players && validMatch(request.resource.data,false)
+        && (request.resource.data.status=='settled'?settling(mid):request.resource.data.status=='cancelled'?cancelling():accepting() || reporting());
+      allow delete: if false;
+      match /checks/{uid}{
+        allow read: if signed() && request.auth.uid in get(/databases/$(database)/documents/ratedMatches/$(mid)).data.players;
+        allow create,update: if validProof(mid,uid);
+        allow delete: if false;
+      }
+    }
+    match /{document=**}{allow read,write: if false;}
+  }
+}

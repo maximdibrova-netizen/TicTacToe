@@ -3,7 +3,7 @@
 // Шрифты и библиотека связи: сохранённая копия, если она есть.
 var VERSION = '/*VER*/';
 var CACHE = 'games-' + VERSION;
-var PAGES = ['./', 'account.js', 'tochki/', 'ttt/', 'battleship/', 'checkers/', 'go/', 'chess/', 'lava/', 'abalone/', 'falling4/', 'quoridor/', 'durak/', 'durak/cards/deck-full.webp', 'chess/sf/stockfish-19-lite-single.js', 'chess/sf/stockfish-19-lite-single.wasm', 'chess/db/names.json', 'chess/db/meta.json', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
+var PAGES = ['./', 'account.js', 'game-rating.js', 'tochki/', 'ttt/', 'battleship/', 'checkers/', 'go/', 'chess/', 'lava/', 'abalone/', 'falling4/', 'quoridor/', 'durak/', 'durak/cards/deck-full.webp', 'chess/sf/stockfish-19-lite-single.js', 'chess/sf/stockfish-19-lite-single.wasm', 'chess/db/names.json', 'chess/db/meta.json', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 var FONTS = /*FONTS*/[];
 var EXTRA = ['https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js'];
 

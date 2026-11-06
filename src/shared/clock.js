@@ -14,7 +14,7 @@ var GameClock = (function () {
   function fmtTime(m, s) { return fmtMin(m) + ' мин' + (s ? ' + ' + s + ' с' : ''); }
 
   function attach(a) {
-    var model = null, game = null, lastMove = 0, ended = false, received = 0, lastSend = 0, paused = false;
+    var model = null, game = null, lastMove = 0, ended = false, received = 0, lastSend = 0, paused = false, initial = null;
     var n = a.labels.length;
     // ---------- settings ----------
     // cfg: { enabled, preset: 'off'|'1+0'|…|'custom', min, inc, per: bool, pmin: [], pinc: [] }
@@ -83,6 +83,7 @@ var GameClock = (function () {
         note.textContent = (same ? 'У каждого ' + fmtTime(t.m[0], t.s[0]) + (t.s[0] ? ' за ход' : '') : a.labels.map(function (l, i) { return l + ': ' + fmtTime(t.m[i], t.s[i]); }).join(' · ')) +
           '. Время кончилось — партия проиграна. Онлайн у всех время хозяина игры.';
       }
+      if (typeof GameEvents !== 'undefined') GameEvents.clock(a.id, config());
     }
     root.addEventListener('click', function (e) {
       var p = e.target.closest('[data-p]');
@@ -111,16 +112,21 @@ var GameClock = (function () {
     function guest() { return a.role() === 'guest'; }
     function expire() {
       if (!model || model.flag === null || ended) return;
-      ended = true; a.expire(model.flag); result.querySelector('p').textContent = a.labels[model.flag] + ' — поражение по времени. Партия окончена.'; result.hidden = a.resultModal === false;
+      ended = true;
+      if (typeof GameEvents !== 'undefined') GameEvents.expire(a.id, model.flag);
+      a.expire(model.flag);
+      if (typeof GameEvents !== 'undefined') GameEvents.flush();
+      result.querySelector('p').textContent = a.labels[model.flag] + ' — поражение по времени. Партия окончена.'; result.hidden = a.resultModal === false;
     }
-    function packet() { return model ? { left: model.left.slice(), inc: model.inc.slice(), turn: model.turn, running: model.running && !paused, flag: model.flag } : null; }
+    function packet() { return model ? { left: model.left.slice(), inc: model.inc.slice(), turn: model.turn, running: model.running && !paused, flag: model.flag, initial: initial } : null; }
     function publish() { if (a.role() === 'host') { a.send({ t: 'clock-v1', clock: packet() }); lastSend = Date.now(); } }
     function sync() {
       var s = a.state(), now = Date.now();
       if (!s) { game = null; model = null; bar.hidden = true; result.hidden = true; paused = false; return; }
-      if (game !== s.game) { game = s.game; lastMove = s.moves; ended = false; result.hidden = true; received = 0; var c = config(); model = !guest() && c.enabled && s.ready ? new FischerClock(c.left, c.inc, s.turn, now) : null; }
+      if (game !== s.game) { game = s.game; lastMove = s.moves; ended = false; result.hidden = true; received = 0; var c = config(); initial = c; model = !guest() && c.enabled && s.ready ? new FischerClock(c.left, c.inc, s.turn, now) : null; }
       if (!model && !guest() && s.ready && !s.over) { var c2 = config(); if (c2.enabled) model = new FischerClock(c2.left, c2.inc, s.turn, now); }
-      var wasPaused = paused; paused = !!s.paused;
+      var wasPaused = paused; paused = !!s.paused || typeof GameEvents !== 'undefined' && GameEvents.waiting();
+      if (typeof GameEvents !== 'undefined') GameEvents.clock(a.id, initial || config());
       if (model && !guest()) {
         if (s.moves > lastMove) {
           // Removing a resigned seat changes history/turn, but is not a played move.
@@ -154,15 +160,17 @@ var GameClock = (function () {
       if (!guest()) return true;
       sync(); var c = d.clock;
       if (c && Array.isArray(c.left) && c.left.length === a.labels.length && Array.isArray(c.inc) && Number.isInteger(c.turn) && c.turn >= 0 && c.turn < a.labels.length && c.left.every(function (x) { return Number.isFinite(x) && x >= 0; })) {
+        if (c.initial && c.initial.enabled && Array.isArray(c.initial.left) && c.initial.left.length === a.labels.length && Array.isArray(c.initial.inc) && c.initial.inc.length === a.labels.length && c.initial.left.every(function(x){return Number.isFinite(x)&&x>=0;}) && c.initial.inc.every(function(x){return Number.isFinite(x)&&x>=0;})) initial = { enabled:true,left:c.initial.left.slice(),inc:c.initial.inc.slice() };
         model = new FischerClock(c.left, c.inc, c.turn, Date.now()); model.running = !!c.running; model.flag = c.flag; received = Date.now(); expire();
       } else model = null;
       draw(); return true;
     }
-    function before() { sync(); return !(model && model.flag !== null); }
+    function before() { sync(); return !(model && model.flag !== null) && !(typeof GameEvents !== 'undefined' && GameEvents.waiting()); }
     setInterval(sync, 100);
     // для бота: сколько осталось у каждого (мс) и добавка
-    function info() { if (!model) return null; sync(); return { left: model.left.slice(), inc: model.inc.slice(), running: model.running }; }
-    return { sync: sync, before: before, receive: receive, publish: publish, info: info, settings: root, enabled: function () { return !!model; } };
+    function configuration() { var c=initial || config();return {enabled:!!c.enabled,left:c.left.slice(),inc:c.inc.slice()}; }
+    function info() { if (!model) return null; sync(); return { left: model.left.slice(), inc: model.inc.slice(), running: model.running && !paused, initial: configuration() }; }
+    return { sync: sync, before: before, receive: receive, publish: publish, info: info, configuration:configuration, settings: root, enabled: function () { return !!model; } };
   }
   return { attach: attach };
 })();

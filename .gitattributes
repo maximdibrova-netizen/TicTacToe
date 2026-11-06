@@ -1,0 +1,3 @@
+# esbuild preserves whitespace inside Firebase SDK diagnostic template strings.
+account.js -whitespace
+game-rating.js -whitespace

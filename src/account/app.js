@@ -1,6 +1,5 @@
-import { initializeApp } from 'firebase/app';
+import { auth as sharedAuth } from './firebase.js';
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut, sendPasswordResetEmail, updateProfile, connectAuthEmulator } from 'firebase/auth';
-import { firebaseConfig } from './config.js';
 import Core from './core.js';
 
 const $ = id => document.getElementById(id);
@@ -91,13 +90,7 @@ $('accountProfileForm').onsubmit = event => {
 };
 
 try {
-  const port = new URLSearchParams(location.search).get('authEmulator');
-  // Explicit opt-in is available only on loopback. Production never trusts a test server.
-  const emulate = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname) && /^\d{4,5}$/.test(port || '') && +port < 65536;
-  const config = emulate ? { ...firebaseConfig, projectId: 'demo-mdgames' } : { ...firebaseConfig };
-  if ([firebaseConfig.projectId + '.web.app', firebaseConfig.projectId + '.firebaseapp.com'].includes(location.hostname)) config.authDomain = location.hostname;
-  auth = getAuth(initializeApp(config)); auth.languageCode = 'ru';
-  if (emulate) connectAuthEmulator(auth, 'http://127.0.0.1:' + port, { disableWarnings: true });
+  auth = sharedAuth;
   onAuthStateChanged(auth, current => {
     user = current; paint();
     if (!registration && user && dialog.open && mode !== 'profile') close();
@@ -105,3 +98,5 @@ try {
   }, () => { $('accountHint').textContent = 'Аккаунт сейчас недоступен. Можно играть гостем.'; });
 } catch (_) { $('accountHint').textContent = 'Аккаунт сейчас недоступен. Можно играть гостем.'; }
 paint();
+
+if(new URLSearchParams(location.search).get('signin')==='1')open('login');

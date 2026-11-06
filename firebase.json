@@ -8,5 +8,6 @@
       {"source": "/sw.js", "headers": [{"key": "Cache-Control", "value": "no-cache"}]}
     ]
   },
-  "emulators": {"auth": {"port": 9099}, "ui": {"enabled": false}, "singleProjectMode": true}
+  "firestore": {"rules": "firestore.rules", "indexes": "firestore.indexes.json"},
+  "emulators": {"auth": {"port": 9099}, "firestore": {"port": 8080}, "ui": {"enabled": false}, "singleProjectMode": true}
 }

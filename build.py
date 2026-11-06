@@ -8,8 +8,8 @@ net, room, review = read('shared', 'net.js'), read('shared', 'room-client.js'), 
 clock = read('shared', 'clock-core.js') + '\n' + read('shared', 'clock.js') + '\n' + read('shared', 'continue.js')
 clock_css = read('shared', 'clock.css') + '\n' + read('shared','view.css')
 view = read('shared','view.js')
-match = read('shared','match-core.js') + '\n' + read('shared','match-actions.js')
-clock_css += '\n' + read('shared','match-actions.css')
+match = read('shared','game-events.js') + '\n' + read('shared','match-core.js') + '\n' + read('shared','match-actions.js')
+clock_css += '\n' + read('shared','match-actions.css') + '\n' + read('ratings','style.css')
 hub_back = read('shared', 'hub-back.html')
 
 def head(extra='', root=''):
@@ -45,12 +45,12 @@ def build(name):
             dp = os.path.join(d, sub)
             if os.path.exists(dp): shutil.rmtree(dp)
             shutil.copytree(sp, dp)
-    open(os.path.join(d, 'index.html'), 'w', encoding='utf-8').write(head('<style>' + clock_css + '</style><script>' + room + '\n' + view + '\n' + match + '</script>' + hub_back, '../') + page + '\n</body></html>\n')
+    open(os.path.join(d, 'index.html'), 'w', encoding='utf-8').write(head('<style>' + clock_css + '</style><script>' + room + '\n' + view + '\n' + match + '</script>' + hub_back, '../') + page + '<script src="../game-rating.js" defer></script>\n</body></html>\n')
     print('собрано:', name + '/index.html')
 GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go', 'chess', 'lava', 'abalone', 'falling4', 'quoridor', 'durak']
 for g in GAMES: build(g)
 subprocess.run(['node', os.path.join(here, 'build-account.mjs')], cwd=here, check=True)
-hub = read('hub.html').replace('/*NET*/', net).replace('/*VER*/', ver).replace('/*ACCOUNT_CSS*/', read('account', 'style.css')).replace('<!--ACCOUNT_UI-->', read('account', 'ui.html'))
+hub = read('hub.html').replace('/*NET*/', net).replace('/*VER*/', ver).replace('/*ACCOUNT_CSS*/', read('account', 'style.css')).replace('<!--ACCOUNT_UI-->', read('account', 'ui.html')).replace('/*RATING_CSS*/', read('ratings','style.css')).replace('<!--RATING_UI-->',read('ratings','ui.html'))
 open(os.path.join(here, 'index.html'), 'w', encoding='utf-8').write(head() + hub + '\n</body></html>\n')
 print('собрано: index.html (главная и комната)')
 # работа без интернета: манифест, иконки и service worker в корень сайта

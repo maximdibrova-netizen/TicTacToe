@@ -14,7 +14,7 @@ def prepare():
     if target.exists():
         shutil.rmtree(target)
     target.mkdir()
-    for name in ['index.html', 'account.js', 'sw.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png']:
+    for name in ['index.html', 'account.js', 'game-rating.js', 'sw.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png']:
         shutil.copy2(ROOT / name, target / name)
     for game in built['GAMES']:
         shutil.copytree(ROOT / game, target / game)

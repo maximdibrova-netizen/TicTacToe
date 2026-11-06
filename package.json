@@ -4,9 +4,13 @@
   "scripts": {
     "build": "python build.py",
     "build:firebase": "python prepare_firebase.py",
-    "deploy:firebase": "python prepare_firebase.py && firebase deploy --only hosting --project mdgames153",
+    "deploy:firebase": "python prepare_firebase.py && firebase deploy --only hosting,firestore --project mdgames153",
     "emulator:auth": "firebase emulators:start --only auth --project demo-mdgames",
+    "emulator:ratings": "firebase emulators:start --only auth,firestore --project demo-mdgames",
     "test:account": "node tests/account-ui.cjs",
+    "test:ratings": "node tests/rating-rules.cjs && node tests/ratings-store.cjs && node tests/ratings-ui.cjs && node tests/rated-multigame-ui.cjs && node tests/rated-four-player-ui.cjs",
+    "test:multi": "node tests/multigame-ui.cjs",
+    "test:events": "node tests/game-events-ui.cjs",
     "test": "node --test tests/*.test.cjs",
     "test:abalone": "node tests/abalone-ui.cjs",
     "test:view": "node tests/local-view-ui.cjs",
@@ -22,6 +26,7 @@
     "test:browser": "node tests/browser.cjs"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "6.0.0",
     "esbuild": "0.28.2",
     "peer": "1.0.2",
     "peerjs": "1.5.4",
