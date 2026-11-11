@@ -1,0 +1,93 @@
+<title>Покер — Техасский холдем</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap">
+<style>/*POKER_CSS*/</style>
+<main class="poker-shell">
+  <header class="poker-header">
+    <a id="pokerHome" class="poker-back" href="../">‹ Все игры</a>
+    <div><h1>Техасский холдем</h1><p>Безлимитный покер с друзьями</p></div>
+    <span id="pokerCount" class="poker-count">0 / 6 мест</span>
+  </header>
+  <p id="pokerNotice" role="status" hidden></p>
+  <div class="poker-layout">
+    <section class="poker-play" aria-label="Покерный стол">
+      <div id="pokerTable" class="poker-table">
+        <div class="poker-felt" aria-hidden="true"></div>
+        <div id="pokerSeats" class="poker-seats"></div>
+        <div class="poker-center">
+          <div class="poker-stage"><span id="pokerStreet">Ожидание игроков</span> <span id="pokerClock" hidden></span></div>
+          <div id="pokerBoard" class="poker-board" aria-label="Общие карты"></div>
+          <strong id="pokerPot">Банк 0</strong>
+        </div>
+      </div>
+      <div class="poker-feedback" aria-live="polite">
+        <p id="pokerTurn">Создайте стол или введите код друга</p>
+        <p id="pokerResult" hidden></p>
+      </div>
+      <div id="pokerActions" class="poker-actions" hidden>
+        <div class="poker-basic">
+          <button type="button" id="pokerFold">Фолд</button>
+          <button type="button" id="pokerCall" class="poker-main">Чек</button>
+          <button type="button" id="pokerAllIn">Олл-ин</button>
+        </div>
+        <form id="pokerRaiseForm" class="poker-raise" hidden>
+          <label for="pokerRaiseTo" id="pokerRaiseLabel">Рейз до</label>
+          <input id="pokerRaiseTo" type="number" inputmode="numeric" required>
+          <button type="submit" id="pokerRaise" class="poker-main">Рейз</button>
+        </form>
+      </div>
+    </section>
+    <aside class="poker-sidebar">
+      <section id="pokerEntry" class="poker-panel">
+        <h2>Стол для друзей</h2>
+        <label for="pokerName">Имя за столом</label>
+        <input id="pokerName" maxlength="24" autocomplete="nickname" placeholder="Ваше имя">
+        <button id="pokerCreate" type="button" class="poker-main">Создать стол</button>
+        <form id="pokerJoinForm">
+          <label for="pokerJoinCode">Код стола</label>
+          <div class="poker-row">
+            <input id="pokerJoinCode" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="8 символов">
+            <button id="pokerJoin" type="submit">Войти</button>
+          </div>
+        </form>
+      </section>
+      <section id="pokerRoom" class="poker-panel" hidden>
+        <h2>Пригласить за стол</h2>
+        <span class="poker-label">Код стола</span>
+        <strong id="pokerCode" class="poker-code"></strong>
+        <button type="button" id="pokerCopy">Скопировать ссылку</button>
+        <input id="pokerLink" type="url" readonly aria-label="Ссылка на стол" hidden>
+        <button type="button" id="pokerDeal" class="poker-main" hidden>Начать раздачу</button>
+        <button type="button" id="pokerRebuy" class="poker-main" hidden>Пополнить фишки</button>
+        <button type="button" id="pokerLeave" class="poker-text-button">Выйти из-за стола</button>
+      </section>
+      <section id="pokerConnecting" class="poker-panel" hidden>
+        <h2 id="pokerConnectionTitle">Подключаемся</h2>
+        <button type="button" id="pokerRetry" class="poker-main" hidden>Переподключиться</button>
+        <button type="button" id="pokerCancel" class="poker-text-button">Вернуться в меню покера</button>
+      </section>
+      <details id="pokerSettings" class="poker-panel" open>
+        <summary>Настройки стола</summary>
+        <form id="pokerSettingsForm">
+          <div class="poker-settings-grid">
+            <label>Малый блайнд <input id="pokerSmall" type="number" min="1" max="999999" value="5" required></label>
+            <label>Большой блайнд <input id="pokerBig" type="number" min="2" max="1000000" value="10" required></label>
+            <label>Анте <input id="pokerAnte" type="number" min="0" max="1000000" value="0" required></label>
+            <label>Стартовый стек <input id="pokerStack" type="number" min="1" max="100000000" value="1000" required></label>
+            <label>На ход, сек <input id="pokerSeconds" type="number" min="0" max="300" value="25" required></label>
+            <label>Резерв, сек <input id="pokerReserve" type="number" min="0" max="600" value="30" required></label>
+          </div>
+          <label id="pokerDealerRow" hidden>Первый дилер <select id="pokerDealer"></select></label>
+          <p id="pokerSettingsNote">Анте платит каждый до раздачи. 0 секунд отключает таймер. Резерв обновляется перед каждой раздачей.</p>
+          <button id="pokerSave" type="submit" hidden>Применить настройки</button>
+        </form>
+      </details>
+      <p id="pokerSummary" class="poker-summary"></p>
+      <p class="poker-summary">Виртуальные фишки</p>
+    </aside>
+  </div>
+</main>
+<script>/*POKER_PEER*/
+</script>
+<script>/*CORE*/
+/*POKER_TABLE*/
+/*POKER_APP*/</script>

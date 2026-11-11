@@ -25,6 +25,20 @@ def head(extra='', root=''):
             'body{margin:0;font:14px system-ui}[hidden]{display:none!important}</style>'
             '<script>window.GAMES_ONLINE=true;window.TTT_ONLINE=true;window.BGC_ONLINE=true;</script>' + extra + '</head><body>\n')
 def build(name):
+    if name == 'poker':
+        from pathlib import Path
+        root = Path(here)
+        page = read('poker', 'ui.html')
+        for marker, filename in [('CSS', 'style.css'), ('TABLE', 'table.js'), ('APP', 'app.js')]:
+            page = page.replace('/*POKER_' + marker + '*/', read('poker', filename))
+        peer_root = root / 'node_modules' / 'peerjs'
+        license_text = (peer_root / 'LICENSE').read_text(encoding='utf-8').strip()
+        peer = '/*!\n' + license_text + '\n*/\n' + (peer_root / 'dist' / 'peerjs.min.js').read_text(encoding='utf-8')
+        page = page.replace('/*CORE*/', read('poker', 'core.js')).replace('/*POKER_PEER*/', peer)
+        (root / 'poker').mkdir(exist_ok=True)
+        (root / 'poker' / 'index.html').write_text(head(root='../') + page + '\n</body></html>\n', encoding='utf-8')
+        print('собрано: poker/index.html')
+        return
     page = read(name, 'ui.html').replace('/*CORE*/', read(name, 'core.js')).replace('/*CLOCK*/', clock).replace('/*NET*/', net).replace('/*REVIEW*/', review).replace('/*VER*/', ver)
     pf = os.path.join(src, name, 'pieces.js')
     if os.path.exists(pf): page = page.replace('/*PIECES*/', read(name, 'pieces.js'))
@@ -47,7 +61,7 @@ def build(name):
             shutil.copytree(sp, dp)
     open(os.path.join(d, 'index.html'), 'w', encoding='utf-8').write(head('<style>' + clock_css + '</style><script>' + room + '\n' + view + '\n' + match + '</script>' + hub_back, '../') + page + '<script src="../game-rating.js" defer></script>\n</body></html>\n')
     print('собрано:', name + '/index.html')
-GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go', 'chess', 'lava', 'abalone', 'falling4', 'quoridor', 'durak']
+GAMES = ['tochki', 'ttt', 'battleship', 'checkers', 'go', 'chess', 'lava', 'abalone', 'falling4', 'quoridor', 'durak', 'poker']
 for g in GAMES: build(g)
 subprocess.run(['node', os.path.join(here, 'build-account.mjs')], cwd=here, check=True)
 hub = read('hub.html').replace('/*NET*/', net).replace('/*VER*/', ver).replace('/*ACCOUNT_CSS*/', read('account', 'style.css')).replace('<!--ACCOUNT_UI-->', read('account', 'ui.html')).replace('/*RATING_CSS*/', read('ratings','style.css')).replace('<!--RATING_UI-->',read('ratings','ui.html'))

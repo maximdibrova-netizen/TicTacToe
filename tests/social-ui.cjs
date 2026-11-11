@@ -163,8 +163,21 @@ async function test() {
     await alice.locator('#stageFriends').click();
     await alice.locator('#socialResume').click();
     await host.locator('#game').waitFor();
-    assert.deepEqual(errors, []);
     console.log('Decline, accepted private game, shared instance, real move and return from Friends PASS');
+    for (const page of [alice, bob]) {
+      await page.locator('#backBtn').click();
+      await page.locator('#leaveBtn').click();
+      await page.locator('#friendsTab').click();
+    }
+    await invite(alice, 'poker');
+    await bob.locator('#socialChallenges').getByRole('button', {name: 'Принять'}).click();
+    await host.locator('#pokerCode').waitFor();
+    const pokerCode = await host.locator('#pokerCode').textContent();
+    await guest.locator('#pokerCode').filter({hasText: pokerCode}).waitFor();
+    await host.locator('#pokerDeal').click();
+    await guest.locator('#pokerStreet').filter({hasText: 'Префлоп'}).waitFor();
+    assert.deepEqual(errors, []);
+    console.log('Accepted Poker invitation in Friends opens the shared table and starts a hand PASS');
   } finally {
     await browser?.close();
     server.close();

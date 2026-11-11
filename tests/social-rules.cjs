@@ -96,7 +96,7 @@ async function test() {
     await assertSucceeds(updateDoc(challenge(alice), {...change('ready'), roomCode: 'ABCDF'}));
     await assertFails(updateDoc(challenge(bob), change('opened')));
     await assertSucceeds(updateDoc(challenge(alice), change('opened')));
-    await assertSucceeds(setDoc(challenge(alice), invite('go', 'tuvwxyzabcdefghijklm')));
+    await assertSucceeds(setDoc(challenge(alice), invite('poker', 'tuvwxyzabcdefghijklm')));
     await env.withSecurityRulesDisabled(context => updateDoc(challenge(context.firestore()), {
       createdAt: Timestamp.fromMillis(Date.now() - 660_000)
     }));

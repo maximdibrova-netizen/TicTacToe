@@ -169,7 +169,7 @@ service cloud.firestore {
     function newChallenge(c,pair){
       return c.keys().hasOnly(['members','from','to','game','attempt','status','roomCode','createdAt','updatedAt'])
         && validSocialPair(c,pair) && c.from==request.auth.uid && socialFriend(pair)
-        && pool(c.game) && !(c.game in ['multi3','multi4'])
+        && (c.game=='poker' || (pool(c.game) && !(c.game in ['multi3','multi4'])))
         && c.attempt is string && c.attempt.matches('^[A-Za-z0-9]{20}$')
         && c.status=='pending' && c.roomCode=='' && c.createdAt==request.time && c.updatedAt==request.time;
     }

@@ -111,6 +111,14 @@ a.game.current::after { content: "сейчас играете"; position: absolu
   <section class="room multi-card" aria-labelledby="multiHeading"><h2 id="multiHeading"><span class="multi-art" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Несколько игр одновременно</h2><p>Выберите три или четыре разные игры и играйте с другом параллельно. Каждая доска сохраняет свой ход, а победитель набора определяется по общей сумме очков.</p><div class="row"><button type="button" id="multiOpen" class="btn main">Выбрать игры</button><span class="pill">3 или 4 доски</span></div></section>
 
   <div class="games" id="games">
+    <a class="game" href="poker/" data-g="poker" data-name="Покер">
+      <div class="art" style="background:#164c42;display:flex;justify-content:center;align-items:center;gap:3px" aria-hidden="true">
+        <span style="transform:rotate(-12deg);background:#f1e4ca;color:#15263d;border-radius:6px;padding:6px 10px;font:800 24px Rubik,system-ui">A♠</span>
+        <span style="transform:rotate(10deg);background:#fff8e9;color:#a72338;border-radius:6px;padding:6px 10px;font:800 24px Rubik,system-ui">K♥</span>
+      </div>
+      <h3>Покер</h3><p>Безлимитный техасский холдем с друзьями.</p>
+      <div class="tags"><span>2–6 игроков</span><span>По ссылке</span></div>
+    </a>
     <a class="game" href="durak/" data-g="durak" data-name="Дурак">
       <div class="art" style="background:#233b43">
         <svg viewBox="0 0 140 100" aria-hidden="true">
@@ -268,7 +276,7 @@ a.game.current::after { content: "сейчас играете"; position: absolu
 
   function validGames(games) { return Array.isArray(games) && (games.length === 3 || games.length === 4) && games.every(function(g,i){return MULTI_GAMES.indexOf(g)>=0 && games.indexOf(g)===i;}); }
   function slotFor(win) { return R.slots.find(function(s){return s.frame && s.frame.contentWindow === win;}) || null; }
-  function roomContext() { return {role:R.role,state:R.state,code:R.code,online:Net2P.online(),peerUid:R.peerUid,peerName:R.peerName,instance:R.inst,game:R.game,slots:R.slots.map(function(s){return {game:s.game,id:s.id,index:s.index,frame:s.frame,score:s.score,phase:s.phase};}),multi:R.multi,ranked:R.ranked,ratedSession:R.ratedSession,friendAttempt:R.friend?.attempt||null}; }
+  function roomContext() { return {role:R.role,state:R.state,code:R.code,online:Net2P.online(),peerUid:R.peerUid,peerName:R.peerName,instance:R.inst,game:R.game,slots:R.slots.map(function(s){return {game:s.game,id:s.id,index:s.index,frame:s.frame,score:s.score,phase:s.phase};}),multi:R.multi,ranked:R.ranked,ratedSession:R.ratedSession,friendAttempt:R.friend?.attempt||null,pokerCode:R.pokerCode||''}; }
   function frameContext(win) { var slot=slotFor(win); return slot ? Object.assign({},roomContext(),{slot:{game:slot.game,id:slot.id,index:slot.index,frame:slot.frame},game:slot.game,id:slot.id,index:slot.index}) : null; }
   function changed(reason) {
     var key=JSON.stringify([R.state,R.role,R.code,Net2P.online(),R.peerUid,R.peerName,R.inst,R.ranked,R.friend?.attempt,ratingRevision,R.slots.map(function(s){return[s.id,s.score,s.phase];})]);
@@ -294,6 +302,7 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     return reason === 'declined' ? 'Предложение отклонено. Можно выбрать другую игру.' : reason === 'busy' ? 'Уже есть другой запрос. Попробуйте ещё раз.' : reason === 'timeout' ? 'Время запроса истекло.' : 'Запрос отменён.';
   }
   function showChoice(p) {
+    if (p.g === 'poker') p.ranked = false;
     clearChoice(); choice = p;
     $('choiceAccept').disabled = false;
     var mine = p.by === R.role, art = document.querySelector('a.game[data-g="'+p.g+'"] .art');
@@ -334,8 +343,9 @@ a.game.current::after { content: "сейчас играете"; position: absolu
   }
   function launchGame(p) {
     var inst = R.code + '-' + (++R.seq) + '-' + Date.now().toString(36);
-    rsend({t:'pick',id:p.id,inst:inst,g:p.g,games:p.games,ranked:!!p.ranked});
-    loadGame(p.g,inst,false,p.games,!!p.ranked);
+    var ranked = p.g !== 'poker' && !!p.ranked;
+    rsend({t:'pick',id:p.id,inst:inst,g:p.g,games:p.games,ranked:ranked});
+    loadGame(p.g,inst,false,p.games,ranked);
   }
   $('choiceAccept').onclick = acceptChoice;
   $('choiceDecline').onclick = function(){cancelChoice();};
@@ -422,6 +432,11 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     closeFriend: function (attempt) { if (R.friend?.attempt===attempt && !R.game) leaveRoom(false); },
     context: roomContext,
     frameContext: frameContext,
+    pokerReady: function (win, code) {
+      if (R.role !== 'host' || R.game !== 'poker' || !slotFor(win) || !validPokerCode(code)) return;
+      R.pokerCode = code;
+      rsend({t:'poker-table', inst:R.inst, code:code});
+    },
     gameEvent: function(win,event){
       var slot=slotFor(win);if(!slot||!event||typeof event!=='object')return;
       slot.phase=event.phase;slot.yourTurn=!event.over&&Array.isArray(event.mine)&&event.mine.indexOf(event.turn)>=0;
@@ -472,7 +487,7 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     });
   }
   function announceGame() {
-    rsend({ t:'pick', inst:R.inst, g:R.game, games:R.multi?R.slots.map(function(s){return s.game;}):undefined, ranked:R.ranked });
+    rsend({ t:'pick', inst:R.inst, g:R.game, games:R.multi?R.slots.map(function(s){return s.game;}):undefined, ranked:R.ranked, pokerCode:R.pokerCode });
   }
   function announceState() {
     announceGame();
@@ -524,7 +539,8 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     if (m.t === 'b') { onBridge(m); return; }
     if(m.t==='service'){if(m.data&&typeof m.data==='object')dispatchEvent(new CustomEvent('room:service',{detail:{context:roomContext(),data:m.data}}));return;}
     if(m.t==='bundle-result'){if(R.multi&&m.inst===R.inst&&[0,.5,1].indexOf(m.score)>=0){var slot=R.slots.find(function(s){return s.id===m.id;});if(slot){slot.remoteScore=m.score;updateSlotScore(slot);renderMulti();changed('score');}}return;}
-    if (m.t === 'pick' && R.role === 'guest') { clearChoice(); if (Object.prototype.hasOwnProperty.call(NAMES,m.g) && typeof m.inst === 'string' && (m.g!=='multi'||validGames(m.games))) loadGame(m.g, m.inst, true,m.games,!!m.ranked); else if (!m.g && R.game) { unloadGame(); showHome(); } }
+    if (m.t === 'poker-table' && R.role === 'guest' && R.game === 'poker' && m.inst === R.inst) { syncPokerCode(m.code); return; }
+    if (m.t === 'pick' && R.role === 'guest') { clearChoice(); if (Object.prototype.hasOwnProperty.call(NAMES,m.g) && typeof m.inst === 'string' && (m.g!=='multi'||validGames(m.games))) loadGame(m.g, m.inst, true,m.games,!!m.ranked,m.pokerCode); else if (!m.g && R.game) { unloadGame(); showHome(); } }
     else if (m.t === 'want' && R.role === 'host' && validChoice(m) && Net2P.online()) {
       if (choice) rsend({t:'offer-end',id:m.id,reason:'busy'});
       else showChoice({id:m.id,g:m.g,games:m.games,ranked:!!m.ranked,by:'guest'});
@@ -542,7 +558,7 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     if (!Net2P.online()) { toast('Нет связи с другом. Предложите игру после подключения.'); return; }
     if (choice) { toast('Сначала дождитесь ответа на текущий запрос.'); return; }
     var id = R.role + '-' + Date.now().toString(36) + '-' + (++choiceSeq);
-    var p={id:id,g:g,games:games,ranked:!!(window.RatingUI&&window.RatingUI.wantRated&&window.RatingUI.wantRated()),by:R.role};if(!allowInvite(p))return;
+    var p={id:id,g:g,games:games,ranked:g!=='poker'&&!!(window.RatingUI&&window.RatingUI.wantRated&&window.RatingUI.wantRated()),by:R.role};if(!allowInvite(p))return;
     showChoice(p);
     rsend({t:R.role === 'host'?'offer':'want',id:id,g:g,games:games,ranked:p.ranked});
   }
@@ -586,10 +602,18 @@ a.game.current::after { content: "сейчас играете"; position: absolu
   };
 
   // ---- game frame; the ordinary #frame remains unchanged for single games ----
-  function loadGame(g, inst, announced, games, ranked) {
+  function validPokerCode(code) { return code === '' || (typeof code === 'string' && /^[A-HJ-NP-Z2-9]{8}$/.test(code)); }
+  function syncPokerCode(code) {
+    if (!validPokerCode(code) || code === R.pokerCode) return;
+    R.pokerCode = code;
+    $('frame').contentWindow?.openInvitedPokerTable?.(code);
+  }
+  function loadGame(g, inst, announced, games, ranked, pokerCode) {
+    if (g === 'poker' && R.game === g && R.inst === inst) { syncPokerCode(pokerCode); return; }
     if (R.inst !== inst) { dropBridge(true); }
     var fresh=R.inst!==inst;
-    R.inst = inst; R.game = g;R.multi=g==='multi';R.ranked=!!ranked;if(fresh)R.ratedSession=null;
+    R.inst = inst; R.game = g;R.multi=g==='multi';R.ranked=g!=='poker'&&!!ranked;if(fresh)R.ratedSession=null;
+    R.pokerCode = g==='poker' && validPokerCode(pokerCode) ? pokerCode : '';
     bundleEnded=false;multiActive=0;
     $('stage').classList.toggle('multi-mode',R.multi);$('multiToolbar').hidden=$('multiTabs').hidden=$('multiPanels').hidden=!R.multi;
     $('multiPanels').replaceChildren();$('multiTabs').replaceChildren();R.slots=[];
@@ -600,9 +624,9 @@ a.game.current::after { content: "сейчас играете"; position: absolu
       $('stTitle').textContent=(R.ranked?'Рейтинговая связка · ':'')+games.length+' игры';renderMulti();showStage();renderRoom();changed('pick');return;
     }
     R.slots=[{game:g,id:inst,index:0,frame:$('frame')}];
-    var src = g + '/' + (R.role === 'guest' ? '#' + R.code : '');
+    var src = g + '/' + (R.role === 'guest' && g !== 'poker' ? '#' + R.code : '');
     $('frame').src = 'about:blank';
-    setTimeout(function () { $('frame').src = src; }, 30);
+    setTimeout(function () { if (R.inst === inst) $('frame').src = src; }, 30);
     $('stTitle').textContent = (R.ranked?'Рейтинговая партия · ':'')+(NAMES[g] || g);
     showStage();
     if (announced && R.role === 'guest') toast('Друг открыл «' + (NAMES[g] || g) + '»');
