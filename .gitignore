@@ -3,4 +3,5 @@ test-results/
 __pycache__/
 firebase-public/
 .firebase/
+gha-creds-*.json
 *-debug.log

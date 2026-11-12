@@ -1,0 +1,66 @@
+name: Deploy MDgames to Firebase
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: mdgames153-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies and test
+        run: |
+          npm ci
+          npm test
+
+      - name: Build public site and install Firebase CLI
+        run: |
+          npm run build:firebase
+          npm install --global firebase-tools@15.35.0
+
+      - name: Verify this is the latest main commit
+        id: latest
+        shell: bash
+        run: |
+          head=$(git ls-remote --exit-code origin refs/heads/main | cut -f1)
+          if [ "$head" = "$GITHUB_SHA" ]; then
+            echo 'deploy=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'A newer main commit will be deployed by its own run.'
+          fi
+
+      - name: Authenticate to Google Cloud
+        if: steps.latest.outputs.deploy == 'true'
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          project_id: mdgames153
+          workload_identity_provider: projects/123913965910/locations/global/workloadIdentityPools/mdgames-github/providers/github-main
+          service_account: github-firebase-deploy@mdgames153.iam.gserviceaccount.com
+
+      - name: Deploy Hosting and Firestore
+        if: steps.latest.outputs.deploy == 'true'
+        run: firebase deploy --only hosting,firestore --project mdgames153 --non-interactive --message "GitHub ${GITHUB_SHA}"
