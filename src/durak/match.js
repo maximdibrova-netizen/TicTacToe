@@ -2,7 +2,7 @@ const match = MatchActions.attach({
   id:ID, resultModal:false,
   // боты соглашаются на ничью, если по разыгрышам случайных раздач их шансы не лучше
   botDraw:(ids,cb) => cb(!game || !game.state || game.view.result || ids.every(id => D.estimate(game.state,id,60) <= 0.1)),
-  events:{fullPlayers:()=>game?game.view.counts.map((_,id)=>({id,label:playerName(id),kind:id===game.seat?'human':game.online?'remote':'bot'})):[],result:()=>game&&game.view.result?{draw:game.view.result.loser===null,winners:game.view.result.loser===null?[]:game.view.counts.map((_,i)=>i).filter(i=>i!==game.view.result.loser),reason:game.view.result.reason}:null,evaluation:()=>false,continued:()=>!!game&&game.view.version>0,clockSeats:()=>[],botLevel:()=>null},
+  events:{fullPlayers:()=>game?game.view.counts.map((_,id)=>({id,label:playerName(id),kind:id===game.seat?'human':game.online?'remote':'bot'})):[],result:()=>game&&game.view.result?{draw:game.view.result.loser===null,winners:game.view.result.loser===null?[]:game.view.counts.map((_,i)=>i).filter(i=>i!==game.view.result.loser),reason:game.view.result.reason}:null,evaluation:()=>false,continued:()=>!!game&&game.view.version>0,clockSeats:()=>[0,1,2,3],botLevel:()=>null},
   state:() => {
     if (!game) return null;
     const v = game.view;

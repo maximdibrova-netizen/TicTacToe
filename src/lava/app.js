@@ -15,6 +15,7 @@
   $('lavaEval').checked=!!S.evalOn;$('lavaEval').onchange=function(){S.evalOn=this.checked;savePrefs();if(rv)rv.refresh();};
   if (window.IN_ROOM) S.roles = PRESETS.net.slice();
   var state = null, roles = [], gameSetup = null, epoch = 0, netRound = 0, shownResult = '';
+  var clockRound = 0, savedClock = null;
   var busy = false, pending = false, botTimer = 0, pendTimer = 0, toastTimer = 0, resultTimer = 0;
   var VOTE = null, askFor = null, undoWait = false, rv = null, HC = { key: null, line: null };
   var armed = -1, B = 480, pieces = [], tileEls = [], markEls = [], holesKey = '', audio = null;
@@ -129,13 +130,17 @@
   }
   function saveGame() {
     if (LavaLink.current() || !state) return;
-    try { if (state.over) localStorage.removeItem(SAVED); else localStorage.setItem(SAVED, JSON.stringify({ state: state, roles: roles, setup: gameSetup })); } catch (e) {}
+    var time = state.over ? null : clock.info();
+    try {
+      if (state.over) localStorage.removeItem(SAVED);
+      else localStorage.setItem(SAVED, JSON.stringify({state:state, roles:roles, setup:gameSetup, clock:time}));
+    } catch (e) {}
   }
 
   // ---------- размеры ----------
   function layout() {
     if ($('game').hidden) return;
-    var vw = window.innerWidth, vh = window.innerHeight - MatchActions.space(), hub = window.hubH ? window.hubH() : 0;
+    var vw = window.innerWidth, vh = window.innerHeight - MatchActions.space() - $('game').querySelector('.gc-bar').offsetHeight, hub = window.hubH ? window.hubH() : 0;
     var top = $('game').querySelector('.g-top').offsetHeight || 54, bar = 62 + ($('rvMount').offsetHeight || 38), wide = vw >= 700 && vw > vh * 1.15, gem, b;
     if (wide) {
       gem = Math.max(50, Math.min(84, vh * .1));
@@ -222,6 +227,7 @@
   function render() {
     BoardView.refresh('lava');
     if (!state) return;
+    clock.sync();
     var V = viewing(), S0 = V ? rv.display().s : state, vary = V && rv.canPlay();
     var can = canAct(), turn = S0.turn, n = net();
     if (!busy) { paintTiles(S0.tiles); placePieces(S0); }
@@ -250,7 +256,7 @@
       var p = S0.players[seat], nm = label(seat), cn = C[c].name;
       el.querySelector('.nm').textContent = nm;
       el.querySelector('.nm').style.color = C[c].light;
-      var st = !p.alive ? 'сгорел' : S0.over && S0.winner === seat ? 'победил!' : n && roles[seat] === 'net' && !n.online[seat] ? 'нет связи' : nm === cn ? '' : cn.toLowerCase();
+      var st = !p.alive ? (S0.log.includes(45 + seat) ? 'время вышло' : 'сгорел') : S0.over && S0.winner === seat ? 'победил!' : n && roles[seat] === 'net' && !n.online[seat] ? 'нет связи' : nm === cn ? '' : cn.toLowerCase();
       el.querySelector('.st').textContent = st;
       el.classList.toggle('on', !S0.over && seat === turn);
       el.classList.toggle('dead', !p.alive);
@@ -378,7 +384,7 @@
   // ---------- ходы ----------
   function after() { render(); schedule(); }
   function commit(m, seat) {
-    if (!state || state.turn !== seat || busy) return;
+    if (!state || state.turn !== seat || busy || !clock.before()) return;
     if (!L.moves(state, seat).some(function (x) { return x.m === m; })) return;
     var next = L.apply(state, m); if (!next) return;
     var old = state; state = next; pending = false; busy = true; armed = -1;
@@ -388,7 +394,7 @@
   }
   function act(m) {
     if (viewing()) { if (rv.canPlay()) rv.play(m); return; }
-    if (!canAct() || !L.moves(state, state.turn).some(function (x) { return x.m === m; })) return;
+    if (!canAct() || !clock.before() || !L.moves(state, state.turn).some(function (x) { return x.m === m; })) return;
     var n = net();
     if (!n) { commit(m, state.turn); return; }
     if (n.role === 'host') { LavaLink.act(m); return; }
@@ -575,6 +581,7 @@
   $('askYes').onclick = function () { answer(true); }; $('askNo').onclick = function () { answer(false); };
   $('askDialog').addEventListener('cancel', function (e) { e.preventDefault(); answer(false); });
   function onMsg(d, from) {
+    if(clock.receive(d, from)) return;
     if(MA&&MA.receive(d,from))return;
     var n = net(); if (!n || !state || !d) return;
     if (n.role === 'host') {
@@ -594,7 +601,8 @@
     layout();
   }
   function startLocal(saved) {
-    LavaLink.close(); stopTimers();
+    LavaLink.close(); stopTimers(); clockRound++;
+    savedClock = saved ? saved.clock || {initial:{enabled:false,left:[],inc:[]}} : null;
     if (saved) { state = saved.state; roles = saved.roles.slice(); gameSetup = saved.setup || null; }
     else { gameSetup = selectedSetup(); roles = gameSetup.roles.slice(); state = L.create(gameSetup); }
     shownResult = ''; if ($('result').open) $('result').close();
@@ -609,7 +617,7 @@
   function showRules() { $('rulesDialog').showModal(); }
   $('gameRulesBtn').onclick = showRules; $('rulesClose').onclick = function () { $('rulesDialog').close(); };
   function home() {
-    stopTimers(); LavaLink.close(); state = null; roles = [];
+    stopTimers(); LavaLink.close(); state = null; roles = []; savedClock = null; clock.sync();
     document.querySelectorAll('dialog[open]').forEach(function (d) { d.close(); });
     $('game').hidden = true; $('menu').hidden = false;
     if (!window.IN_ROOM && location.hash) history.replaceState(null, '', location.pathname + location.search);
@@ -625,7 +633,7 @@
     if (n) { LavaLink.start(L.create(n.cfg)); return; }
     if (!gameSetup) gameSetup = { mapId: state.mapId, corners: state.players.map(function (p) { return p.corner; }), first: 0, roles: roles.slice() };
     var g = { mapId: gameSetup.mapId, corners: gameSetup.corners, first: Math.floor(Math.random() * gameSetup.corners.length) };
-    state = L.create(g); roles = gameSetup.roles.slice(); rv.reset(); buildBoard(); saveGame(); render(); schedule();
+    clockRound++; savedClock = null; state = L.create(g); roles = gameSetup.roles.slice(); rv.reset(); buildBoard(); saveGame(); render(); schedule();
   }
   $('againBtn').onclick = function () { if (net() || state.over) restart(); else $('restartDialog').showModal(); };
   $('resultAgain').onclick = restart; $('restartConfirm').onclick = restart; $('restartCancel').onclick = function () { $('restartDialog').close(); };
@@ -657,11 +665,11 @@
     if (!n.state) { renderLobby(n); return; }
     if ($('lobby').open) $('lobby').close();
     if (n.state === state) { render(); return; }
-    var old = state, fresh = !old || netRound !== n.round, moved = !fresh && n.state.ply === old.ply + 1;
+    var old = state, fresh = !old || netRound !== n.round, moved = !fresh && n.state.ply === old.ply + 1 && n.state.last?.m < 40;
     netRound = n.round; roles = n.cfg.roles.slice(); gameSetup = n.cfg;
     clearTimeout(pendTimer); pending = false;
     if (fresh) {
-      stopTimers(); shownResult = ''; if ($('result').open) $('result').close();
+      clockRound++; savedClock = null; stopTimers(); shownResult = ''; if ($('result').open) $('result').close();
       state = n.state; VOTE = null; $('menu').hidden = true; $('game').hidden = false; rv.reset(); buildBoard(); layout(); render(); schedule(); return;
     }
     if (busy) { state = n.state; rv.sync(); return; }
@@ -693,6 +701,27 @@
   var hash = /^#([A-Za-z0-9]{5})$/.exec(location.hash);
   if (hash) join(hash[1]);
 
+ var clock = GameClock.attach({
+    id:'lava', labels:['Игрок 1','Игрок 2','Игрок 3','Игрок 4'], label:function(i){return state?.players[i] ? C[state.players[i].corner].name : '';},
+    seat:function(){return net()?.seat ?? (!humansLocal() ? roles.indexOf('human') : null);},
+    eliminate:true, role:function(){return net()?.role;},
+    state:function(){return state ? {game:clockRound, turn:state.turn, moves:state.ply, over:state.over, ready:true, paused:busy,
+      active:state.players.flatMap(function(p,i){return p.alive ? [i] : [];}),
+      noIncrement:state.last && state.last.m>=40, savedClock:savedClock} : null;},
+    send:function(m){if(net()?.role==='host')LavaLink.tellAll(m);else LavaLink.tell(m);},
+    menu:home, analyze:function(){rv.go(0);render();}, changed:saveGame,
+    expire:function(i){
+      if(state.over) return;
+      var next=L.apply(state,45+i);
+      if(!next) return;
+      stopTimers(); state=next; state.settlement={type:'time',actor:i}; armed=-1;
+      if($('askDialog').open)$('askDialog').close();
+      VOTE=null; askFor=null; rv.sync(); saveGame(); render();
+      if(net()?.role==='host')LavaLink.update(state);
+      if(!state.over){toast(C[state.players[i].corner].name+' — время вышло.');schedule();}
+    }
+  });
+  window.addEventListener('pagehide', saveGame);
  /*MATCH_ACTIONS*/
   BoardView.attach({id:'lava',ref:function(){return state?(net()?'net:'+net().code+':'+netRound:gameSetup):null;},boards:['board'],axes:6,autoFlip:function(){var n=LavaLink.current(),i=n&&n.role==='guest'?n.seat:roles.indexOf('human');return state&&i>=0&&state.players[i].corner<2;},coords:function(){return S.coords;},setCoords:function(v){S.coords=v;savePrefs();},analysis:function(){return state&&state.over;}});
 })();

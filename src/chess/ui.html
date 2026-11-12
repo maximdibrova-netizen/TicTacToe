@@ -464,7 +464,7 @@ body.blind.peek .sq .pc { visibility: visible; }
   function curChess() { return viewing() || G.over ? chessOf(G.cur) : G.c; }
 
   // ---------- clock (shared) ----------
-  var GC = GameClock.attach({ id: 'chess', labels: ['Белые', 'Чёрные'],
+  var GC = GameClock.attach({ id: 'chess', seat:function () { var side = G && mySide(); return side ? (side === 'w' ? 0 : 1) : null; }, labels: ['Белые', 'Чёрные'],
     state: function () { return G && !G.analysis ? { game: G, turn: G.c.turn() === 'w' ? 0 : 1, moves: G.c.history().length, over: !!G.over, ready: true } : null; },
     role: function () { return Net2P.role(); }, send: function (m) { Net2P.send(m); }, menu: toMenu, analyze: analyzeFinished,
     expire: function (i) { if (!G) return; token++; G.over = true; G.result = { w: i === 0 ? 'b' : 'w', t: 'время ' + (i === 0 ? 'белых' : 'чёрных') + ' вышло' }; G.endShown = true; render(); }

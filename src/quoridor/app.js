@@ -45,7 +45,6 @@
     $('levelCard').hidden = settings.mode !== 'bot';
     $('netCard').hidden = !online;
     $('playBtn').hidden = online;
-    clock.settings.hidden = count === 4;
     $('sideSeg').style.setProperty('--seats', count);
     $('sideSeg').innerHTML = COLORS.slice(0,count).map((color,i) =>
       '<button data-side="'+i+'"><i class="side-dot" style="--seat:'+color+'"></i>'+NAMES[i]+'</button>').join('');
@@ -490,7 +489,7 @@
       onPeer,onData:guestData,onFail:message => lobby(message,{error:true})});
   }
   function hostData(d) {
-    if (match.receive(d,game ? 1-game.side : null) || clock.receive(d) || !game || !game.online) return;
+    if (match.receive(d,game ? 1-game.side : null) || clock.receive(d,game ? 1-game.side : null) || !game || !game.online) return;
     if (d.t === 'needsync') { sendSnapshot(); return; }
     if (d.t !== 'try') return;
     const state = game.state;
@@ -537,13 +536,14 @@
     if (next) record(next,type === 'draw' ? game.state.turn : actor,false);
   }
   const clock = GameClock.attach({
-    id:ID, labels:NAMES.slice(0,2), resultModal:false,
-    state:() => game && game.count === 2 && !game.analysis ? {
+    id:ID, labels:NAMES, resultModal:false, eliminate:true, seat:() => game?.side,
+    state:() => game && !game.analysis ? {
+      active:game.state.pawns.flatMap((cell, i) => cell >= 0 ? [i] : []),
       game, turn:game.state.turn, moves:game.state.ply, ready:true,
       over:Q.over(game.state), paused:!!game.motion, noIncrement:/^(time|resign|draw)/.test(game.state.last || '')
     } : null,
     role:Net2P.role, send:Net2P.send, menu:home, analyze,
-    expire:seat => { finish('time',seat); clock.publish(); }
+    expire:seat => { finish('time',seat); if (!Q.over(game.state)) toast(name(seat)+' проиграли по времени.'); }
   });
   const continueGame = ContinueGame.attach({
     mount:$('game'), clock,

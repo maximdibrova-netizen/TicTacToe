@@ -14,5 +14,11 @@ FischerClock.prototype.move = function(next, now) {
   this.tick(now); if (this.flag !== null || !this.running) return false;
   this.left[this.turn] += this.inc[this.turn]; this.turn = next; return true;
 };
+FischerClock.prototype.gift = function(seat, now) {
+  this.tick(now);
+  if (!this.running || this.flag !== null || !Number.isInteger(seat) || seat < 0 || seat >= this.left.length) return false;
+  this.left[seat] += 15000;
+  return true;
+};
 FischerClock.prototype.stop = function(now) { this.tick(now); this.running = false; };
 if (typeof module !== 'undefined') module.exports = FischerClock;

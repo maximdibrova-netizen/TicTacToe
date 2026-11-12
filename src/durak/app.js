@@ -86,6 +86,7 @@
   function canPlayCard() { return canAct() && game.view.phase !== 'review'; }
   function resultTitle(v) {
     if (v.result.loser === null) return 'Ничья';
+    if (v.result.reason === 'time') return v.result.loser === game.seat ? 'Ты проиграл по времени' : playerName(v.result.loser)+' проиграл по времени';
     if (v.result.reason === 'resign') return v.result.loser === game.seat ? 'Ты сдался' : playerName(v.result.loser)+' сдался';
     return v.result.loser === game.seat ? 'Ты проиграл' : 'Ты вышел из игры';
   }
@@ -155,6 +156,7 @@
     }
   }
   function render() {
+    clock.sync();
     if (!game) return;
     const v = game.view, act = canAct();
     $('modeTitle').textContent = [variantLabel(v.variant),cardsLabel(v.size ?? 36),
@@ -203,7 +205,7 @@
       $('endTitle').textContent = resultTitle(v);
       $('endText').textContent = v.result.reason === 'cards'
         ? v.result.loser === game.seat ? 'У остальных больше нет карт.' : 'С картами остался '+playerName(v.result.loser).toLowerCase()+'.'
-        : v.result.reason === 'draw' ? 'Никто не проиграл.' : 'Партия закончилась сдачей.';
+        : v.result.reason === 'time' ? 'Время вышло.' : v.result.reason === 'draw' ? 'Никто не проиграл.' : 'Партия закончилась сдачей.';
     }
   }
 
@@ -393,13 +395,13 @@
     if (!game || game.online || game.moving || game.view.result || game.state.actor === game.seat) return;
     const current = game, state = game.state;
     botTimer = setTimeout(() => {
-      if (game !== current || game.state !== state || game.moving) return;
+      if (game !== current || game.state !== state || game.moving || !clock.before()) return;
       const seat = state.actor;
       update(D.play(state,seat,D.bot(D.view(state,seat),{unseen:D.unseen(state,seat)})));
     },isOut(game.view,game.seat)?180:300);
   }
   function act(action) {
-    if (!canAct()) return false;
+    if (!canAct() || !clock.before()) return false;
     if (game.online && Net2P.role() === 'guest') {
       game.pending = Net2P.send({t:'try',id:game.id,version:game.view.version,action});
       if (game.pending) render();
@@ -621,7 +623,7 @@
     const state = D.create(2,undefined,{variant:prefs.variant,size:prefs.size,cheat:prefs.cheat});
     const id = Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
     enter({state,seat:0,online:true,id},D.view(state,0));
-    sendState();
+    sendState(); clock.publish();
   }
   function onPeer(connected) {
     if (!game || !game.online) return;
@@ -634,7 +636,7 @@
     const state = game?.state;
     if (!state || !game.online || state.phase !== 'review' || !Net2P.online()) return;
     reviewTimer = setTimeout(() => {
-      if (game?.state === state && Net2P.online()) update(D.play(state,state.actor,{type:'pass'}));
+      if (game?.state === state && Net2P.online() && clock.before()) update(D.play(state,state.actor,{type:'pass'}));
     },REVIEW_MS);
   }
   function host() {
@@ -642,7 +644,7 @@
     lobby('Подключаюсь к серверу связи…');
     Net2P.host({
       prefix:PREFIX, onReady:(code,link) => lobby('Отправь другу ссылку или код. Раздача начнётся после подключения.',{code,link}),
-      onJoin:() => game && game.online && game.state ? sendState() : hostStart(),
+      onJoin:() => game && game.online && game.state ? (sendState(), clock.publish()) : hostStart(),
       onPeer,onData:hostData,onFail:message => lobby(message,{error:true})
     });
   }
@@ -653,13 +655,14 @@
       onPeer,onData:guestData,onFail:message => lobby(message,{error:true})});
   }
   function hostData(d) {
-    if (match.receive(d,1) || !game || !game.online || !game.state || d.t !== 'try') return;
+    if (match.receive(d,1) || clock.receive(d,1) || !game || !game.online || !game.state || d.t !== 'try') return;
     if (d.id !== game.id || d.version !== game.state.version) { sendState(); return; }
+    if (!clock.before()) return;
     const next = D.play(game.state,1,d.action);
     if (!update(next)) Net2P.send({t:'nack',id:game.id});
   }
   function guestData(d) {
-    if (match.receive(d,null)) return;
+    if (match.receive(d,null) || clock.receive(d)) return;
     if (d.t === 'state') {
       if (typeof d.id !== 'string' || d.id.length > 40 || !D.validView(d.view,1)) return;
       if (!game || game.id !== d.id) enter({seat:1,online:true,id:d.id},d.view);
@@ -693,6 +696,17 @@
     if (game.state) update(D.settle(game.state,result.type,result.actor));
     else showView({...game.view,phase:'end',actor:-1,result:{reason:result.type,loser:result.type==='draw'?null:result.actor}},false);
   }
+  const clock = GameClock.attach({
+    id:ID, labels:['Игрок 1','Игрок 2','Игрок 3','Игрок 4'],
+    seat:() => game?.seat, label:playerName, resultModal:false,
+    state:() => game ? {
+      game, turn:game.view.actor, moves:game.view.version, over:!!game.view.result, ready:true,
+      paused:!!game.moving, noIncrement:!!game.view.result && game.view.result.reason !== 'cards',
+      active:game.view.counts.flatMap((_,i) => isOut(game.view,i) ? [] : [i])
+    } : null,
+    role:Net2P.role, send:Net2P.send, menu:home, analyze:() => {},
+    expire:seat => finish({type:'time',actor:seat})
+  });
   /*MATCH_ACTIONS*/
 
   if (window.IN_ROOM || Net2P.hashCode()) prefs.mode = 'net';

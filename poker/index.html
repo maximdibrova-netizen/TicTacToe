@@ -107,6 +107,9 @@ section.poker-panel { display: grid; gap: 9px; }
 #pokerPot { font: 700 clamp(16px, 2.4vw, 24px)/1 Rubik, system-ui; color: var(--gold); }
 .poker-board, .poker-cards { display: flex; justify-content: center; gap: 5px; }
 .poker-card {
+  position: relative;
+  flex: none;
+  perspective: 340px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -115,17 +118,32 @@ section.poker-panel { display: grid; gap: 9px; }
   height: 57px;
   border: 1px solid #e0d5bf;
   border-radius: 6px;
-  background: #fff8e9;
-  box-shadow: 0 2px 3px #07131155;
+  border-color: transparent;
   color: #162336;
   font: 800 18px/1 Rubik, system-ui;
 }
 .poker-card.red { color: #a72338; }
 .poker-card.empty { background: #113d36; border: 1px dashed #88b39b99; box-shadow: none; }
-.poker-card.back { background: repeating-linear-gradient(135deg, #304d70 0 3px, #213756 3px 6px); border-color: #9eb0c1; }
+.poker-card-turn { position:absolute; inset:-1px; transform-style:preserve-3d; }
+.poker-card-face,.poker-card-back {
+  position:absolute; inset:0; border-radius:6px; backface-visibility:hidden;
+  box-shadow:0 2px 3px #07131155;
+}
+.poker-card-face {
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  background:#fff8e9; border:1px solid #e0d5bf;
+}
+.poker-cards .poker-card-face { flex-direction:row; gap:1px; }
+.poker-card-back { transform:rotateY(180deg); border:1px solid #9eb0c1; }
+.poker-card-back, .poker-card.back { background: repeating-linear-gradient(135deg, #304d70 0 3px, #213756 3px 6px); border-color: #9eb0c1; }
 .poker-cards .poker-card { flex-direction: row; gap: 1px; width: 32px; height: 36px; font-size: 12px; }
 .poker-seat-badges { display: flex; justify-content: center; align-items: center; gap: 4px; min-height: 17px; color: #c0c9db; font-size: 10px; }
 .poker-seat-badges span { border-radius: 4px; background: #33415d; padding: 1px 4px; white-space: nowrap; }
+.poker-folding { pointer-events:none; }
+.poker-seat .poker-gift {
+  min-height:22px; padding:1px 6px; justify-self:center; font-size:11px;
+  background:#253850; color:#dcece7; border-color:#648583;
+}
 .poker-seat-badges .dealer { background: #f2dcb4; color: #251d16; font-weight: 800; }
 .poker-feedback { text-align: center; min-height: 49px; padding: 14px 2px 3px; }
 .poker-feedback p { margin: 0 0 5px; }
@@ -230,13 +248,15 @@ section.poker-panel { display: grid; gap: 9px; }
             <label>Стартовый стек <input id="pokerStack" type="number" min="1" max="100000000" value="1000" required></label>
             <label>На ход, сек <input id="pokerSeconds" type="number" min="0" max="300" value="25" required></label>
             <label>Резерв, сек <input id="pokerReserve" type="number" min="0" max="600" value="30" required></label>
+            <label>Рост блайндов, мин <input id="pokerBlindMinutes" type="number" min="0" max="180" value="0" required></label>
           </div>
           <label id="pokerDealerRow" hidden>Первый дилер <select id="pokerDealer"></select></label>
-          <p id="pokerSettingsNote">Анте платит каждый до раздачи. 0 секунд отключает таймер. Резерв обновляется перед каждой раздачей.</p>
+          <p id="pokerSettingsNote">Анте платит каждый до раздачи. 0 секунд отключает таймер. Резерв обновляется перед каждой раздачей. Блайнды удваиваются со следующей раздачи после окончания интервала. 0 минут оставляет блайнды фиксированными.</p>
           <button id="pokerSave" type="submit" hidden>Применить настройки</button>
         </form>
       </details>
       <p id="pokerSummary" class="poker-summary"></p>
+      <p id="pokerBlindClock" class="poker-summary" hidden></p>
       <p class="poker-summary">Виртуальные фишки</p>
     </aside>
   </div>
@@ -279,12 +299,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   'use strict';
 
   const SEATS = 6;
-  const defaults = Object.freeze({smallBlind: 5, bigBlind: 10, ante: 0, stack: 1000, seconds: 25, reserve: 30});
+  const defaults = Object.freeze({smallBlind: 5, bigBlind: 10, ante: 0, stack: 1000, seconds: 25, reserve: 30, blindMinutes: 0});
   const names = ['Старшая карта', 'Пара', 'Две пары', 'Тройка', 'Стрит', 'Флеш', 'Фулл-хаус', 'Каре', 'Стрит-флеш'];
   const integers = (value, min, max) => Number.isSafeInteger(value) && value >= min && value <= max;
 
   function settings(input) {
-    const {smallBlind, bigBlind, ante, stack, seconds, reserve} = input;
+    const {smallBlind, bigBlind, ante, stack, seconds, reserve, blindMinutes = 0} = input;
     if (!integers(smallBlind, 1, 999999) || !integers(bigBlind, smallBlind + 1, 1000000)) {
       throw Error('Большой блайнд должен быть больше малого, оба — целые положительные числа.');
     }
@@ -294,7 +314,19 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     if (!integers(seconds, 0, 300) || !integers(reserve, 0, 600)) {
       throw Error('Время на ход — от 0 до 300 секунд, резерв — от 0 до 600.');
     }
-    return {smallBlind, bigBlind, ante, stack, seconds, reserve};
+    if (!integers(blindMinutes, 0, 180)) throw Error('Интервал роста блайндов — от 0 до 180 минут.');
+    return {smallBlind, bigBlind, ante, stack, seconds, reserve, blindMinutes};
+  }
+
+  function blindLevel(config, started, now) {
+    const interval = config.blindMinutes * 60000;
+    const limit = Math.floor(Math.log2(1000000 / config.bigBlind));
+    const level = started == null || !interval ? 0 : Math.min(limit, Math.floor(Math.max(0, now - started) / interval));
+    return {
+      smallBlind: config.smallBlind * 2 ** level,
+      bigBlind: config.bigBlind * 2 ** level,
+      nextAt: interval && started != null && level < limit ? started + (level + 1) * interval : null
+    };
   }
 
   function shuffle() {
@@ -376,8 +408,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     return paid;
   }
 
-  function newHand(seats, configuration, previousButton = -1, now = Date.now(), deck = shuffle()) {
+  function newHand(seats, configuration, previousButton = -1, now = Date.now(), deck = shuffle(), blinds = null) {
     const config = settings(configuration);
+    if (blinds) {
+      config.smallBlind = blinds.smallBlind;
+      config.bigBlind = blinds.bigBlind;
+    }
     if (!Array.isArray(seats) || seats.length > SEATS) throw Error('За столом максимум 6 игроков.');
     if (deck.length !== 52 || new Set(deck).size !== 52 || !deck.every(card => integers(card, 0, 51))) throw Error('Некорректная колода.');
     const players = Array.from({length: SEATS}, (_, i) => {
@@ -533,8 +569,20 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   function act(hand, seat, action, now = Date.now()) { return apply(hand, seat, action, now, false); }
   function tick(hand, now = Date.now(), disconnected = false) {
     if (hand.result || (!disconnected && (hand.deadline === null || now < hand.deadline))) return false;
-    const action = options(hand, hand.turn);
-    return apply(hand, hand.turn, {type: action.check ? 'check' : 'fold'}, now, true);
+    const expired = hand.deadline !== null && now >= hand.deadline;
+    const seat = hand.turn;
+    if (!apply(hand, seat, {type: 'fold'}, now, true)) return false;
+    hand.players[seat].timedOut = expired;
+    return true;
+  }
+
+  function addTime(hand, from, to, now = Date.now()) {
+    const player = hand.players[to];
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from === to || !hand.players[from] || !live(player) || !player.stack ||
+        hand.result || hand.deadline === null || now >= hand.deadline) return false;
+    player.reserve += 15000;
+    if (hand.turn === to) hand.deadline += 15000;
+    return true;
   }
 
   function view(hand, seat, now = Date.now()) {
@@ -545,12 +593,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       clock: hand.deadline === null ? null : {base: Math.max(0, hand.baseUntil - now), left: Math.max(0, hand.deadline - now)},
       options: options(hand, seat),
       players: hand.players.map(p => p && ({seat: p.seat, name: p.name, stack: p.stack, bet: hand.result ? 0 : p.bet,
-        folded: p.folded, reserve: p.reserve,
+        folded: p.folded, timedOut: !!p.timedOut, reserve: p.reserve,
         cards: p.seat === seat || (hand.result?.showdown && !p.folded) ? p.cards.slice() : []}))
     };
   }
 
-  return {SEATS, defaults, settings, compare, evaluate, newHand, options, act, tick, view};
+  return {SEATS, defaults, settings, blindLevel, compare, evaluate, newHand, options, act, tick, addTime, view};
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = Holdem;
 
@@ -588,6 +636,7 @@ class PokerTable {
     this.session = null;
     this.heartbeatAt = 0;
     setInterval(() => this.pulse(), 200);
+    document.addEventListener('visibilitychange', () => this.pulse());
   }
 
   host(name, settings) {
@@ -703,6 +752,10 @@ class PokerTable {
     session.seats[seat].seen = Date.now();
     if (packet.type === 'leave') { this.drop(session, connection, true); return; }
     if (packet.type === 'rebuy') { this.rebuy(seat); return; }
+    if (packet.type === 'gift') {
+      if (packet.number === session.number) this.gift(seat, packet.to);
+      return;
+    }
     if (packet.type === 'act') {
       const {hand, number} = session;
       if (hand && packet.number === number && packet.revision === hand.revision &&
@@ -757,7 +810,12 @@ class PokerTable {
   configure(settings) {
     const session = this.session;
     if (session?.role !== 'host' || this.active(session)) return false;
-    session.config = Holdem.settings(settings);
+    const config = Holdem.settings(settings);
+    if (['smallBlind', 'bigBlind', 'blindMinutes'].some(key => config[key] !== session.config[key])) {
+      session.blindStart = null;
+      session.blinds = null;
+    }
+    session.config = config;
     if (!session.hand) {
       for (const seat of session.seats) if (seat) seat.stack = session.config.stack;
     }
@@ -779,7 +837,10 @@ class PokerTable {
     if (previous && players.filter(Boolean).length === 2 && players[previous.big]) {
       previousButton = players.findIndex((seat, index) => seat && index !== previous.big);
     }
-    session.hand = Holdem.newHand(players, session.config, previousButton);
+    const now = Date.now();
+    session.blindStart ??= now;
+    session.blinds = Holdem.blindLevel(session.config, session.blindStart, now);
+    session.hand = Holdem.newHand(players, session.config, previousButton, now, undefined, session.blinds);
     session.handSeats = players;
     session.number++;
     this.afterAction(session);
@@ -809,6 +870,17 @@ class PokerTable {
     return true;
   }
 
+  gift(from, to) {
+    const session = this.session;
+    if (!session?.ready || !Number.isInteger(to) || !session.view?.seats[to]?.online) return false;
+    if (session.role === 'guest') {
+      return this.send(session.connection, {type: 'gift', to, number: session.view.number});
+    }
+    if (!this.active(session) || !Holdem.addTime(session.hand, from, to)) return false;
+    this.publish();
+    return true;
+  }
+
   afterAction(session) {
     if (session.hand.result) {
       for (const player of session.hand.players) if (player) session.seats[player.seat].stack = player.stack;
@@ -829,7 +901,10 @@ class PokerTable {
         }
       });
     }
-    return {type: 'table', code: session.code, me, number: session.number, config: session.config, seats, hand};
+    const now = Date.now();
+    const level = session.blinds || Holdem.blindLevel(session.config, null, now);
+    const blinds = {...level, left: level.nextAt === null ? null : Math.max(0, level.nextAt - now)};
+    return {type: 'table', code: session.code, me, number: session.number, config: session.config, seats, hand, blinds};
   }
 
   publish() {
@@ -883,13 +958,15 @@ class PokerTable {
 (function () {
   'use strict';
   const $ = id => document.getElementById('poker' + id);
-  const settingsFields = {smallBlind: 'Small', bigBlind: 'Big', ante: 'Ante', stack: 'Stack', seconds: 'Seconds', reserve: 'Reserve'};
+  const settingsFields = {smallBlind: 'Small', bigBlind: 'Big', ante: 'Ante', stack: 'Stack', seconds: 'Seconds', reserve: 'Reserve', blindMinutes: 'BlindMinutes'};
   const streets = ['Префлоп', 'Флоп', 'Тёрн', 'Ривер'];
   const suits = ['♠', '♥', '♦', '♣'];
   const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
   let room;
   try { if (parent !== window) room = parent.ROOM?.frameContext(window); } catch (_) {}
-  let clockAt = 0, clock = null, raiseTurn = '';
+  let clockAt = 0, clock = null, blindLeft = null, raiseTurn = '';
+  let lastView = null, revealAt = 0, revealTimer;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const table = new PokerTable(render, code => {
     if (room?.role === 'host') parent.ROOM.pokerReady(window, code);
   }, peerOptions());
@@ -936,36 +1013,100 @@ class PokerTable {
     element.dataset.card = String(value);
     if (suit === 1 || suit === 2) element.classList.add('red');
     element.setAttribute('aria-label', rank + ' ' + ['пики', 'червы', 'бубны', 'трефы'][suit]);
-    element.append(tag('span', rank), tag('span', suits[suit]));
+    const turn = tag('span', undefined, 'poker-card-turn');
+    const face = tag('span', undefined, 'poker-card-face');
+    const back = tag('span', undefined, 'poker-card-back');
+    back.setAttribute('aria-hidden', 'true');
+    face.append(tag('span', rank), tag('span', suits[suit]));
+    turn.append(face, back);
+    element.append(turn);
     return element;
   }
 
-  function drawSeat(view, index) {
+  function fromPot(element) {
+    const pot = $('Pot').getBoundingClientRect();
+    const bounds = element.getBoundingClientRect();
+    return 'translate(' + (pot.left + pot.width / 2 - bounds.left - bounds.width / 2) + 'px,' +
+      (pot.top + pot.height / 2 - bounds.top - bounds.height / 2) + 'px)';
+  }
+
+  function drawCards(container, values, timing) {
+    if (timing?.fold && container.children.length && !container.firstChild.classList.contains('poker-folding')) {
+      for (const element of container.children) {
+        const transform = fromPot(element);
+        element.classList.add('poker-folding');
+        element.setAttribute('aria-hidden', 'true');
+        delete element.dataset.card;
+        const animation = element.animate([
+          {transform: 'none', opacity: 1},
+          {transform: transform + ' scale(.5) rotate(12deg)', opacity: 0}
+        ], {duration: 270, easing: 'ease-in', fill: 'forwards'});
+        animation.finished.then(() => element.remove(), () => element.remove());
+      }
+      return 270;
+    }
+    if (timing?.keepFold && container.firstChild?.classList.contains('poker-folding')) return 0;
+    let end = 0;
+    values.forEach((value, index) => {
+      const existing = container.children[index];
+      const hidden = typeof value === 'string';
+      if (hidden ? existing?.classList.contains(value) : existing?.dataset.card === String(value)) return;
+      const element = card(hidden ? null : value, hidden ? value : null);
+      if (existing) existing.replaceWith(element); else container.append(element);
+      if (!timing || value === 'empty') return;
+      const delay = timing.delay + (timing.offsets ? timing.offsets[index] : index * timing.step);
+      const flip = element.querySelector('.poker-card-turn');
+      if (timing.slide) {
+        element.animate([
+          {transform: fromPot(element) + ' scale(.66)', opacity: 0},
+          {transform: 'none', opacity: 1}
+        ], {duration: 300, delay, easing: 'cubic-bezier(.19,.8,.3,1)', fill: 'backwards'});
+      }
+      if (flip) flip.animate([
+        {transform: 'rotateY(180deg)'}, {transform: 'rotateY(0)'}
+      ], {duration: 300, delay: delay + (timing.slide ? 65 : 0), easing: 'ease-in-out', fill: 'backwards'});
+      end = Math.max(end, delay + (timing.slide && flip ? 365 : 300));
+    });
+    while (container.children.length > values.length) container.lastChild.remove();
+    return end;
+  }
+
+  function drawSeat(view, index, transition) {
     const seat = view?.seats[index];
     const hand = view?.hand;
     const player = hand?.players[index];
     const mine = view?.me === index;
-    const tile = tag('div', undefined, 'poker-seat');
-    tile.dataset.seat = index;
-    if (!seat) {
-      tile.classList.add('is-empty');
-      tile.append(tag('span', 'Свободно'));
-      return tile;
+    let tile = $('Seats').querySelector('[data-seat="' + index + '"]');
+    if (!tile) {
+      tile = tag('div', undefined, 'poker-seat');
+      tile.dataset.seat = index;
+      const gift = tag('button', '+15 с', 'poker-gift');
+      gift.type = 'button';
+      gift.onclick = () => table.gift(table.session?.view?.me, index);
+      tile.append(tag('div', undefined, 'poker-seat-name'), tag('div', undefined, 'poker-seat-meta'),
+        tag('div', undefined, 'poker-cards'), tag('div', undefined, 'poker-seat-badges'), gift);
+      $('Seats').append(tile);
     }
-    if (mine) tile.classList.add('is-mine');
-    if (hand?.turn === index) tile.classList.add('is-turn');
-    if (player?.folded) tile.classList.add('is-folded');
-    const name = tag('div', seat.name, 'poker-seat-name');
-    name.dataset.seatName = '';
-    name.title = seat.name;
-    if (mine) name.setAttribute('aria-label', seat.name + ', вы');
-    const chips = !hand?.result && player ? player.stack : seat.stack;
-    const meta = tag('div', chips + ' фишек', 'poker-seat-meta');
+    tile.classList.toggle('is-empty', !seat);
+    tile.classList.toggle('is-mine', mine);
+    tile.classList.toggle('is-turn', hand?.turn === index);
+    tile.classList.toggle('is-folded', !!player?.folded);
+    const [name, meta, cards, badges, gift] = tile.children;
+    name.textContent = seat?.name || 'Свободно';
+    name.title = seat?.name || '';
+    name.toggleAttribute('data-seat-name', !!seat);
+    if (mine && seat) name.setAttribute('aria-label', seat.name + ', вы');
+    else name.removeAttribute('aria-label');
+    meta.hidden = badges.hidden = !seat;
+    gift.hidden = !seat?.online || mine || !hand?.clock || !hand.players[view.me] || !player?.stack || player.folded;
+    const title = seat ? 'Добавить 15 секунд: ' + seat.name : '';
+    gift.title = title;
+    gift.setAttribute('aria-label', title);
+
+    const chips = !hand?.result && player ? player.stack : seat?.stack;
+    meta.textContent = seat ? chips + ' фишек' : '';
     if (player?.bet) meta.append(' · ', tag('b', String(player.bet)));
-    const cards = tag('div', undefined, 'poker-cards');
-    if (player?.cards.length) cards.append(...player.cards.map(value => card(value)));
-    else if (player && !player.folded && !hand.result) cards.append(card(null, 'back'), card(null, 'back'));
-    const badges = tag('div', undefined, 'poker-seat-badges');
+    badges.replaceChildren();
     if (hand?.button === index && player) {
       const button = tag('span', 'D', 'dealer');
       button.title = 'Дилер';
@@ -974,12 +1115,24 @@ class PokerTable {
     }
     if (hand?.small === index && player) badges.append(tag('span', 'SB'));
     if (hand?.big === index && player) badges.append(tag('span', 'BB'));
-    if (!seat.online) badges.append(tag('span', 'Нет связи'));
-    else if (player?.folded) badges.append(tag('span', 'Фолд'));
+    if (seat && !seat.online) badges.append(tag('span', 'Нет связи'));
+    else if (player?.folded) badges.append(tag('span', player.timedOut ? 'Время вышло' : 'Фолд'));
     else if (player && !hand.result && !player.stack) badges.append(tag('span', 'Олл-ин'));
-    else if (hand && !hand.result && !player) badges.append(tag('span', 'Ожидает'));
-    tile.append(name, meta, cards, badges);
-    return tile;
+    else if (seat && hand && !hand.result && !player) badges.append(tag('span', 'Ожидает'));
+    const values = player && !player.folded ? player.cards.length ? player.cards : !hand.result ? ['back', 'back'] : [] : [];
+    const prior = transition?.prior?.players[index];
+    let timing = null;
+    if (transition) {
+      if (hand.result?.showdown && !mine && !prior?.cards.length && values.length) {
+        timing = {slide: false, delay: transition.reveal, step: 75};
+      } else if (transition.deal) {
+        const order = (index - hand.button + Holdem.SEATS - 1) % Holdem.SEATS;
+        timing = {slide: true, delay: order * 48, step: 115};
+      } else if (player?.folded) {
+        timing = {fold: !!prior && !prior.folded, keepFold: true};
+      }
+    } else if (player?.folded && !reduceMotion.matches) timing = {keepFold: true};
+    return drawCards(cards, values, timing);
   }
 
   function drawActions(view) {
@@ -1013,12 +1166,18 @@ class PokerTable {
   }
 
   function updateClock() {
+    const elapsed = performance.now() - clockAt;
+    $('BlindClock').hidden = blindLeft === null;
+    if (blindLeft !== null) {
+      const seconds = Math.max(0, Math.ceil((blindLeft - elapsed) / 1000));
+      $('BlindClock').textContent = seconds ? 'Рост блайндов через ' + Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0') :
+        'Новые блайнды со следующей раздачи';
+    }
     $('Clock').hidden = !clock;
     if (!clock) return;
-    const elapsed = performance.now() - clockAt;
     const reserve = elapsed >= clock.base && clock.left > clock.base;
     const left = Math.max(0, Math.ceil(((reserve ? clock.left : clock.base) - elapsed) / 1000));
-    const text = (reserve ? 'Резерв ' : '') + left + ' с';
+    const text = left ? (reserve ? 'Резерв ' : '') + left + ' с' : '…';
     if ($('Clock').textContent !== text) $('Clock').textContent = text;
   }
 
@@ -1031,20 +1190,49 @@ class PokerTable {
     const me = view?.me ?? 0;
     const ordered = [2, 3, 4, 1, 0, 5].map(offset => (me + offset) % Holdem.SEATS);
     const online = view?.seats.filter(seat => seat?.online) || [];
-    $('Seats').replaceChildren(...ordered.map(index => drawSeat(view, index)));
-    $('Board').replaceChildren(...Array.from({length: 5}, (_, i) =>
-      i < (hand?.board.length || 0) ? card(hand.board[i]) : card(null, 'empty')));
+    const sameTable = !!view && lastView?.code === view.code && lastView.me === me;
+    const newHand = !!hand && sameTable && lastView.number !== view.number;
+    const animate = sameTable && !!hand && !reduceMotion.matches;
+    const prior = sameTable && !newHand ? lastView.hand : null;
+    if (!sameTable) {
+      $('Seats').replaceChildren();
+      $('Board').replaceChildren();
+      revealAt = 0;
+    }
+    if (newHand) {
+      $('Board').replaceChildren();
+      for (const cards of $('Seats').querySelectorAll('.poker-cards')) cards.replaceChildren();
+    }
+    const boardStart = prior?.board.length ?? 0;
+    const boardDelay = newHand ? 430 : 0;
+    const runout = !!hand?.result?.showdown && hand.board.length > boardStart;
+    const offsets = runout ? [0, 75, 150, 480, 820] : [0, 85, 170, 255, 340];
+    const boardEnd = drawCards($('Board'), Array.from({length: 5}, (_, i) => hand?.board[i] ?? 'empty'),
+      animate && hand.board.length > boardStart ? {slide: true, delay: boardDelay - offsets[boardStart], offsets} : null);
+    const transition = animate ? {deal: newHand, prior, reveal: boardEnd ? boardEnd + 60 : 0} : null;
+    const seatsEnd = Math.max(...ordered.map(index => drawSeat(view, index, transition)));
+    if (animate && hand.result && (!prior?.result || newHand) && Math.max(boardEnd, seatsEnd)) {
+      const wait = Math.max(boardEnd, seatsEnd);
+      revealAt = performance.now() + wait;
+      clearTimeout(revealTimer);
+      revealTimer = setTimeout(render, wait + 20);
+    }
+    const revealing = !reduceMotion.matches && !!hand?.result && performance.now() < revealAt;
     $('Count').textContent = (view?.seats.filter(Boolean).length || 0) + ' / 6 мест';
-    $('Street').textContent = hand ? hand.result ? hand.result.showdown ? 'Вскрытие' : 'Раздача завершена' : streets[hand.street] : 'Ожидание игроков';
+    $('Street').textContent = hand ? hand.result ? hand.result.showdown ? revealing ? 'Вскрываем карты…' : 'Вскрытие' : 'Раздача завершена' : streets[hand.street] : 'Ожидание игроков';
     $('Pot').textContent = 'Банк ' + (hand?.pot || 0);
     $('Turn').textContent = active ? hand.turn === me ? 'Ваш ход' : 'Ходит ' + hand.players[hand.turn].name :
-      hand?.result ? 'Раздача ' + view.number + ' завершена' : view ? online.length < 2 ? 'Ждём второго игрока' : 'Готово к раздаче' :
+      revealing ? 'Завершаем раздачу' : hand?.result ? 'Раздача ' + view.number + ' завершена' : view ? online.length < 2 ? 'Ждём второго игрока' : 'Готово к раздаче' :
       room?.role === 'guest' ? 'Ждём, пока друг откроет стол' : 'Создайте стол или введите код друга';
-    clock = hand?.clock || null;
-    clockAt = performance.now();
+    if (view !== lastView) {
+      clock = hand?.clock || null;
+      blindLeft = view?.blinds?.left ?? null;
+      clockAt = performance.now();
+    }
+    lastView = view;
     updateClock();
     drawActions(view);
-    drawResult(hand, view);
+    drawResult(revealing ? null : hand, view);
     $('Entry').hidden = !!session || room?.role === 'guest';
     $('JoinForm').hidden = !!room;
     $('Room').hidden = !view;
@@ -1063,12 +1251,12 @@ class PokerTable {
     }
     $('Save').hidden = !view || !host || !!active;
     $('Deal').hidden = !view || !host || !!active;
-    $('Deal').disabled = online.filter(seat => seat.stack > 0).length < 2;
+    $('Deal').disabled = revealing || online.filter(seat => seat.stack > 0).length < 2;
     $('Deal').textContent = hand ? 'Следующая раздача' : 'Начать раздачу';
     $('Rebuy').hidden = !view || !!active || view.seats[me].stack > 0;
     $('Code').textContent = view?.code || '';
     const config = view?.config;
-    $('Summary').textContent = config ? 'Блайнды ' + config.smallBlind + ' / ' + config.bigBlind + ' · Анте ' + config.ante +
+    $('Summary').textContent = config ? 'Блайнды ' + (view.blinds?.smallBlind ?? config.smallBlind) + ' / ' + (view.blinds?.bigBlind ?? config.bigBlind) + ' · Анте ' + config.ante +
       (config.seconds ? ' · ' + config.seconds + ' с на ход + ' + config.reserve + ' с резерва' : ' · Без таймера') : '';
     if (session?.error) note(session.error);
   }

@@ -15,7 +15,8 @@ var GameClock = (function () {
 
   function attach(a) {
     var model = null, game = null, lastMove = 0, ended = false, received = 0, lastSend = 0, paused = false, initial = null;
-    var n = a.labels.length;
+    var n = a.labels.length, seats = a.labels.map(function (_, i) { return i; });
+    var key = null, deadlineTimer, lastCheck = 0, settling = false;
     // ---------- settings ----------
     // cfg: { enabled, preset: 'off'|'1+0'|…|'custom', min, inc, per: bool, pmin: [], pinc: [] }
     var cfg = { enabled: false, preset: 'off', min: 5, inc: 3, per: false, pmin: a.labels.map(function () { return 5; }), pinc: a.labels.map(function () { return 3; }) };
@@ -105,71 +106,160 @@ var GameClock = (function () {
 
     // ---------- clock faces in the game ----------
     var bar = document.createElement('div'); bar.className = 'gc-bar'; bar.hidden = true; document.getElementById('game').prepend(bar);
+    var faces = a.labels.map(function (label, i) {
+      var face = document.createElement('div'); face.className = 'gc-face';
+      var name = document.createElement('span'), time = document.createElement('strong');
+      var gift = document.createElement('button'); gift.type = 'button'; gift.className = 'gc-gift'; gift.textContent = '+15 с';
+      gift.onclick = function () {
+        if (!before() || !canGift(i, ownSeat())) return;
+        if (guest()) a.send({ t: 'clock-gift-v1', to: i, key: key });
+        else give(i);
+      };
+      face.append(name, time, gift); bar.appendChild(face);
+      return { face:face, name:name, time:time, gift:gift };
+    });
     var result = document.createElement('div'); result.className = 'gc-result'; result.hidden = true; result.setAttribute('role', 'dialog'); result.setAttribute('aria-label', 'Партия завершена по времени');
     result.innerHTML = '<div><h2>Время вышло</h2><p></p><div class="gc-result-actions"><button type="button" class="gc-analyze">Анализ</button><button type="button" class="gc-menu">В меню</button></div></div>'; document.body.appendChild(result);
     result.querySelector('.gc-menu').onclick = function () { result.hidden = true; a.menu(); sync(); };
     result.querySelector('.gc-analyze').onclick = function () { result.hidden = true; a.analyze(); sync(); };
     function guest() { return a.role() === 'guest'; }
+    function ownSeat() {
+      var s = a.state(), seat = a.seat ? a.seat() : null;
+      return seat == null && s && !a.role() ? s.turn : seat;
+    }
+    function canGift(to, from) {
+      var s = a.state(), active = s && (s.active || seats);
+      return !!(model && model.flag === null && model.running && s && !s.over && s.ready &&
+        active.indexOf(to) >= 0 && active.indexOf(from) >= 0 && from !== to);
+    }
+    function give(to) {
+      if (model.gift(to, paused ? model.at : Date.now())) { publish(); draw(); scheduleDeadline(); if (a.changed) a.changed(); }
+      else sync();
+    }
     function expire() {
       if (!model || model.flag === null || ended) return;
-      ended = true;
-      if (typeof GameEvents !== 'undefined') GameEvents.expire(a.id, model.flag);
-      a.expire(model.flag);
-      if (typeof GameEvents !== 'undefined') GameEvents.flush();
-      result.querySelector('p').textContent = a.labels[model.flag] + ' — поражение по времени. Партия окончена.'; result.hidden = a.resultModal === false;
+      var flag = model.flag, s = a.state();
+      if (!s) return;
+      var eliminate = !guest() && a.eliminate && s.active && s.active.length > 2;
+      ended = settling = true;
+      try {
+        if (!eliminate && typeof GameEvents !== 'undefined') GameEvents.expire(a.id, flag);
+        a.expire(flag);
+        if (typeof GameEvents !== 'undefined') GameEvents.flush();
+      } finally { settling = false; }
+      var next = a.state();
+      if (eliminate && next && !next.over && next.active.indexOf(flag) < 0) {
+        model.flag = null; model.running = true; model.turn = next.turn; model.at = Date.now();
+        lastMove = next.moves; ended = false; paused = !!next.paused;
+        return;
+      }
+      var label = a.label ? a.label(flag) : a.labels[flag];
+      result.querySelector('p').textContent = label + ' — поражение по времени. Партия окончена.';
+      result.hidden = a.resultModal === false;
     }
-    function packet() { return model ? { left: model.left.slice(), inc: model.inc.slice(), turn: model.turn, running: model.running && !paused, flag: model.flag, initial: initial } : null; }
-    function publish() { if (a.role() === 'host') { a.send({ t: 'clock-v1', clock: packet() }); lastSend = Date.now(); } }
+    function packet() { return model ? { key:key, left:model.left.slice(), inc:model.inc.slice(), turn:model.turn, running:model.running && !paused, flag:model.flag, initial:initial } : null; }
+    function publish() { if (!settling && a.role() === 'host') { a.send({ t:'clock-v1', clock:packet() }); lastSend = Date.now(); } }
+    function scheduleDeadline() {
+      clearTimeout(deadlineTimer);
+      if (model && !guest() && model.running && !paused) {
+        deadlineTimer = setTimeout(sync, Math.max(0, model.at + model.left[model.turn] - Date.now()));
+      }
+    }
     function sync() {
+      if (settling) return;
       var s = a.state(), now = Date.now();
-      if (!s) { game = null; model = null; bar.hidden = true; result.hidden = true; paused = false; return; }
-      if (game !== s.game) { game = s.game; lastMove = s.moves; ended = false; result.hidden = true; received = 0; var c = config(); initial = c; model = !guest() && c.enabled && s.ready ? new FischerClock(c.left, c.inc, s.turn, now) : null; }
-      if (!model && !guest() && s.ready && !s.over) { var c2 = config(); if (c2.enabled) model = new FischerClock(c2.left, c2.inc, s.turn, now); }
-      var wasPaused = paused; paused = !!s.paused || typeof GameEvents !== 'undefined' && GameEvents.waiting();
+      if (!s) {
+        game = null; model = null; key = null; result.hidden = true; paused = false;
+        scheduleDeadline(); draw(); return;
+      }
+      if (game !== s.game) {
+        game = s.game; lastMove = s.moves; ended = false; result.hidden = true; received = lastSend = lastCheck = 0;
+        initial = s.savedClock?.initial || config(); model = null; key = null; paused = false;
+      }
+      if (!model && !guest() && s.ready && !s.over && initial.enabled) {
+        model = new FischerClock(s.savedClock?.left || initial.left, initial.inc, s.turn, now);
+        key = Math.random().toString(36).slice(2);
+      }
+      var wasPaused = paused;
+      paused = !!s.paused || typeof GameEvents !== 'undefined' && GameEvents.waiting();
       if (typeof GameEvents !== 'undefined') GameEvents.clock(a.id, initial || config());
       if (model && !guest()) {
+        if (wasPaused) model.at = now;
         if (s.moves > lastMove) {
-          // Removing a resigned seat changes history/turn, but is not a played move.
-          if (s.noIncrement) { model.tick(now); model.turn = s.turn; }
-          else model.move(s.turn, now);
-        }
-        else if (paused) model.at = now;          // анимация хода: часы стоят
+          if (s.noIncrement) { model.tick(now); if (!s.over) model.turn = s.turn; }
+          else model.move(s.over ? model.turn : s.turn, now);
+        } else if (s.over) model.running = false;
+        else if (paused) model.at = now;
         else model.tick(now);
-        // При отмене хода сохраняем потраченное время, не добавляем прибавку.
-        if (s.moves < lastMove) { model.turn = s.turn; if (model.flag === null) model.running = !s.over; }
-        if (s.over) model.stop(now);
-        lastMove = s.moves; expire();
-        if (now - lastSend > 500 || wasPaused !== paused) publish();
+        if (s.moves < lastMove && model.flag === null && !s.over) { model.turn = s.turn; model.running = true; }
+        if (s.over) model.running = false;
+        lastMove = s.moves;
+        var flagged = model.flag !== null && !ended;
+        expire();
+        if (flagged || now - lastSend > 500 || wasPaused !== paused) publish();
       }
+      scheduleDeadline();
       draw();
     }
     function draw() {
       bar.hidden = !model; var timed = !!model;
       if (document.body.classList.contains('gc-timed') !== timed) { document.body.classList.toggle('gc-timed', timed); setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 0); }
       if (!model) return;
-      var now = Date.now(), s = a.state();
-      bar.innerHTML = a.labels.map(function (label, i) {
-        if (s && s.active && s.active.indexOf(i) < 0) return '';
-        var ms = model.left[i]; if (guest() && model.running && i === model.turn) ms = Math.max(0, ms - (now - received));
-        var sec = Math.ceil(ms / 1000), text = ms < 10000 ? (ms / 1000).toFixed(1) : Math.floor(sec / 60) + ':' + ('0' + sec % 60).slice(-2);
-        return '<div class="gc-face ' + (model.running && i === model.turn ? 'gc-active ' : '') + (ms < 10000 ? 'gc-low' : '') + '"><span>' + label + (model.inc[i] ? ' <small>+' + model.inc[i] / 1000 + '</small>' : '') + '</span><strong>' + text + '</strong></div>';
-      }).join('');
+      var now = Date.now(), s = a.state(), from = ownSeat();
+      var localGuest = guest();
+      if (localGuest && key !== null && model.running && now - received >= model.left[model.turn] && now - lastCheck >= 500) {
+        lastCheck = now;
+        a.send({ t:'clock-check-v1', key:key });
+      }
+      faces.forEach(function (f, i) {
+        f.face.hidden = !!(s && s.active && s.active.indexOf(i) < 0 && model.flag !== i);
+        var running = model.running && !paused && i === model.turn;
+        var ms = model.left[i];
+        var predicting = localGuest && model.running && i === model.turn;
+        if (predicting) ms = Math.max(0, ms - (now - received));
+        var sec = Math.ceil(ms / 1000);
+        var text = !ms && predicting ? '…' : ms < 10000 ? (Math.ceil(ms / 100) / 10).toFixed(1) : Math.floor(sec / 60) + ':' + ('0' + sec % 60).slice(-2);
+        var label = a.label ? a.label(i) : a.labels[i];
+        var title = 'Добавить 15 секунд: ' + label;
+        f.face.classList.toggle('gc-active', running);
+        f.face.classList.toggle('gc-low', ms < 10000);
+        f.name.textContent = label + (model.inc[i] ? ' +' + model.inc[i] / 1000 : '');
+        f.time.textContent = text;
+        f.gift.hidden = !canGift(i, from);
+        if (f.gift.title !== title) { f.gift.title = title; f.gift.setAttribute('aria-label', title); }
+      });
     }
-    function receive(d) {
-      if (!d || d.t !== 'clock-v1') return false;
+    function receive(d, from) {
+      if (!d) return false;
+      if (d.t === 'clock-check-v1') {
+        if (a.role() === 'host' && key !== null && d.key === key) sync();
+        return true;
+      }
+      if (d.t === 'clock-gift-v1') {
+        if (a.role() !== 'host') return true;
+        if (from == null && n === 2) { var own = ownSeat(); if (Number.isInteger(own)) from = 1 - own; }
+        if (before() && key !== null && d.key === key && canGift(d.to, from)) give(d.to);
+        return true;
+      }
+      if (d.t !== 'clock-v1') return false;
       if (!guest()) return true;
       sync(); var c = d.clock;
-      if (c && Array.isArray(c.left) && c.left.length === a.labels.length && Array.isArray(c.inc) && Number.isInteger(c.turn) && c.turn >= 0 && c.turn < a.labels.length && c.left.every(function (x) { return Number.isFinite(x) && x >= 0; })) {
-        if (c.initial && c.initial.enabled && Array.isArray(c.initial.left) && c.initial.left.length === a.labels.length && Array.isArray(c.initial.inc) && c.initial.inc.length === a.labels.length && c.initial.left.every(function(x){return Number.isFinite(x)&&x>=0;}) && c.initial.inc.every(function(x){return Number.isFinite(x)&&x>=0;})) initial = { enabled:true,left:c.initial.left.slice(),inc:c.initial.inc.slice() };
+      if (!a.state()) return true;
+      var validTimes = function (xs) { return Array.isArray(xs) && xs.length === n && xs.every(function (x) { return Number.isFinite(x) && x >= 0; }); };
+      if (c && validTimes(c.left) && validTimes(c.inc) && seats.indexOf(c.turn) >= 0 && (c.flag === null || seats.indexOf(c.flag) >= 0)) {
+        if (c.initial && c.initial.enabled && validTimes(c.initial.left) && validTimes(c.initial.inc)) initial = { enabled:true,left:c.initial.left.slice(),inc:c.initial.inc.slice() };
+        key = typeof c.key === 'string' ? c.key : null;
         model = new FischerClock(c.left, c.inc, c.turn, Date.now()); model.running = !!c.running; model.flag = c.flag; received = Date.now(); expire();
       } else model = null;
       draw(); return true;
     }
     function before() { sync(); return !(model && model.flag !== null) && !(typeof GameEvents !== 'undefined' && GameEvents.waiting()); }
     setInterval(sync, 100);
+    document.addEventListener('visibilitychange', sync);
+    window.addEventListener('pageshow', sync);
     // для бота: сколько осталось у каждого (мс) и добавка
     function configuration() { var c=initial || config();return {enabled:!!c.enabled,left:c.left.slice(),inc:c.inc.slice()}; }
-    function info() { if (!model) return null; sync(); return { left: model.left.slice(), inc: model.inc.slice(), running: model.running && !paused, initial: configuration() }; }
+    function info() { sync(); if (!model) return null; return { left: model.left.slice(), inc: model.inc.slice(), running: model.running && !paused, initial: configuration() }; }
     return { sync: sync, before: before, receive: receive, publish: publish, info: info, configuration:configuration, settings: root, enabled: function () { return !!model; } };
   }
   return { attach: attach };

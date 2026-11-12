@@ -58,8 +58,8 @@ async function main() {
   const instance = p => p.evaluate(() => ROOM.context().instance);
   const version = p => p.evaluate(() => document.querySelector('#frame').contentWindow.GameEvents.current()?.version);
   const ready = p => p.waitForFunction(() => document.querySelector('#frame').contentWindow.GameEvents?.current()?.mode === 'online');
-  async function start(host) {
-    await frame(host).locator('#netCreate').click();
+  async function start(host, game) {
+    await frame(host).locator(game === 'lava' ? '#playBtn' : '#netCreate').click();
     for (const p of views) await ready(p);
   }
   try {
@@ -164,6 +164,54 @@ async function main() {
     await host.locator('#interruptGame').click();
     await host.locator('#interruptConfirm').click();
     await guest.waitForFunction(() => !ROOM.context().game && ROOM.context().state === 'live');
+    for (const game of ['go','abalone','lava','durak']) {
+      await host.evaluate(game => localStorage.setItem('clock-' + game, JSON.stringify({
+        v:2, enabled:true, preset:'custom', min:.25, inc:0, per:false, pmin:[.25,.25,.25,.25], pinc:[0,0,0,0]
+      })), game);
+      await host.locator('a[data-g="' + game + '"]').click();
+      await guest.locator('#choiceAccept').click();
+      await start(host, game);
+      if (game === 'go' || game === 'abalone') {
+        const hostFirst = await host.evaluate(() => {
+          const e = document.querySelector('#frame').contentWindow.GameEvents.current();
+          return e.mine.includes(e.turn);
+        });
+        const current = frame(hostFirst ? host : guest);
+        if (game === 'go') await current.locator('#passBtn').click();
+        else {
+          await current.locator('#board [data-name="C3"]').press('Enter');
+          await current.locator('#board [data-name="D3"]').press('Enter');
+        }
+        for (const p of views) {
+          await p.waitForFunction(() => document.querySelector('#frame').contentWindow.GameEvents.current()?.version === 1);
+          await frame(p).locator('.gc-active').waitFor();
+        }
+      }
+      for (const [giver, receiver] of [[guest, host], [host, guest]]) {
+        const button = frame(giver).locator('.gc-gift:visible');
+        await button.waitFor();
+        assert.equal(await button.count(), 1);
+        const target = await button.evaluate(b => Array.from(b.closest('.gc-bar').children).indexOf(b.parentElement));
+        await button.click();
+        for (const p of [giver, receiver]) await frame(p).locator('.gc-face').nth(target)
+          .locator('strong').filter({hasText: /^0:[23][0-9]$/}).waitFor();
+      }
+      await host.evaluate(() => {
+        const w = document.querySelector('#frame').contentWindow;
+        const now = w.Date.now;
+        try {
+          w.Date.now = () => now() + 45000;
+          w.document.dispatchEvent(new Event('visibilitychange'));
+        } finally { w.Date.now = now; }
+      });
+      for (const p of views) await p.waitForFunction(() => document.querySelector('#frame').contentWindow.GameEvents.current()?.result?.reason === 'time');
+      const result = p => p.evaluate(() => document.querySelector('#frame').contentWindow.GameEvents.current().score);
+      assert.equal(await result(host) + await result(guest), 1);
+      await host.locator('#interruptGame').click();
+      await host.locator('#interruptConfirm').click();
+      await guest.waitForFunction(() => !ROOM.context().game && ROOM.context().state === 'live');
+      console.log(game + ' online host and guest gift time and agree on the timeout result PASS');
+    }
     assert.deepEqual(errors, []);
     console.log('Clock continues in catalogue, both see time loss, and both can return to analysis PASS');
   } finally {

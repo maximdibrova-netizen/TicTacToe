@@ -154,16 +154,16 @@ var Lava = (function () {
   }
   function apply(s, m) {
     if (!s || s.over) return null;
-    // 40–43 are resignations; 44 is a draw accepted by every active player.
+    // 40–43 are resignations, 44 is a draw, 45–48 are clock forfeits.
     // They are kept in the log, rather than masquerading as ordinary jumps.
-    if (m >= 40 && m <= 44 && m % 1 === 0) {
-      var seat = m === 44 ? s.turn : m - 40, p = s.players[seat];
+    if (m >= 40 && m <= 48 && m % 1 === 0) {
+      var seat = m === 44 ? s.turn : m >= 45 ? m - 45 : m - 40, p = s.players[seat];
       if (!p || !p.alive) return null;
       var n = clone(s), alive = [];
       if (m !== 44) n.players[seat].alive = false;
       n.players.forEach(function (p, i) { if (p.alive) alive.push(i); });
       n.ply++; n.log = s.log.concat(m);
-      n.last = { seat: seat, m: m, d: -1, from: p.pos, land: p.pos, to: p.pos, kind: m === 44 ? 'draw' : 'resign', pushed: [], killed: [], fell: false, left: n.tiles[p.pos] };
+      n.last = { seat: seat, m: m, d: -1, from: p.pos, land: p.pos, to: p.pos, kind: m === 44 ? 'draw' : m >= 45 ? 'time' : 'resign', pushed: [], killed: [], fell: false, left: n.tiles[p.pos] };
       if (m === 44) { n.draw = true; n.over = true; n.turn = -1; n.winner = null; }
       else if (alive.length === 1) { n.over = true; n.turn = -1; n.winner = alive[0]; }
       else if (seat === s.turn) for (var i = 1; i <= n.players.length; i++) { var nx = (seat + i) % n.players.length; if (n.players[nx].alive) { n.turn = nx; break; } }

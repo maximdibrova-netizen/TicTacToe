@@ -8,3 +8,9 @@
 #game:has(#replay):has(.continue-button:not([hidden])) .evalgraph{bottom:158px}#game:has(#replay):has(.continue-button:not([hidden])) #boardWrap{bottom:206px}body.no-eval #game:has(#replay):has(.continue-button:not([hidden])) #boardWrap{bottom:164px}
 
 #continueDialog .card{background:var(--bg-3,var(--table,var(--bg-2,#1c2537)));color:inherit}#continueDialog .card h2{color:inherit;font:800 12px/1.4 var(--body,system-ui);letter-spacing:.08em}#continueDialog .gc-note{color:inherit;opacity:.85}#continueDialog .gc-presets button{background:var(--btn,var(--panel-dark,#293248));color:inherit}#continueDialog .gc-presets button[aria-pressed=true]{background:var(--gold,#ffd166);color:#211700}
+
+.gc-face{position:relative;padding-inline:5px}
+.gc-gift{display:inline-block;margin:0 0 0 4px;padding:3px 4px;border:1px solid currentColor;border-radius:6px;background:transparent;color:inherit;font:700 11px/1.15 system-ui,sans-serif;white-space:nowrap;cursor:pointer}
+.gc-gift:hover,.gc-gift:focus-visible{background:#ffffff26}
+.gc-face[hidden],.gc-gift[hidden]{display:none!important}
+.gc-face:has(.gc-gift:not([hidden])) strong{font-size:clamp(16px,4.5vw,25px)}

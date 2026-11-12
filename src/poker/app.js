@@ -1,13 +1,15 @@
 (function () {
   'use strict';
   const $ = id => document.getElementById('poker' + id);
-  const settingsFields = {smallBlind: 'Small', bigBlind: 'Big', ante: 'Ante', stack: 'Stack', seconds: 'Seconds', reserve: 'Reserve'};
+  const settingsFields = {smallBlind: 'Small', bigBlind: 'Big', ante: 'Ante', stack: 'Stack', seconds: 'Seconds', reserve: 'Reserve', blindMinutes: 'BlindMinutes'};
   const streets = ['Префлоп', 'Флоп', 'Тёрн', 'Ривер'];
   const suits = ['♠', '♥', '♦', '♣'];
   const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
   let room;
   try { if (parent !== window) room = parent.ROOM?.frameContext(window); } catch (_) {}
-  let clockAt = 0, clock = null, raiseTurn = '';
+  let clockAt = 0, clock = null, blindLeft = null, raiseTurn = '';
+  let lastView = null, revealAt = 0, revealTimer;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const table = new PokerTable(render, code => {
     if (room?.role === 'host') parent.ROOM.pokerReady(window, code);
   }, peerOptions());
@@ -54,36 +56,100 @@
     element.dataset.card = String(value);
     if (suit === 1 || suit === 2) element.classList.add('red');
     element.setAttribute('aria-label', rank + ' ' + ['пики', 'червы', 'бубны', 'трефы'][suit]);
-    element.append(tag('span', rank), tag('span', suits[suit]));
+    const turn = tag('span', undefined, 'poker-card-turn');
+    const face = tag('span', undefined, 'poker-card-face');
+    const back = tag('span', undefined, 'poker-card-back');
+    back.setAttribute('aria-hidden', 'true');
+    face.append(tag('span', rank), tag('span', suits[suit]));
+    turn.append(face, back);
+    element.append(turn);
     return element;
   }
 
-  function drawSeat(view, index) {
+  function fromPot(element) {
+    const pot = $('Pot').getBoundingClientRect();
+    const bounds = element.getBoundingClientRect();
+    return 'translate(' + (pot.left + pot.width / 2 - bounds.left - bounds.width / 2) + 'px,' +
+      (pot.top + pot.height / 2 - bounds.top - bounds.height / 2) + 'px)';
+  }
+
+  function drawCards(container, values, timing) {
+    if (timing?.fold && container.children.length && !container.firstChild.classList.contains('poker-folding')) {
+      for (const element of container.children) {
+        const transform = fromPot(element);
+        element.classList.add('poker-folding');
+        element.setAttribute('aria-hidden', 'true');
+        delete element.dataset.card;
+        const animation = element.animate([
+          {transform: 'none', opacity: 1},
+          {transform: transform + ' scale(.5) rotate(12deg)', opacity: 0}
+        ], {duration: 270, easing: 'ease-in', fill: 'forwards'});
+        animation.finished.then(() => element.remove(), () => element.remove());
+      }
+      return 270;
+    }
+    if (timing?.keepFold && container.firstChild?.classList.contains('poker-folding')) return 0;
+    let end = 0;
+    values.forEach((value, index) => {
+      const existing = container.children[index];
+      const hidden = typeof value === 'string';
+      if (hidden ? existing?.classList.contains(value) : existing?.dataset.card === String(value)) return;
+      const element = card(hidden ? null : value, hidden ? value : null);
+      if (existing) existing.replaceWith(element); else container.append(element);
+      if (!timing || value === 'empty') return;
+      const delay = timing.delay + (timing.offsets ? timing.offsets[index] : index * timing.step);
+      const flip = element.querySelector('.poker-card-turn');
+      if (timing.slide) {
+        element.animate([
+          {transform: fromPot(element) + ' scale(.66)', opacity: 0},
+          {transform: 'none', opacity: 1}
+        ], {duration: 300, delay, easing: 'cubic-bezier(.19,.8,.3,1)', fill: 'backwards'});
+      }
+      if (flip) flip.animate([
+        {transform: 'rotateY(180deg)'}, {transform: 'rotateY(0)'}
+      ], {duration: 300, delay: delay + (timing.slide ? 65 : 0), easing: 'ease-in-out', fill: 'backwards'});
+      end = Math.max(end, delay + (timing.slide && flip ? 365 : 300));
+    });
+    while (container.children.length > values.length) container.lastChild.remove();
+    return end;
+  }
+
+  function drawSeat(view, index, transition) {
     const seat = view?.seats[index];
     const hand = view?.hand;
     const player = hand?.players[index];
     const mine = view?.me === index;
-    const tile = tag('div', undefined, 'poker-seat');
-    tile.dataset.seat = index;
-    if (!seat) {
-      tile.classList.add('is-empty');
-      tile.append(tag('span', 'Свободно'));
-      return tile;
+    let tile = $('Seats').querySelector('[data-seat="' + index + '"]');
+    if (!tile) {
+      tile = tag('div', undefined, 'poker-seat');
+      tile.dataset.seat = index;
+      const gift = tag('button', '+15 с', 'poker-gift');
+      gift.type = 'button';
+      gift.onclick = () => table.gift(table.session?.view?.me, index);
+      tile.append(tag('div', undefined, 'poker-seat-name'), tag('div', undefined, 'poker-seat-meta'),
+        tag('div', undefined, 'poker-cards'), tag('div', undefined, 'poker-seat-badges'), gift);
+      $('Seats').append(tile);
     }
-    if (mine) tile.classList.add('is-mine');
-    if (hand?.turn === index) tile.classList.add('is-turn');
-    if (player?.folded) tile.classList.add('is-folded');
-    const name = tag('div', seat.name, 'poker-seat-name');
-    name.dataset.seatName = '';
-    name.title = seat.name;
-    if (mine) name.setAttribute('aria-label', seat.name + ', вы');
-    const chips = !hand?.result && player ? player.stack : seat.stack;
-    const meta = tag('div', chips + ' фишек', 'poker-seat-meta');
+    tile.classList.toggle('is-empty', !seat);
+    tile.classList.toggle('is-mine', mine);
+    tile.classList.toggle('is-turn', hand?.turn === index);
+    tile.classList.toggle('is-folded', !!player?.folded);
+    const [name, meta, cards, badges, gift] = tile.children;
+    name.textContent = seat?.name || 'Свободно';
+    name.title = seat?.name || '';
+    name.toggleAttribute('data-seat-name', !!seat);
+    if (mine && seat) name.setAttribute('aria-label', seat.name + ', вы');
+    else name.removeAttribute('aria-label');
+    meta.hidden = badges.hidden = !seat;
+    gift.hidden = !seat?.online || mine || !hand?.clock || !hand.players[view.me] || !player?.stack || player.folded;
+    const title = seat ? 'Добавить 15 секунд: ' + seat.name : '';
+    gift.title = title;
+    gift.setAttribute('aria-label', title);
+
+    const chips = !hand?.result && player ? player.stack : seat?.stack;
+    meta.textContent = seat ? chips + ' фишек' : '';
     if (player?.bet) meta.append(' · ', tag('b', String(player.bet)));
-    const cards = tag('div', undefined, 'poker-cards');
-    if (player?.cards.length) cards.append(...player.cards.map(value => card(value)));
-    else if (player && !player.folded && !hand.result) cards.append(card(null, 'back'), card(null, 'back'));
-    const badges = tag('div', undefined, 'poker-seat-badges');
+    badges.replaceChildren();
     if (hand?.button === index && player) {
       const button = tag('span', 'D', 'dealer');
       button.title = 'Дилер';
@@ -92,12 +158,24 @@
     }
     if (hand?.small === index && player) badges.append(tag('span', 'SB'));
     if (hand?.big === index && player) badges.append(tag('span', 'BB'));
-    if (!seat.online) badges.append(tag('span', 'Нет связи'));
-    else if (player?.folded) badges.append(tag('span', 'Фолд'));
+    if (seat && !seat.online) badges.append(tag('span', 'Нет связи'));
+    else if (player?.folded) badges.append(tag('span', player.timedOut ? 'Время вышло' : 'Фолд'));
     else if (player && !hand.result && !player.stack) badges.append(tag('span', 'Олл-ин'));
-    else if (hand && !hand.result && !player) badges.append(tag('span', 'Ожидает'));
-    tile.append(name, meta, cards, badges);
-    return tile;
+    else if (seat && hand && !hand.result && !player) badges.append(tag('span', 'Ожидает'));
+    const values = player && !player.folded ? player.cards.length ? player.cards : !hand.result ? ['back', 'back'] : [] : [];
+    const prior = transition?.prior?.players[index];
+    let timing = null;
+    if (transition) {
+      if (hand.result?.showdown && !mine && !prior?.cards.length && values.length) {
+        timing = {slide: false, delay: transition.reveal, step: 75};
+      } else if (transition.deal) {
+        const order = (index - hand.button + Holdem.SEATS - 1) % Holdem.SEATS;
+        timing = {slide: true, delay: order * 48, step: 115};
+      } else if (player?.folded) {
+        timing = {fold: !!prior && !prior.folded, keepFold: true};
+      }
+    } else if (player?.folded && !reduceMotion.matches) timing = {keepFold: true};
+    return drawCards(cards, values, timing);
   }
 
   function drawActions(view) {
@@ -131,12 +209,18 @@
   }
 
   function updateClock() {
+    const elapsed = performance.now() - clockAt;
+    $('BlindClock').hidden = blindLeft === null;
+    if (blindLeft !== null) {
+      const seconds = Math.max(0, Math.ceil((blindLeft - elapsed) / 1000));
+      $('BlindClock').textContent = seconds ? 'Рост блайндов через ' + Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0') :
+        'Новые блайнды со следующей раздачи';
+    }
     $('Clock').hidden = !clock;
     if (!clock) return;
-    const elapsed = performance.now() - clockAt;
     const reserve = elapsed >= clock.base && clock.left > clock.base;
     const left = Math.max(0, Math.ceil(((reserve ? clock.left : clock.base) - elapsed) / 1000));
-    const text = (reserve ? 'Резерв ' : '') + left + ' с';
+    const text = left ? (reserve ? 'Резерв ' : '') + left + ' с' : '…';
     if ($('Clock').textContent !== text) $('Clock').textContent = text;
   }
 
@@ -149,20 +233,49 @@
     const me = view?.me ?? 0;
     const ordered = [2, 3, 4, 1, 0, 5].map(offset => (me + offset) % Holdem.SEATS);
     const online = view?.seats.filter(seat => seat?.online) || [];
-    $('Seats').replaceChildren(...ordered.map(index => drawSeat(view, index)));
-    $('Board').replaceChildren(...Array.from({length: 5}, (_, i) =>
-      i < (hand?.board.length || 0) ? card(hand.board[i]) : card(null, 'empty')));
+    const sameTable = !!view && lastView?.code === view.code && lastView.me === me;
+    const newHand = !!hand && sameTable && lastView.number !== view.number;
+    const animate = sameTable && !!hand && !reduceMotion.matches;
+    const prior = sameTable && !newHand ? lastView.hand : null;
+    if (!sameTable) {
+      $('Seats').replaceChildren();
+      $('Board').replaceChildren();
+      revealAt = 0;
+    }
+    if (newHand) {
+      $('Board').replaceChildren();
+      for (const cards of $('Seats').querySelectorAll('.poker-cards')) cards.replaceChildren();
+    }
+    const boardStart = prior?.board.length ?? 0;
+    const boardDelay = newHand ? 430 : 0;
+    const runout = !!hand?.result?.showdown && hand.board.length > boardStart;
+    const offsets = runout ? [0, 75, 150, 480, 820] : [0, 85, 170, 255, 340];
+    const boardEnd = drawCards($('Board'), Array.from({length: 5}, (_, i) => hand?.board[i] ?? 'empty'),
+      animate && hand.board.length > boardStart ? {slide: true, delay: boardDelay - offsets[boardStart], offsets} : null);
+    const transition = animate ? {deal: newHand, prior, reveal: boardEnd ? boardEnd + 60 : 0} : null;
+    const seatsEnd = Math.max(...ordered.map(index => drawSeat(view, index, transition)));
+    if (animate && hand.result && (!prior?.result || newHand) && Math.max(boardEnd, seatsEnd)) {
+      const wait = Math.max(boardEnd, seatsEnd);
+      revealAt = performance.now() + wait;
+      clearTimeout(revealTimer);
+      revealTimer = setTimeout(render, wait + 20);
+    }
+    const revealing = !reduceMotion.matches && !!hand?.result && performance.now() < revealAt;
     $('Count').textContent = (view?.seats.filter(Boolean).length || 0) + ' / 6 мест';
-    $('Street').textContent = hand ? hand.result ? hand.result.showdown ? 'Вскрытие' : 'Раздача завершена' : streets[hand.street] : 'Ожидание игроков';
+    $('Street').textContent = hand ? hand.result ? hand.result.showdown ? revealing ? 'Вскрываем карты…' : 'Вскрытие' : 'Раздача завершена' : streets[hand.street] : 'Ожидание игроков';
     $('Pot').textContent = 'Банк ' + (hand?.pot || 0);
     $('Turn').textContent = active ? hand.turn === me ? 'Ваш ход' : 'Ходит ' + hand.players[hand.turn].name :
-      hand?.result ? 'Раздача ' + view.number + ' завершена' : view ? online.length < 2 ? 'Ждём второго игрока' : 'Готово к раздаче' :
+      revealing ? 'Завершаем раздачу' : hand?.result ? 'Раздача ' + view.number + ' завершена' : view ? online.length < 2 ? 'Ждём второго игрока' : 'Готово к раздаче' :
       room?.role === 'guest' ? 'Ждём, пока друг откроет стол' : 'Создайте стол или введите код друга';
-    clock = hand?.clock || null;
-    clockAt = performance.now();
+    if (view !== lastView) {
+      clock = hand?.clock || null;
+      blindLeft = view?.blinds?.left ?? null;
+      clockAt = performance.now();
+    }
+    lastView = view;
     updateClock();
     drawActions(view);
-    drawResult(hand, view);
+    drawResult(revealing ? null : hand, view);
     $('Entry').hidden = !!session || room?.role === 'guest';
     $('JoinForm').hidden = !!room;
     $('Room').hidden = !view;
@@ -181,12 +294,12 @@
     }
     $('Save').hidden = !view || !host || !!active;
     $('Deal').hidden = !view || !host || !!active;
-    $('Deal').disabled = online.filter(seat => seat.stack > 0).length < 2;
+    $('Deal').disabled = revealing || online.filter(seat => seat.stack > 0).length < 2;
     $('Deal').textContent = hand ? 'Следующая раздача' : 'Начать раздачу';
     $('Rebuy').hidden = !view || !!active || view.seats[me].stack > 0;
     $('Code').textContent = view?.code || '';
     const config = view?.config;
-    $('Summary').textContent = config ? 'Блайнды ' + config.smallBlind + ' / ' + config.bigBlind + ' · Анте ' + config.ante +
+    $('Summary').textContent = config ? 'Блайнды ' + (view.blinds?.smallBlind ?? config.smallBlind) + ' / ' + (view.blinds?.bigBlind ?? config.bigBlind) + ' · Анте ' + config.ante +
       (config.seconds ? ' · ' + config.seconds + ' с на ход + ' + config.reserve + ' с резерва' : ' · Без таймера') : '';
     if (session?.error) note(session.error);
   }

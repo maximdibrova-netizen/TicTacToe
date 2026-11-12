@@ -723,7 +723,7 @@ onmessage = function (e) {
   $('ckPdnDownload').onclick=function(){try{var file=pdnFile(),url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download=file.name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},60000);}catch(e){$('ckPdnError').textContent=e.message;}};
   $('ckPdnShare').onclick=function(){navigator.share({files:[pdnFile()],title:'Русские шашки · PDN'}).catch(function(e){if(e.name!=='AbortError')$('ckPdnError').textContent='Используйте скачивание .pdn';});};
 
-  var GC = GameClock.attach({id:"checkers", labels:["Белые", "Чёрные"],
+  var GC = GameClock.attach({id:"checkers", seat:function(){var side=G&&mySide();return side? (side===1?0:1):null;}, labels:["Белые", "Чёрные"],
     state:function(){return G&&!G.analysis?{game:G,turn:(G.s.side===1?0:1),moves:G.moves.length,over:!!(G.over || G.s.winner),ready:true}:null;}, role:function(){return Net2P.role();},
     send:function(m){Net2P.send(m);}, menu:toMenu, analyze:analyzeFinished,
     expire:function(i){if(!G)return;token++;G.over=true; G.s.winner=i===0?-1:1;}

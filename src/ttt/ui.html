@@ -720,8 +720,6 @@ onmessage = function (e) {
     });
   }
   function hostData(conn, d) {
-    if (GC && GC.receive(d)) return;
-    if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     var n = NET; if (!d || typeof d !== 'object') return;
     if (d.t === 'hello') {
       if (n.conn && n.conn !== conn && n.cid && n.cid !== d.cid && n.peerOnline !== false) { try { conn.send({ t: 'full' }); } catch (e) {} return; }
@@ -733,6 +731,8 @@ onmessage = function (e) {
     }
     if (conn !== n.conn) return;
     if(MA&&MA.receive(d,3-n.hostSide))return;
+    if (GC && GC.receive(d)) return;
+    if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     n.seen = Date.now(); if (n.peerOnline === false) { n.peerOnline = true; if (G) render(); }
     if (d.t === 'ping') { netSend({ t: 'pong' }); return; }
     if (d.t === 'try') {
@@ -857,9 +857,9 @@ onmessage = function (e) {
   $('askNo').onclick = function () { answerAsk(false); };
 
 
-  var GC = GameClock.attach({id:"ttt", labels:["Крестики", "Нолики"],
+  var GC = GameClock.attach({id:"ttt", seat:function(){return G&&mySide()?mySide()-1:null;}, labels:["Крестики", "Нолики"],
     state:function(){return G&&!G.analysis?{game:G,turn:(G.s.turn-1),moves:G.moves.length,over:!!(G.over || G.s.winner),ready:true}:null;}, role:function(){return NET && NET.role;},
-    send:function(m){netBroadcast(m);}, menu:toMenu, analyze:analyzeFinished,
+    send:function(m){if(NET&&NET.role==='host')netBroadcast(m);else netSend(m);}, menu:toMenu, analyze:analyzeFinished,
     expire:function(i){if(!G)return;token++;G.over=true; G.s.winner=i===0?2:1;}
   });
   (function autoJoin() { if (!ONLINE) return; var m = /^#([A-Za-z0-9]{5})$/.exec(location.hash || ''); if (m) { S.mode = 'net'; renderMenu(); guestJoin(m[1]); } })();

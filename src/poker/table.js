@@ -32,6 +32,7 @@ class PokerTable {
     this.session = null;
     this.heartbeatAt = 0;
     setInterval(() => this.pulse(), 200);
+    document.addEventListener('visibilitychange', () => this.pulse());
   }
 
   host(name, settings) {
@@ -147,6 +148,10 @@ class PokerTable {
     session.seats[seat].seen = Date.now();
     if (packet.type === 'leave') { this.drop(session, connection, true); return; }
     if (packet.type === 'rebuy') { this.rebuy(seat); return; }
+    if (packet.type === 'gift') {
+      if (packet.number === session.number) this.gift(seat, packet.to);
+      return;
+    }
     if (packet.type === 'act') {
       const {hand, number} = session;
       if (hand && packet.number === number && packet.revision === hand.revision &&
@@ -201,7 +206,12 @@ class PokerTable {
   configure(settings) {
     const session = this.session;
     if (session?.role !== 'host' || this.active(session)) return false;
-    session.config = Holdem.settings(settings);
+    const config = Holdem.settings(settings);
+    if (['smallBlind', 'bigBlind', 'blindMinutes'].some(key => config[key] !== session.config[key])) {
+      session.blindStart = null;
+      session.blinds = null;
+    }
+    session.config = config;
     if (!session.hand) {
       for (const seat of session.seats) if (seat) seat.stack = session.config.stack;
     }
@@ -223,7 +233,10 @@ class PokerTable {
     if (previous && players.filter(Boolean).length === 2 && players[previous.big]) {
       previousButton = players.findIndex((seat, index) => seat && index !== previous.big);
     }
-    session.hand = Holdem.newHand(players, session.config, previousButton);
+    const now = Date.now();
+    session.blindStart ??= now;
+    session.blinds = Holdem.blindLevel(session.config, session.blindStart, now);
+    session.hand = Holdem.newHand(players, session.config, previousButton, now, undefined, session.blinds);
     session.handSeats = players;
     session.number++;
     this.afterAction(session);
@@ -253,6 +266,17 @@ class PokerTable {
     return true;
   }
 
+  gift(from, to) {
+    const session = this.session;
+    if (!session?.ready || !Number.isInteger(to) || !session.view?.seats[to]?.online) return false;
+    if (session.role === 'guest') {
+      return this.send(session.connection, {type: 'gift', to, number: session.view.number});
+    }
+    if (!this.active(session) || !Holdem.addTime(session.hand, from, to)) return false;
+    this.publish();
+    return true;
+  }
+
   afterAction(session) {
     if (session.hand.result) {
       for (const player of session.hand.players) if (player) session.seats[player.seat].stack = player.stack;
@@ -273,7 +297,10 @@ class PokerTable {
         }
       });
     }
-    return {type: 'table', code: session.code, me, number: session.number, config: session.config, seats, hand};
+    const now = Date.now();
+    const level = session.blinds || Holdem.blindLevel(session.config, null, now);
+    const blinds = {...level, left: level.nextAt === null ? null : Math.max(0, level.nextAt - now)};
+    return {type: 'table', code: session.code, me, number: session.number, config: session.config, seats, hand, blinds};
   }
 
   publish() {

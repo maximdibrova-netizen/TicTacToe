@@ -1662,8 +1662,6 @@ onmessage = function (e) {
     if (G&&!pendingContinuation) { renderCornersGame(G.cnt, G.own, G.mask, G.over ? -1 : G.turn); setStatus(); } else lobbyRender();
   }
   function hostOnData(conn, d) {
-    if (GC && GC.receive(d)) return;
-    if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     if (!d || typeof d !== 'object') return;
     if (d.t === 'hello') {
       var cid = String(d.cid || ''), seat = -1, q;
@@ -1683,6 +1681,8 @@ onmessage = function (e) {
     var seat2 = seatOf(conn);
     if (seat2 < 0) return;
     if(MA&&MA.receive(d,seat2))return;
+    if (GC && GC.receive(d, seat2)) return;
+    if (GC && d && /^(try|move|shot|ans)$/.test(d.t) && !GC.before()) return;
     NET.seats[seat2].seen = Date.now();
     if (d.t === 'pong') return;
     if (d.t === 'try') {
@@ -1896,9 +1896,9 @@ onmessage = function (e) {
 
   // a shared link (…/#CODE) drops the friend straight into the game
 
-  var GC = GameClock.attach({id:"tochki", labels:["Фиолетовые", "Зелёные", "Синие", "Красные"],
+  var GC = GameClock.attach({id:"tochki", seat:function(){var seat=mySeat();return seat>=0?seat:G&&G.kinds.indexOf('bot')>=0?G.kinds.indexOf('human'):null;}, labels:["Фиолетовые", "Зелёные", "Синие", "Красные"],
     state:function(){return G&&!G.analysis?{game:G,turn:(G.turn),moves:G.moves,noIncrement:G.hist[G.hist.length-1].cell===-2,over:!!(G.over),ready:true,paused:!!(G.playing||G.queue.length),active:[0,1,2,3].filter(function(i){return !!(G.mask&(1<<i));})}:null;}, role:function(){return NET && NET.role;},
-    send:function(m){netBroadcast(m);}, menu:toMenu, analyze:analyzeFinished,
+    send:function(m){if(NET&&NET.role==='host')netBroadcast(m);else netSend(m);}, menu:toMenu, analyze:analyzeFinished,
     expire:function(i){if(!G)return;token++;G.over=true; G.winner=nextAlive(G.mask,i); stopAnims();}
   });
 

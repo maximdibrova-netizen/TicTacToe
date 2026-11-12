@@ -199,7 +199,7 @@ var Durak = (function () {
   function settle(state, reason, loser) {
     if (state.result) return null;
     if (reason === 'draw') loser = null;
-    else if (reason !== 'resign' || !Number.isInteger(loser) || loser < 0 || loser >= state.count) return null;
+    else if (!['resign','time'].includes(reason) || !Number.isInteger(loser) || loser < 0 || loser >= state.count) return null;
     return {...state, phase: 'end', actor: -1, version: state.version + 1, result: {reason, loser}};
   }
 
@@ -240,7 +240,7 @@ var Durak = (function () {
         && v.last.seat === v.defender && card(v.last.card) && v.table.some(p => p.cover === v.last.card)))
       && (v.resolved === null || (v.resolved && player(v.resolved.defender) && table(v.resolved.table)
         && (v.resolved.draws === undefined || (Array.isArray(v.resolved.draws) && v.resolved.draws.length <= size && v.resolved.draws.every(player)))))
-      && (v.result === null || (['cards','draw','resign'].includes(v.result.reason) && (v.result.loser === null || player(v.result.loser))));
+      && (v.result === null || (['cards','draw','resign','time'].includes(v.result.reason) && (v.result.loser === null || player(v.result.loser))));
   }
 
   // простой бот: самой дешёвой картой; им же доигрываются партии при переборе

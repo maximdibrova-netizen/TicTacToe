@@ -37,6 +37,7 @@ async function main() {
     await host.locator('#pokerName').fill('Хозяин');
     await host.locator('#pokerAnte').fill('2');
     await host.locator('#pokerSeconds').fill('0');
+    await host.locator('#pokerBlindMinutes').fill('2');
     await host.locator('#pokerCreate').click();
     await host.locator('#pokerCode').waitFor();
     const code = await host.locator('#pokerCode').textContent();
@@ -60,6 +61,8 @@ async function main() {
     await host.locator('#pokerDealer').selectOption('3');
     await host.locator('#pokerDeal').click();
     await host.locator('#pokerSeats [data-seat="3"] .dealer').waitFor();
+    await host.locator('#pokerBlindClock').filter({hasText: /Рост блайндов через/}).waitFor();
+    assert.ok(await host.evaluate(() => document.querySelector('#pokerSeats').getAnimations({subtree:true}).length > 0), 'deal cards are animated');
     for (const p of players) {
       await p.locator('#pokerStreet').filter({hasText: 'Префлоп'}).waitFor();
       assert.equal(await p.locator('#pokerSeats [data-card]').count(), 2, 'only own cards are visible preflop');
@@ -73,6 +76,8 @@ async function main() {
       await players[turn].locator(i === 0 ? '#pokerAllIn' : '#pokerCall').click();
       if (i < 5) await host.waitForFunction(previous => Number(document.querySelector('#pokerSeats .is-turn')?.dataset.seat) !== previous, turn);
     }
+    await host.locator('#pokerStreet').filter({hasText: 'Вскрываем карты'}).waitFor();
+    assert.equal(await host.locator('#pokerResult').isVisible(), false);
     await host.locator('#pokerStreet').filter({hasText: 'Вскрытие'}).waitFor();
     assert.equal(await host.locator('#pokerBoard [data-card]').count(), 5);
     assert.equal(await host.locator('#pokerSeats [data-card]').count(), 12);
@@ -104,12 +109,27 @@ async function main() {
     await table.locator('#pokerSettings summary').click();
     await table.locator('#pokerSeconds').fill('2');
     await table.locator('#pokerReserve').fill('1');
+    await table.locator('#pokerBlindMinutes').fill('1');
     await table.locator('#pokerSave').click();
     await table.locator('#pokerDeal').click();
     await guestTable.locator('#pokerStreet').filter({hasText: 'Префлоп'}).waitFor();
     await third.locator('#pokerStreet').filter({hasText: 'Префлоп'}).waitFor();
     await guestTable.locator('#pokerClock').waitFor();
-    await table.locator('#pokerSeats [data-seat="0"].is-folded').waitFor();
+    await guestTable.locator('#pokerSeats [data-seat="0"] .poker-gift').click();
+    await table.locator('#pokerClock').filter({hasText: /Резерв 1[0-6] с/}).waitFor();
+    await table.locator('#pokerFold').click();
+    await table.locator('#pokerSeats [data-seat="0"] .poker-folding').first().waitFor();
+    await table.locator('#pokerSeats [data-seat="0"] .poker-card').first().waitFor({state:'detached'});
+    await table.locator('.poker-seat.is-folded').filter({hasText:'Время вышло'}).waitFor();
+    await table.locator('#pokerResult').waitFor();
+    await table.locator('#pokerDeal').evaluate(button => {
+      const now = Date.now;
+      try { Date.now = () => now() + 61000; button.click(); }
+      finally { Date.now = now; }
+    });
+    for (const tableView of [table, guestTable]) {
+      await tableView.locator('#pokerSummary').filter({hasText:'Блайнды 10 / 20'}).waitFor();
+    }
     await owner.locator('#backBtn').click();
     await owner.locator('a[data-g=poker]').click();
     await owner.locator('#sameGameResume').click();

@@ -2,12 +2,12 @@ var Holdem = (function () {
   'use strict';
 
   const SEATS = 6;
-  const defaults = Object.freeze({smallBlind: 5, bigBlind: 10, ante: 0, stack: 1000, seconds: 25, reserve: 30});
+  const defaults = Object.freeze({smallBlind: 5, bigBlind: 10, ante: 0, stack: 1000, seconds: 25, reserve: 30, blindMinutes: 0});
   const names = ['Старшая карта', 'Пара', 'Две пары', 'Тройка', 'Стрит', 'Флеш', 'Фулл-хаус', 'Каре', 'Стрит-флеш'];
   const integers = (value, min, max) => Number.isSafeInteger(value) && value >= min && value <= max;
 
   function settings(input) {
-    const {smallBlind, bigBlind, ante, stack, seconds, reserve} = input;
+    const {smallBlind, bigBlind, ante, stack, seconds, reserve, blindMinutes = 0} = input;
     if (!integers(smallBlind, 1, 999999) || !integers(bigBlind, smallBlind + 1, 1000000)) {
       throw Error('Большой блайнд должен быть больше малого, оба — целые положительные числа.');
     }
@@ -17,7 +17,19 @@ var Holdem = (function () {
     if (!integers(seconds, 0, 300) || !integers(reserve, 0, 600)) {
       throw Error('Время на ход — от 0 до 300 секунд, резерв — от 0 до 600.');
     }
-    return {smallBlind, bigBlind, ante, stack, seconds, reserve};
+    if (!integers(blindMinutes, 0, 180)) throw Error('Интервал роста блайндов — от 0 до 180 минут.');
+    return {smallBlind, bigBlind, ante, stack, seconds, reserve, blindMinutes};
+  }
+
+  function blindLevel(config, started, now) {
+    const interval = config.blindMinutes * 60000;
+    const limit = Math.floor(Math.log2(1000000 / config.bigBlind));
+    const level = started == null || !interval ? 0 : Math.min(limit, Math.floor(Math.max(0, now - started) / interval));
+    return {
+      smallBlind: config.smallBlind * 2 ** level,
+      bigBlind: config.bigBlind * 2 ** level,
+      nextAt: interval && started != null && level < limit ? started + (level + 1) * interval : null
+    };
   }
 
   function shuffle() {
@@ -99,8 +111,12 @@ var Holdem = (function () {
     return paid;
   }
 
-  function newHand(seats, configuration, previousButton = -1, now = Date.now(), deck = shuffle()) {
+  function newHand(seats, configuration, previousButton = -1, now = Date.now(), deck = shuffle(), blinds = null) {
     const config = settings(configuration);
+    if (blinds) {
+      config.smallBlind = blinds.smallBlind;
+      config.bigBlind = blinds.bigBlind;
+    }
     if (!Array.isArray(seats) || seats.length > SEATS) throw Error('За столом максимум 6 игроков.');
     if (deck.length !== 52 || new Set(deck).size !== 52 || !deck.every(card => integers(card, 0, 51))) throw Error('Некорректная колода.');
     const players = Array.from({length: SEATS}, (_, i) => {
@@ -256,8 +272,20 @@ var Holdem = (function () {
   function act(hand, seat, action, now = Date.now()) { return apply(hand, seat, action, now, false); }
   function tick(hand, now = Date.now(), disconnected = false) {
     if (hand.result || (!disconnected && (hand.deadline === null || now < hand.deadline))) return false;
-    const action = options(hand, hand.turn);
-    return apply(hand, hand.turn, {type: action.check ? 'check' : 'fold'}, now, true);
+    const expired = hand.deadline !== null && now >= hand.deadline;
+    const seat = hand.turn;
+    if (!apply(hand, seat, {type: 'fold'}, now, true)) return false;
+    hand.players[seat].timedOut = expired;
+    return true;
+  }
+
+  function addTime(hand, from, to, now = Date.now()) {
+    const player = hand.players[to];
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from === to || !hand.players[from] || !live(player) || !player.stack ||
+        hand.result || hand.deadline === null || now >= hand.deadline) return false;
+    player.reserve += 15000;
+    if (hand.turn === to) hand.deadline += 15000;
+    return true;
   }
 
   function view(hand, seat, now = Date.now()) {
@@ -268,11 +296,11 @@ var Holdem = (function () {
       clock: hand.deadline === null ? null : {base: Math.max(0, hand.baseUntil - now), left: Math.max(0, hand.deadline - now)},
       options: options(hand, seat),
       players: hand.players.map(p => p && ({seat: p.seat, name: p.name, stack: p.stack, bet: hand.result ? 0 : p.bet,
-        folded: p.folded, reserve: p.reserve,
+        folded: p.folded, timedOut: !!p.timedOut, reserve: p.reserve,
         cards: p.seat === seat || (hand.result?.showdown && !p.folded) ? p.cards.slice() : []}))
     };
   }
 
-  return {SEATS, defaults, settings, compare, evaluate, newHand, options, act, tick, view};
+  return {SEATS, defaults, settings, blindLevel, compare, evaluate, newHand, options, act, tick, addTime, view};
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = Holdem;

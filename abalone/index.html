@@ -10,6 +10,12 @@
 
 #continueDialog .card{background:var(--bg-3,var(--table,var(--bg-2,#1c2537)));color:inherit}#continueDialog .card h2{color:inherit;font:800 12px/1.4 var(--body,system-ui);letter-spacing:.08em}#continueDialog .gc-note{color:inherit;opacity:.85}#continueDialog .gc-presets button{background:var(--btn,var(--panel-dark,#293248));color:inherit}#continueDialog .gc-presets button[aria-pressed=true]{background:var(--gold,#ffd166);color:#211700}
 
+.gc-face{position:relative;padding-inline:5px}
+.gc-gift{display:inline-block;margin:0 0 0 4px;padding:3px 4px;border:1px solid currentColor;border-radius:6px;background:transparent;color:inherit;font:700 11px/1.15 system-ui,sans-serif;white-space:nowrap;cursor:pointer}
+.gc-gift:hover,.gc-gift:focus-visible{background:#ffffff26}
+.gc-face[hidden],.gc-gift[hidden]{display:none!important}
+.gc-face:has(.gc-gift:not([hidden])) strong{font-size:clamp(16px,4.5vw,25px)}
+
 .local-views{position:fixed;top:8px;right:8px;z-index:65;display:flex;gap:4px;background:#111827ed;border:1px solid #586176;border-radius:10px;padding:3px;color:#f1eee8}.local-views button{min-width:34px;height:30px;padding:3px 7px;border:0;border-radius:6px;color:inherit;background:transparent;font:800 12px system-ui;cursor:pointer}.local-views button[aria-pressed=true]{background:#eac17c;color:#211a10}.local-views button:focus-visible{outline:2px solid #eac17c}.local-rotated{rotate:180deg}.local-mirrored{scale:-1 1}.local-rotated :is(.coord,.lab,.cd){rotate:180deg;transform-box:fill-box;transform-origin:center}.view-no-coords :is(.coord,.cd,.ab-axis,.view-axis-label){display:none!important}.view-no-coords .grid .lab{visibility:hidden}.view-no-history :is(#nota,#notation,#ckNotation,.notation-card){display:none!important}.view-no-history:not(.view-analysis) :is(.rv-nav,#replay){display:none!important}.view-axis-label{position:absolute;pointer-events:none;color:#c6cbd4;font:700 11px system-ui}.local-rotated .view-axis-label{rotate:180deg}html.in-room #game{padding-top:42px!important}
 
 body:has(#replay) .local-views{right:calc(50% - 66px)}html:not(.in-room) body.in-game:has(#replay) .local-views{top:48px}html:not(.in-room) body.in-game:has(#replay) .topbar{top:86px}html:not(.in-room) body.in-game:has(#replay) .gc-bar{top:86px}html:not(.in-room) body.in-game.gc-timed:has(#replay) .topbar{top:148px}html:not(.in-room) body.in-game:has(#replay) #boardWrap{top:194px}html:not(.in-room) body.in-game.gc-timed:has(#replay) #boardWrap{top:256px}
@@ -502,7 +508,7 @@ body:not(.ab-analysis):not(.view-no-history) #sidePanel{display:block;margin-top
   <div class="card" id="netCard" hidden><h2>Онлайн с другом</h2><div class="seg" style="--cols:2"><button id="netCreate">Создать игру</button><button id="netJoinBtn">Войти по коду</button></div><div class="join" id="joinRow" hidden><input id="joinCode" maxlength="5" placeholder="КОД" aria-label="Код игры" autocomplete="off" spellcheck="false"><button id="joinGo">Войти</button></div><p class="hint">Хозяин выбирает расстановку и время. Другу достаточно ссылки или кода.</p></div>
   <button class="play" id="playBtn">Играть</button><button class="secondary" id="analyzeBtn">Анализ позиции</button>
   <details class="card rules"><summary>Как играть</summary><ol><li>Выбери один шар или прямую непрерывную группу из двух или трёх своих шаров.</li><li>За ход группа сдвигается на одну лунку в одном из шести направлений. При боковом сдвиге все лунки должны быть свободны.</li><li>Вдоль линии можно толкать меньшую группу соперника: <b>2 против 1, 3 против 1 или 3 против 2</b>. Толкать необязательно.</li><li>За шарами соперника должно быть свободное место или край доски. Свои шары за край выводить нельзя.</li><li>Выбил шесть шаров соперника — победил. Чёрные всегда ходят первыми.</li></ol><a href="https://foxmind.co.il/wp-content/uploads/2021/10/ABALONE_CLASSIC_RULES_EN-FM-p.pdf" target="_blank" rel="noopener">Правила издателя ↗</a></details>
-  <p class="hint version">Версия от 12.11.2026 22:12</p>
+  <p class="hint version">Версия от 13.11.2026 00:25</p>
  </div>
 </section>
 <section id="game" class="screen" hidden>
@@ -534,6 +540,12 @@ FischerClock.prototype.move = function(next, now) {
   this.tick(now); if (this.flag !== null || !this.running) return false;
   this.left[this.turn] += this.inc[this.turn]; this.turn = next; return true;
 };
+FischerClock.prototype.gift = function(seat, now) {
+  this.tick(now);
+  if (!this.running || this.flag !== null || !Number.isInteger(seat) || seat < 0 || seat >= this.left.length) return false;
+  this.left[seat] += 15000;
+  return true;
+};
 FischerClock.prototype.stop = function(now) { this.tick(now); this.running = false; };
 if (typeof module !== 'undefined') module.exports = FischerClock;
 
@@ -554,7 +566,8 @@ var GameClock = (function () {
 
   function attach(a) {
     var model = null, game = null, lastMove = 0, ended = false, received = 0, lastSend = 0, paused = false, initial = null;
-    var n = a.labels.length;
+    var n = a.labels.length, seats = a.labels.map(function (_, i) { return i; });
+    var key = null, deadlineTimer, lastCheck = 0, settling = false;
     // ---------- settings ----------
     // cfg: { enabled, preset: 'off'|'1+0'|…|'custom', min, inc, per: bool, pmin: [], pinc: [] }
     var cfg = { enabled: false, preset: 'off', min: 5, inc: 3, per: false, pmin: a.labels.map(function () { return 5; }), pinc: a.labels.map(function () { return 3; }) };
@@ -644,71 +657,160 @@ var GameClock = (function () {
 
     // ---------- clock faces in the game ----------
     var bar = document.createElement('div'); bar.className = 'gc-bar'; bar.hidden = true; document.getElementById('game').prepend(bar);
+    var faces = a.labels.map(function (label, i) {
+      var face = document.createElement('div'); face.className = 'gc-face';
+      var name = document.createElement('span'), time = document.createElement('strong');
+      var gift = document.createElement('button'); gift.type = 'button'; gift.className = 'gc-gift'; gift.textContent = '+15 с';
+      gift.onclick = function () {
+        if (!before() || !canGift(i, ownSeat())) return;
+        if (guest()) a.send({ t: 'clock-gift-v1', to: i, key: key });
+        else give(i);
+      };
+      face.append(name, time, gift); bar.appendChild(face);
+      return { face:face, name:name, time:time, gift:gift };
+    });
     var result = document.createElement('div'); result.className = 'gc-result'; result.hidden = true; result.setAttribute('role', 'dialog'); result.setAttribute('aria-label', 'Партия завершена по времени');
     result.innerHTML = '<div><h2>Время вышло</h2><p></p><div class="gc-result-actions"><button type="button" class="gc-analyze">Анализ</button><button type="button" class="gc-menu">В меню</button></div></div>'; document.body.appendChild(result);
     result.querySelector('.gc-menu').onclick = function () { result.hidden = true; a.menu(); sync(); };
     result.querySelector('.gc-analyze').onclick = function () { result.hidden = true; a.analyze(); sync(); };
     function guest() { return a.role() === 'guest'; }
+    function ownSeat() {
+      var s = a.state(), seat = a.seat ? a.seat() : null;
+      return seat == null && s && !a.role() ? s.turn : seat;
+    }
+    function canGift(to, from) {
+      var s = a.state(), active = s && (s.active || seats);
+      return !!(model && model.flag === null && model.running && s && !s.over && s.ready &&
+        active.indexOf(to) >= 0 && active.indexOf(from) >= 0 && from !== to);
+    }
+    function give(to) {
+      if (model.gift(to, paused ? model.at : Date.now())) { publish(); draw(); scheduleDeadline(); if (a.changed) a.changed(); }
+      else sync();
+    }
     function expire() {
       if (!model || model.flag === null || ended) return;
-      ended = true;
-      if (typeof GameEvents !== 'undefined') GameEvents.expire(a.id, model.flag);
-      a.expire(model.flag);
-      if (typeof GameEvents !== 'undefined') GameEvents.flush();
-      result.querySelector('p').textContent = a.labels[model.flag] + ' — поражение по времени. Партия окончена.'; result.hidden = a.resultModal === false;
+      var flag = model.flag, s = a.state();
+      if (!s) return;
+      var eliminate = !guest() && a.eliminate && s.active && s.active.length > 2;
+      ended = settling = true;
+      try {
+        if (!eliminate && typeof GameEvents !== 'undefined') GameEvents.expire(a.id, flag);
+        a.expire(flag);
+        if (typeof GameEvents !== 'undefined') GameEvents.flush();
+      } finally { settling = false; }
+      var next = a.state();
+      if (eliminate && next && !next.over && next.active.indexOf(flag) < 0) {
+        model.flag = null; model.running = true; model.turn = next.turn; model.at = Date.now();
+        lastMove = next.moves; ended = false; paused = !!next.paused;
+        return;
+      }
+      var label = a.label ? a.label(flag) : a.labels[flag];
+      result.querySelector('p').textContent = label + ' — поражение по времени. Партия окончена.';
+      result.hidden = a.resultModal === false;
     }
-    function packet() { return model ? { left: model.left.slice(), inc: model.inc.slice(), turn: model.turn, running: model.running && !paused, flag: model.flag, initial: initial } : null; }
-    function publish() { if (a.role() === 'host') { a.send({ t: 'clock-v1', clock: packet() }); lastSend = Date.now(); } }
+    function packet() { return model ? { key:key, left:model.left.slice(), inc:model.inc.slice(), turn:model.turn, running:model.running && !paused, flag:model.flag, initial:initial } : null; }
+    function publish() { if (!settling && a.role() === 'host') { a.send({ t:'clock-v1', clock:packet() }); lastSend = Date.now(); } }
+    function scheduleDeadline() {
+      clearTimeout(deadlineTimer);
+      if (model && !guest() && model.running && !paused) {
+        deadlineTimer = setTimeout(sync, Math.max(0, model.at + model.left[model.turn] - Date.now()));
+      }
+    }
     function sync() {
+      if (settling) return;
       var s = a.state(), now = Date.now();
-      if (!s) { game = null; model = null; bar.hidden = true; result.hidden = true; paused = false; return; }
-      if (game !== s.game) { game = s.game; lastMove = s.moves; ended = false; result.hidden = true; received = 0; var c = config(); initial = c; model = !guest() && c.enabled && s.ready ? new FischerClock(c.left, c.inc, s.turn, now) : null; }
-      if (!model && !guest() && s.ready && !s.over) { var c2 = config(); if (c2.enabled) model = new FischerClock(c2.left, c2.inc, s.turn, now); }
-      var wasPaused = paused; paused = !!s.paused || typeof GameEvents !== 'undefined' && GameEvents.waiting();
+      if (!s) {
+        game = null; model = null; key = null; result.hidden = true; paused = false;
+        scheduleDeadline(); draw(); return;
+      }
+      if (game !== s.game) {
+        game = s.game; lastMove = s.moves; ended = false; result.hidden = true; received = lastSend = lastCheck = 0;
+        initial = s.savedClock?.initial || config(); model = null; key = null; paused = false;
+      }
+      if (!model && !guest() && s.ready && !s.over && initial.enabled) {
+        model = new FischerClock(s.savedClock?.left || initial.left, initial.inc, s.turn, now);
+        key = Math.random().toString(36).slice(2);
+      }
+      var wasPaused = paused;
+      paused = !!s.paused || typeof GameEvents !== 'undefined' && GameEvents.waiting();
       if (typeof GameEvents !== 'undefined') GameEvents.clock(a.id, initial || config());
       if (model && !guest()) {
+        if (wasPaused) model.at = now;
         if (s.moves > lastMove) {
-          // Removing a resigned seat changes history/turn, but is not a played move.
-          if (s.noIncrement) { model.tick(now); model.turn = s.turn; }
-          else model.move(s.turn, now);
-        }
-        else if (paused) model.at = now;          // анимация хода: часы стоят
+          if (s.noIncrement) { model.tick(now); if (!s.over) model.turn = s.turn; }
+          else model.move(s.over ? model.turn : s.turn, now);
+        } else if (s.over) model.running = false;
+        else if (paused) model.at = now;
         else model.tick(now);
-        // При отмене хода сохраняем потраченное время, не добавляем прибавку.
-        if (s.moves < lastMove) { model.turn = s.turn; if (model.flag === null) model.running = !s.over; }
-        if (s.over) model.stop(now);
-        lastMove = s.moves; expire();
-        if (now - lastSend > 500 || wasPaused !== paused) publish();
+        if (s.moves < lastMove && model.flag === null && !s.over) { model.turn = s.turn; model.running = true; }
+        if (s.over) model.running = false;
+        lastMove = s.moves;
+        var flagged = model.flag !== null && !ended;
+        expire();
+        if (flagged || now - lastSend > 500 || wasPaused !== paused) publish();
       }
+      scheduleDeadline();
       draw();
     }
     function draw() {
       bar.hidden = !model; var timed = !!model;
       if (document.body.classList.contains('gc-timed') !== timed) { document.body.classList.toggle('gc-timed', timed); setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 0); }
       if (!model) return;
-      var now = Date.now(), s = a.state();
-      bar.innerHTML = a.labels.map(function (label, i) {
-        if (s && s.active && s.active.indexOf(i) < 0) return '';
-        var ms = model.left[i]; if (guest() && model.running && i === model.turn) ms = Math.max(0, ms - (now - received));
-        var sec = Math.ceil(ms / 1000), text = ms < 10000 ? (ms / 1000).toFixed(1) : Math.floor(sec / 60) + ':' + ('0' + sec % 60).slice(-2);
-        return '<div class="gc-face ' + (model.running && i === model.turn ? 'gc-active ' : '') + (ms < 10000 ? 'gc-low' : '') + '"><span>' + label + (model.inc[i] ? ' <small>+' + model.inc[i] / 1000 + '</small>' : '') + '</span><strong>' + text + '</strong></div>';
-      }).join('');
+      var now = Date.now(), s = a.state(), from = ownSeat();
+      var localGuest = guest();
+      if (localGuest && key !== null && model.running && now - received >= model.left[model.turn] && now - lastCheck >= 500) {
+        lastCheck = now;
+        a.send({ t:'clock-check-v1', key:key });
+      }
+      faces.forEach(function (f, i) {
+        f.face.hidden = !!(s && s.active && s.active.indexOf(i) < 0 && model.flag !== i);
+        var running = model.running && !paused && i === model.turn;
+        var ms = model.left[i];
+        var predicting = localGuest && model.running && i === model.turn;
+        if (predicting) ms = Math.max(0, ms - (now - received));
+        var sec = Math.ceil(ms / 1000);
+        var text = !ms && predicting ? '…' : ms < 10000 ? (Math.ceil(ms / 100) / 10).toFixed(1) : Math.floor(sec / 60) + ':' + ('0' + sec % 60).slice(-2);
+        var label = a.label ? a.label(i) : a.labels[i];
+        var title = 'Добавить 15 секунд: ' + label;
+        f.face.classList.toggle('gc-active', running);
+        f.face.classList.toggle('gc-low', ms < 10000);
+        f.name.textContent = label + (model.inc[i] ? ' +' + model.inc[i] / 1000 : '');
+        f.time.textContent = text;
+        f.gift.hidden = !canGift(i, from);
+        if (f.gift.title !== title) { f.gift.title = title; f.gift.setAttribute('aria-label', title); }
+      });
     }
-    function receive(d) {
-      if (!d || d.t !== 'clock-v1') return false;
+    function receive(d, from) {
+      if (!d) return false;
+      if (d.t === 'clock-check-v1') {
+        if (a.role() === 'host' && key !== null && d.key === key) sync();
+        return true;
+      }
+      if (d.t === 'clock-gift-v1') {
+        if (a.role() !== 'host') return true;
+        if (from == null && n === 2) { var own = ownSeat(); if (Number.isInteger(own)) from = 1 - own; }
+        if (before() && key !== null && d.key === key && canGift(d.to, from)) give(d.to);
+        return true;
+      }
+      if (d.t !== 'clock-v1') return false;
       if (!guest()) return true;
       sync(); var c = d.clock;
-      if (c && Array.isArray(c.left) && c.left.length === a.labels.length && Array.isArray(c.inc) && Number.isInteger(c.turn) && c.turn >= 0 && c.turn < a.labels.length && c.left.every(function (x) { return Number.isFinite(x) && x >= 0; })) {
-        if (c.initial && c.initial.enabled && Array.isArray(c.initial.left) && c.initial.left.length === a.labels.length && Array.isArray(c.initial.inc) && c.initial.inc.length === a.labels.length && c.initial.left.every(function(x){return Number.isFinite(x)&&x>=0;}) && c.initial.inc.every(function(x){return Number.isFinite(x)&&x>=0;})) initial = { enabled:true,left:c.initial.left.slice(),inc:c.initial.inc.slice() };
+      if (!a.state()) return true;
+      var validTimes = function (xs) { return Array.isArray(xs) && xs.length === n && xs.every(function (x) { return Number.isFinite(x) && x >= 0; }); };
+      if (c && validTimes(c.left) && validTimes(c.inc) && seats.indexOf(c.turn) >= 0 && (c.flag === null || seats.indexOf(c.flag) >= 0)) {
+        if (c.initial && c.initial.enabled && validTimes(c.initial.left) && validTimes(c.initial.inc)) initial = { enabled:true,left:c.initial.left.slice(),inc:c.initial.inc.slice() };
+        key = typeof c.key === 'string' ? c.key : null;
         model = new FischerClock(c.left, c.inc, c.turn, Date.now()); model.running = !!c.running; model.flag = c.flag; received = Date.now(); expire();
       } else model = null;
       draw(); return true;
     }
     function before() { sync(); return !(model && model.flag !== null) && !(typeof GameEvents !== 'undefined' && GameEvents.waiting()); }
     setInterval(sync, 100);
+    document.addEventListener('visibilitychange', sync);
+    window.addEventListener('pageshow', sync);
     // для бота: сколько осталось у каждого (мс) и добавка
     function configuration() { var c=initial || config();return {enabled:!!c.enabled,left:c.left.slice(),inc:c.inc.slice()}; }
-    function info() { if (!model) return null; sync(); return { left: model.left.slice(), inc: model.inc.slice(), running: model.running && !paused, initial: configuration() }; }
+    function info() { sync(); if (!model) return null; return { left: model.left.slice(), inc: model.inc.slice(), running: model.running && !paused, initial: configuration() }; }
     return { sync: sync, before: before, receive: receive, publish: publish, info: info, configuration:configuration, settings: root, enabled: function () { return !!model; } };
   }
   return { attach: attach };
@@ -1505,9 +1607,9 @@ if(typeof module!=='undefined'&&module.exports)module.exports=Abalone;
  document.addEventListener('pointerup',function(e){var d=drag;if(!d||d.id!==e.pointerId)return;drag=null;if(!G)return;var dx=e.clientX-d.x,dy=e.clientY-d.y;if(Math.hypot(dx,dy)<12){selectCell(d.i);return;}if(!d.ready)return;if(G.sel.indexOf(d.i)<0)G.sel=[d.i];if(G.flip){dx=-dx;dy=-dy;}var dir=0,best=-Infinity;A.dirs.forEach(function(v,k){var vx=v[0]+v[1]/2,vy=Math.sqrt(3)*v[1]/2,n=vx*dx+vy*dy;if(n>best){best=n;dir=k;}});var state=RV.display().s;if(G.sel.length<2){var options=A.moves(state).filter(function(m){return m.dir===dir&&m.cells.indexOf(d.i)>=0&&(m.cells.length===1||A.groupAxis(m.cells)===dir%3);}).sort(function(a,b){return b.cells.length-a.cells.length;});if(options.length)G.sel=options[0].cells.slice();}var m=A.legal(state,{cells:G.sel,dir:dir});if(m)tryMove(m.key);else{render();toast('В эту сторону сдвинуть нельзя.');}});
  document.addEventListener('pointercancel',function(){drag=null;});$('board').addEventListener('keydown',function(e){var el=e.target.closest('[data-i]');if(el&&(e.key==='Enter'||e.key===' ')){e.preventDefault();selectCell(+el.dataset.i);}if(e.key==='Escape'&&G){G.sel=[];render();}});
  function submit(key){if(!GC.before())return;if(net()&&Net2P.role()==='guest'){G.netPending=true;Net2P.send({t:'try',key:key,n:G.moves.length});render();}else decide(key);}
- function decide(key){if(!GC.before())return;var m=A.legal(G.s,key);if(!m)return;if(net()&&Net2P.role()==='host')Net2P.send({t:'move',key:m.key,n:G.moves.length});apply(m.key);}
+ function decide(key){if(!GC.before())return;var m=A.legal(G.s,key);if(!m)return;apply(m.key,true);}
  function animateMove(before,m,done){if(RV.viewing()||matchMedia('(prefers-reduced-motion: reduce)').matches){done();return;}var animations=[],dur=280;function slide(i,side){var to=A.next[i][m.dir],from=point(i),dest=to>=0?point(to):[from[0]+(G.flip?-1:1)*50*(A.dirs[m.dir][0]+A.dirs[m.dir][1]/2),from[1]+(G.flip?-1:1)*43.30127019*A.dirs[m.dir][1]],el;if(to>=0)el=$('board').querySelector('[data-i="'+to+'"] .marble-svg');else{el=document.createElementNS('http://www.w3.org/2000/svg','circle');el.setAttribute('cx',from[0]);el.setAttribute('cy',from[1]);el.setAttribute('r','19.4');el.setAttribute('fill','url(#play'+(side===1?'Black':'White')+')');$('board').appendChild(el);}if(el){var frames=to>=0?[{transform:'translate('+(from[0]-dest[0])+'px,'+(from[1]-dest[1])+'px)'},{transform:'translate(0,0)'}]:[{transform:'translate(0,0)',opacity:1},{transform:'translate('+(dest[0]-from[0])+'px,'+(dest[1]-from[1])+'px)',opacity:0}];animations.push(el.animate(frames,{duration:dur,easing:'cubic-bezier(.22,.7,.3,1)'}).finished.catch(function(){}));}}m.cells.forEach(function(i){slide(i,before.turn);});m.push.forEach(function(i){slide(i,3-before.turn);});Promise.all(animations).then(done);}
- function apply(key){if(!G||G.over||!GC.before())return;var before=G.s,m=A.legal(before,key),n=m&&A.play(before,key);if(!n)return;var by=before.turn,g=G,my=token;G.s=n;G.moves.push(n.last);G.line.push({s:n,mv:n.last,by:by});G.sel=[];G.busy=false;G.animating=true;G.netPending=false;G.over=!!n.winner;RV.sync();render();animateMove(before,m,function(){if(G!==g||token!==my)return;G.animating=false;render();if(G.over){if(!G.analysis)showEnd();if(net()&&Net2P.role()==='host')GC.publish();}else turnLoop();});}
+ function apply(key,authoritative){if(!G||G.over)return;var before=G.s,m=A.legal(before,key),n=m&&A.play(before,key);if(!n)return;if(authoritative&&net()&&Net2P.role()==='host')Net2P.send({t:'move',key:m.key,n:G.moves.length});var by=before.turn,g=G,my=token;G.s=n;G.moves.push(n.last);G.line.push({s:n,mv:n.last,by:by});G.sel=[];G.busy=false;G.animating=true;G.netPending=false;G.over=!!n.winner;RV.sync();render();animateMove(before,m,function(){if(G!==g||token!==my)return;G.animating=false;render();if(G.over){if(!G.analysis)showEnd();if(net()&&Net2P.role()==='host')GC.publish();}else turnLoop();});}
  function turnLoop(){
   if(!G||G.over||G.analysis||G.busy||G.animating||G.vote||RV.viewing()&&!net()||G.kind[G.s.turn]!=='bot'||net()&&Net2P.role()!=='host')return;
   var g=G,my=token,n=G.moves.length,s=G.s;G.busy=true;render();var ck=GC.info(),budget=A.levels[G.level].ms;if(ck)budget=Math.max(30,Math.min(budget,ck.left[s.turn-1]/25));
@@ -1547,12 +1649,12 @@ if(typeof module!=='undefined'&&module.exports)module.exports=Abalone;
   else if(d.t==='undo'&&Number.isInteger(d.to)&&d.to>=0&&d.to<=G.moves.length)restoreAt(d.to);
  }
  $('netCreate').onclick=hostGame;$('netJoinBtn').onclick=function(){$('joinRow').hidden=!$('joinRow').hidden;if(!$('joinRow').hidden)$('joinCode').focus();};$('joinCode').oninput=function(){this.value=Net2P.cleanCode(this.value);};$('joinCode').onkeydown=function(e){if(e.key==='Enter')$('joinGo').click();};$('joinGo').onclick=function(){var code=Net2P.cleanCode($('joinCode').value);if(code.length===5)joinGame(code);};$('lbCancel').onclick=toMenu;$('lbRetry').onclick=function(){if(lastJoin)joinGame(lastJoin);else hostGame();};$('lbCopy').onclick=function(){if(navigator.clipboard)navigator.clipboard.writeText($('lbLink').value).catch(function(){$('lbLink').select();});else $('lbLink').select();};
- var GC=GameClock.attach({id:'abalone',labels:['Чёрные','Белые'],state:function(){return G&&!G.analysis?{game:G,turn:G.s.turn-1,moves:G.moves.length,over:G.over,ready:true,paused:!!G.animating}:null;},role:function(){return Net2P.role();},send:function(m){Net2P.send(m);},menu:toMenu,analyze:analyzeFinished,expire:function(i){if(!G)return;token++;G.over=true;G.busy=false;G.sel=[];clearVote();render();}});
+ var GC=GameClock.attach({id:'abalone', seat:function(){return G&&mySide()?mySide()-1:null;},labels:['Чёрные','Белые'],state:function(){return G&&!G.analysis?{game:G,turn:G.s.turn-1,moves:G.moves.length,over:G.over,ready:true,paused:!!G.animating}:null;},role:function(){return Net2P.role();},send:function(m){Net2P.send(m);},menu:toMenu,analyze:analyzeFinished,expire:function(i){if(!G)return;token++;G.over=true;G.timeout=i;G.busy=false;G.animating=false;G.netPending=false;G.sel=[];clearVote();render();}});
  CONT=ContinueGame.attach({mount:$('game'),clock:GC,available:function(){return !!G&&!$('game').hidden&&(!net()||G.over)&&(G.analysis||G.over||RV.viewing());},evalOn:function(){return S.evalOn;},level:function(){return S.level;},levels:A.levels.map(function(l){return{label:l.name};}),sides:function(){return[{value:1,label:'Чёрные'},{value:2,label:'Белые'}];},notify:toast,capture:function(){if(RV.display().s.winner)throw Error('Позиция завершена. Вернись на ход назад в анализе.');return{setup:G.setup,moves:RV.pathHere().slice()};},start:function(seed,o){token++;Net2P.close();G.analysis=true;G.busy=false;GC.sync();S.mode=o.mode;S.side=+o.side;S.level=o.level;S.evalOn=o.evalOn;S.setup=seed.setup;save();if(o.mode==='net'){pendingContinuation=seed;hostGame();return;}var kind={1:'me',2:'me'};if(o.mode==='bot')kind[3-S.side]='bot';newGame(kind,seed);}});
  renderMenu();if(window.GAMES_ONLINE&&Net2P.hashCode()){S.mode='net';renderMenu();joinGame(Net2P.hashCode());}
 
   var MA = MatchActions.attach({id:'abalone',
-  events:{result:function(){return G&&G.s.winner?{draw:false,winners:[G.s.winner],reason:'normal'}:null;},evaluation:function(){return !!(G&&G.evalOn);},continued:function(){return !!G&&G.moves.length>0;},clockSeats:function(){return [1,2];},botLevel:function(){return G&&G.level;}},
+  events:{result:function(){return G&&G.timeout!==undefined?{draw:false,winners:[2-G.timeout],reason:'time'}:G&&G.s.winner?{draw:false,winners:[G.s.winner],reason:'normal'}:null;},evaluation:function(){return !!(G&&G.evalOn);},continued:function(){return !!G&&G.moves.length>0;},clockSeats:function(){return [1,2];},botLevel:function(){return G&&G.level;}},
   state:function(){return G?{ref:G,version:G.moves.length,turn:G.s.turn,over:G.over,analysis:G.analysis,players:[1,2].map(function(i){return{id:i,label:NAME[i],kind:G.kind[i]==='bot'?'bot':G.kind[i]==='net'?'remote':'human'};}),mine:[1,2].filter(function(i){return G.kind[i]==='me';})}:null;},
   role:function(){return Net2P.role();},send:function(m){Net2P.send(m);},online:function(){return Net2P.online();},notify:toast,menu:toMenu,again:again,analyze:analyzeFinished,
   resume:function(){if(G){G.adjudication=null;}},

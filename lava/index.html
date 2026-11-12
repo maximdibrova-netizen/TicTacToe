@@ -10,6 +10,12 @@
 
 #continueDialog .card{background:var(--bg-3,var(--table,var(--bg-2,#1c2537)));color:inherit}#continueDialog .card h2{color:inherit;font:800 12px/1.4 var(--body,system-ui);letter-spacing:.08em}#continueDialog .gc-note{color:inherit;opacity:.85}#continueDialog .gc-presets button{background:var(--btn,var(--panel-dark,#293248));color:inherit}#continueDialog .gc-presets button[aria-pressed=true]{background:var(--gold,#ffd166);color:#211700}
 
+.gc-face{position:relative;padding-inline:5px}
+.gc-gift{display:inline-block;margin:0 0 0 4px;padding:3px 4px;border:1px solid currentColor;border-radius:6px;background:transparent;color:inherit;font:700 11px/1.15 system-ui,sans-serif;white-space:nowrap;cursor:pointer}
+.gc-gift:hover,.gc-gift:focus-visible{background:#ffffff26}
+.gc-face[hidden],.gc-gift[hidden]{display:none!important}
+.gc-face:has(.gc-gift:not([hidden])) strong{font-size:clamp(16px,4.5vw,25px)}
+
 .local-views{position:fixed;top:8px;right:8px;z-index:65;display:flex;gap:4px;background:#111827ed;border:1px solid #586176;border-radius:10px;padding:3px;color:#f1eee8}.local-views button{min-width:34px;height:30px;padding:3px 7px;border:0;border-radius:6px;color:inherit;background:transparent;font:800 12px system-ui;cursor:pointer}.local-views button[aria-pressed=true]{background:#eac17c;color:#211a10}.local-views button:focus-visible{outline:2px solid #eac17c}.local-rotated{rotate:180deg}.local-mirrored{scale:-1 1}.local-rotated :is(.coord,.lab,.cd){rotate:180deg;transform-box:fill-box;transform-origin:center}.view-no-coords :is(.coord,.cd,.ab-axis,.view-axis-label){display:none!important}.view-no-coords .grid .lab{visibility:hidden}.view-no-history :is(#nota,#notation,#ckNotation,.notation-card){display:none!important}.view-no-history:not(.view-analysis) :is(.rv-nav,#replay){display:none!important}.view-axis-label{position:absolute;pointer-events:none;color:#c6cbd4;font:700 11px system-ui}.local-rotated .view-axis-label{rotate:180deg}html.in-room #game{padding-top:42px!important}
 
 body:has(#replay) .local-views{right:calc(50% - 66px)}html:not(.in-room) body.in-game:has(#replay) .local-views{top:48px}html:not(.in-room) body.in-game:has(#replay) .topbar{top:86px}html:not(.in-room) body.in-game:has(#replay) .gc-bar{top:86px}html:not(.in-room) body.in-game.gc-timed:has(#replay) .topbar{top:148px}html:not(.in-room) body.in-game:has(#replay) #boardWrap{top:194px}html:not(.in-room) body.in-game.gc-timed:has(#replay) #boardWrap{top:256px}
@@ -674,7 +680,7 @@ dialog p{margin:0 0 10px;color:#d8c8bd}
     </div>
 
     <details class="card rules"><summary><h2>Как играть</h2></summary><div class="rules-body" id="rulesMenu"></div></details>
-    <p class="version">Версия от 12.11.2026 22:12</p>
+    <p class="version">Версия от 13.11.2026 00:25</p>
   </div>
 </section>
 
@@ -853,16 +859,16 @@ var Lava = (function () {
   }
   function apply(s, m) {
     if (!s || s.over) return null;
-    // 40–43 are resignations; 44 is a draw accepted by every active player.
+    // 40–43 are resignations, 44 is a draw, 45–48 are clock forfeits.
     // They are kept in the log, rather than masquerading as ordinary jumps.
-    if (m >= 40 && m <= 44 && m % 1 === 0) {
-      var seat = m === 44 ? s.turn : m - 40, p = s.players[seat];
+    if (m >= 40 && m <= 48 && m % 1 === 0) {
+      var seat = m === 44 ? s.turn : m >= 45 ? m - 45 : m - 40, p = s.players[seat];
       if (!p || !p.alive) return null;
       var n = clone(s), alive = [];
       if (m !== 44) n.players[seat].alive = false;
       n.players.forEach(function (p, i) { if (p.alive) alive.push(i); });
       n.ply++; n.log = s.log.concat(m);
-      n.last = { seat: seat, m: m, d: -1, from: p.pos, land: p.pos, to: p.pos, kind: m === 44 ? 'draw' : 'resign', pushed: [], killed: [], fell: false, left: n.tiles[p.pos] };
+      n.last = { seat: seat, m: m, d: -1, from: p.pos, land: p.pos, to: p.pos, kind: m === 44 ? 'draw' : m >= 45 ? 'time' : 'resign', pushed: [], killed: [], fell: false, left: n.tiles[p.pos] };
       if (m === 44) { n.draw = true; n.over = true; n.turn = -1; n.winner = null; }
       else if (alive.length === 1) { n.over = true; n.turn = -1; n.winner = alive[0]; }
       else if (seat === s.turn) for (var i = 1; i <= n.players.length; i++) { var nx = (seat + i) % n.players.length; if (n.players[nx].alive) { n.turn = nx; break; } }
@@ -927,6 +933,341 @@ var Lava = (function () {
     step: step, rc: rc, who: who, code: code, decode: decode, moves: moves, apply: apply, play: play, bot: bot, valid: valid, startCells: function () { return START.slice(); } };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = Lava;
+</script>
+<script>// Часы Фишера. Перед сменой хода сначала проверяется просрочка.
+function FischerClock(left, inc, turn, now) {
+  this.left = left.slice(); this.inc = inc.slice(); this.turn = turn;
+  this.at = now; this.running = true; this.flag = null;
+}
+FischerClock.prototype.tick = function(now) {
+  if (this.running) {
+    this.left[this.turn] = Math.max(0, this.left[this.turn] - Math.max(0, now - this.at));
+    if (!this.left[this.turn]) { this.flag = this.turn; this.running = false; }
+  }
+  this.at = now;
+};
+FischerClock.prototype.move = function(next, now) {
+  this.tick(now); if (this.flag !== null || !this.running) return false;
+  this.left[this.turn] += this.inc[this.turn]; this.turn = next; return true;
+};
+FischerClock.prototype.gift = function(seat, now) {
+  this.tick(now);
+  if (!this.running || this.flag !== null || !Number.isInteger(seat) || seat < 0 || seat >= this.left.length) return false;
+  this.left[seat] += 15000;
+  return true;
+};
+FischerClock.prototype.stop = function(now) { this.tick(now); this.running = false; };
+if (typeof module !== 'undefined') module.exports = FischerClock;
+
+// Общие часы. Состояние партии предоставляет маленький адаптер каждой игры:
+//   a.state() → { game, turn, moves, over, ready, active?: [места в игре], paused?: true пока идёт анимация хода }
+// Настройка времени — карточка в меню игры (классы .card/.seg берутся из оформления самой игры).
+var GameClock = (function () {
+  var PRESETS = [[1, 0], [3, 2], [5, 3], [10, 5], [15, 10], [30, 0]];
+  var MIN_STEPS = [0.5, 1, 2, 3, 4, 5, 7, 10, 15, 20, 25, 30, 45, 60, 90, 120, 180];
+  var INC_STEPS = [0, 1, 2, 3, 5, 7, 10, 15, 20, 30, 45, 60];
+  function stepIn(list, v, d) {
+    var i = 0, best = Infinity;
+    list.forEach(function (x, k) { var e = Math.abs(x - v); if (e < best) { best = e; i = k; } });
+    return list[Math.max(0, Math.min(list.length - 1, i + d))];
+  }
+  function fmtMin(m) { return m < 1 ? '½' : String(m); }
+  function fmtTime(m, s) { return fmtMin(m) + ' мин' + (s ? ' + ' + s + ' с' : ''); }
+
+  function attach(a) {
+    var model = null, game = null, lastMove = 0, ended = false, received = 0, lastSend = 0, paused = false, initial = null;
+    var n = a.labels.length, seats = a.labels.map(function (_, i) { return i; });
+    var key = null, deadlineTimer, lastCheck = 0, settling = false;
+    // ---------- settings ----------
+    // cfg: { enabled, preset: 'off'|'1+0'|…|'custom', min, inc, per: bool, pmin: [], pinc: [] }
+    var cfg = { enabled: false, preset: 'off', min: 5, inc: 3, per: false, pmin: a.labels.map(function () { return 5; }), pinc: a.labels.map(function () { return 3; }) };
+    try {
+      var sv = JSON.parse(localStorage.getItem('clock-' + a.id) || 'null');
+      if (sv && sv.v === 2) Object.assign(cfg, sv);
+      else if (sv && Array.isArray(sv.left)) {            // старый формат: { enabled, left[ms], inc[ms] }
+        cfg.enabled = !!sv.enabled; cfg.preset = sv.enabled ? 'custom' : 'off';
+        cfg.pmin = sv.left.map(function (x) { return x / 60000; }); cfg.pinc = sv.inc.map(function (x) { return x / 1000; });
+        cfg.min = cfg.pmin[0]; cfg.inc = cfg.pinc[0]; cfg.per = cfg.pmin.some(function (x, i) { return x !== cfg.pmin[0] || cfg.pinc[i] !== cfg.pinc[0]; });
+      }
+    } catch (e) {}
+    while (cfg.pmin.length < n) { cfg.pmin.push(cfg.min); cfg.pinc.push(cfg.inc); }
+
+    var root = document.createElement('div'); root.className = 'card gc-card';
+    root.innerHTML = '<h2>Время на партию</h2>' +
+      '<div class="seg gc-presets" style="--cols:4">' +
+      '<button type="button" data-p="off">Без часов</button>' +
+      PRESETS.map(function (p) { return '<button type="button" data-p="' + p[0] + '+' + p[1] + '"><b>' + p[0] + '+' + p[1] + '</b><small>' + (p[0] + p[1] * 40 / 60 < 3 ? 'пуля' : p[0] + p[1] * 40 / 60 < 10 ? 'блиц' : 'рапид') + '</small></button>'; }).join('') +
+      '<button type="button" data-p="custom"><b>Своё</b><small>настроить</small></button></div>' +
+      '<div class="gc-custom" hidden>' +
+      '<div class="gc-step" data-k="min"><span>Минут на партию</span><button type="button" data-d="-1" aria-label="Меньше минут">−</button><output></output><button type="button" data-d="1" aria-label="Больше минут">+</button></div>' +
+      '<div class="gc-step" data-k="inc"><span>Добавка за ход</span><button type="button" data-d="-1" aria-label="Меньше секунд">−</button><output></output><button type="button" data-d="1" aria-label="Больше секунд">+</button></div>' +
+      '<label class="gc-per"><input type="checkbox"> Разное время игрокам (фора)</label>' +
+      '<div class="gc-players" hidden>' + a.labels.map(function (lab, i) {
+        return '<div class="gc-prow"><b>' + lab + '</b>' +
+          '<div class="gc-step sm" data-k="pmin" data-i="' + i + '"><button type="button" data-d="-1" aria-label="' + lab + ': меньше минут">−</button><output></output><button type="button" data-d="1" aria-label="' + lab + ': больше минут">+</button></div>' +
+          '<div class="gc-step sm" data-k="pinc" data-i="' + i + '"><button type="button" data-d="-1" aria-label="' + lab + ': меньше добавки">−</button><output></output><button type="button" data-d="1" aria-label="' + lab + ': больше добавки">+</button></div></div>';
+      }).join('') + '</div></div>' +
+      '<p class="gc-note"></p>';
+    var menu = document.querySelector('#menu .col, #menu .menu-col') || document.querySelector('#menu');
+    var play = menu.querySelector('#playBtn'); if (play) { var anchor = play; while (anchor.parentElement !== menu) anchor = anchor.parentElement; menu.insertBefore(root, anchor); } else menu.appendChild(root);
+
+    function times() {
+      if (!cfg.enabled) return null;
+      var m = [], s = [];
+      for (var i = 0; i < n; i++) {
+        if (cfg.preset !== 'custom') { var p = cfg.preset.split('+'); m.push(+p[0]); s.push(+p[1]); }
+        else if (cfg.per) { m.push(cfg.pmin[i]); s.push(cfg.pinc[i]); }
+        else { m.push(cfg.min); s.push(cfg.inc); }
+      }
+      return { m: m, s: s };
+    }
+    function config() {
+      var t = times();
+      if (!t) return { enabled: false, left: [], inc: [] };
+      return { enabled: true, left: t.m.map(function (x) { return Math.round(x * 60000); }), inc: t.s.map(function (x) { return x * 1000; }) };
+    }
+    function save() { cfg.v = 2; try { localStorage.setItem('clock-' + a.id, JSON.stringify(cfg)); } catch (e) {} }
+    function paint() {
+      Array.prototype.forEach.call(root.querySelectorAll('[data-p]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.p === (cfg.enabled ? cfg.preset : 'off'))); });
+      var custom = cfg.enabled && cfg.preset === 'custom';
+      root.querySelector('.gc-custom').hidden = !custom;
+      root.querySelector('.gc-per input').checked = !!cfg.per;
+      root.querySelector('.gc-players').hidden = !cfg.per;
+      root.querySelector('[data-k="min"]').hidden = root.querySelector('[data-k="inc"]').hidden = !!cfg.per;
+      root.querySelector('[data-k="min"] output').textContent = fmtMin(cfg.min) + ' мин';
+      root.querySelector('[data-k="inc"] output').textContent = cfg.inc + ' с';
+      Array.prototype.forEach.call(root.querySelectorAll('[data-k="pmin"]'), function (el) { el.querySelector('output').textContent = fmtMin(cfg.pmin[+el.dataset.i]) + ' мин'; });
+      Array.prototype.forEach.call(root.querySelectorAll('[data-k="pinc"]'), function (el) { el.querySelector('output').textContent = '+' + cfg.pinc[+el.dataset.i] + ' с'; });
+      var t = times(), note = root.querySelector('.gc-note');
+      if (!t) note.textContent = 'Играете без ограничения времени.';
+      else {
+        var same = t.m.every(function (x, i) { return x === t.m[0] && t.s[i] === t.s[0]; });
+        note.textContent = (same ? 'У каждого ' + fmtTime(t.m[0], t.s[0]) + (t.s[0] ? ' за ход' : '') : a.labels.map(function (l, i) { return l + ': ' + fmtTime(t.m[i], t.s[i]); }).join(' · ')) +
+          '. Время кончилось — партия проиграна. Онлайн у всех время хозяина игры.';
+      }
+      if (typeof GameEvents !== 'undefined') GameEvents.clock(a.id, config());
+    }
+    root.addEventListener('click', function (e) {
+      var p = e.target.closest('[data-p]');
+      if (p) { if (p.dataset.p === 'off') cfg.enabled = false; else { cfg.enabled = true; cfg.preset = p.dataset.p; } save(); paint(); return; }
+      var d = e.target.closest('[data-d]'); if (!d) return;
+      var st = d.closest('.gc-step'), k = st.dataset.k, dir = +d.dataset.d, i = +st.dataset.i;
+      if (k === 'min') cfg.min = stepIn(MIN_STEPS, cfg.min, dir);
+      else if (k === 'inc') cfg.inc = stepIn(INC_STEPS, cfg.inc, dir);
+      else if (k === 'pmin') cfg.pmin[i] = stepIn(MIN_STEPS, cfg.pmin[i], dir);
+      else if (k === 'pinc') cfg.pinc[i] = stepIn(INC_STEPS, cfg.pinc[i], dir);
+      save(); paint();
+    });
+    root.querySelector('.gc-per input').addEventListener('change', function () {
+      cfg.per = this.checked;
+      if (cfg.per) for (var i = 0; i < n; i++) { cfg.pmin[i] = cfg.min; cfg.pinc[i] = cfg.inc; }
+      save(); paint();
+    });
+    paint();
+
+    // ---------- clock faces in the game ----------
+    var bar = document.createElement('div'); bar.className = 'gc-bar'; bar.hidden = true; document.getElementById('game').prepend(bar);
+    var faces = a.labels.map(function (label, i) {
+      var face = document.createElement('div'); face.className = 'gc-face';
+      var name = document.createElement('span'), time = document.createElement('strong');
+      var gift = document.createElement('button'); gift.type = 'button'; gift.className = 'gc-gift'; gift.textContent = '+15 с';
+      gift.onclick = function () {
+        if (!before() || !canGift(i, ownSeat())) return;
+        if (guest()) a.send({ t: 'clock-gift-v1', to: i, key: key });
+        else give(i);
+      };
+      face.append(name, time, gift); bar.appendChild(face);
+      return { face:face, name:name, time:time, gift:gift };
+    });
+    var result = document.createElement('div'); result.className = 'gc-result'; result.hidden = true; result.setAttribute('role', 'dialog'); result.setAttribute('aria-label', 'Партия завершена по времени');
+    result.innerHTML = '<div><h2>Время вышло</h2><p></p><div class="gc-result-actions"><button type="button" class="gc-analyze">Анализ</button><button type="button" class="gc-menu">В меню</button></div></div>'; document.body.appendChild(result);
+    result.querySelector('.gc-menu').onclick = function () { result.hidden = true; a.menu(); sync(); };
+    result.querySelector('.gc-analyze').onclick = function () { result.hidden = true; a.analyze(); sync(); };
+    function guest() { return a.role() === 'guest'; }
+    function ownSeat() {
+      var s = a.state(), seat = a.seat ? a.seat() : null;
+      return seat == null && s && !a.role() ? s.turn : seat;
+    }
+    function canGift(to, from) {
+      var s = a.state(), active = s && (s.active || seats);
+      return !!(model && model.flag === null && model.running && s && !s.over && s.ready &&
+        active.indexOf(to) >= 0 && active.indexOf(from) >= 0 && from !== to);
+    }
+    function give(to) {
+      if (model.gift(to, paused ? model.at : Date.now())) { publish(); draw(); scheduleDeadline(); if (a.changed) a.changed(); }
+      else sync();
+    }
+    function expire() {
+      if (!model || model.flag === null || ended) return;
+      var flag = model.flag, s = a.state();
+      if (!s) return;
+      var eliminate = !guest() && a.eliminate && s.active && s.active.length > 2;
+      ended = settling = true;
+      try {
+        if (!eliminate && typeof GameEvents !== 'undefined') GameEvents.expire(a.id, flag);
+        a.expire(flag);
+        if (typeof GameEvents !== 'undefined') GameEvents.flush();
+      } finally { settling = false; }
+      var next = a.state();
+      if (eliminate && next && !next.over && next.active.indexOf(flag) < 0) {
+        model.flag = null; model.running = true; model.turn = next.turn; model.at = Date.now();
+        lastMove = next.moves; ended = false; paused = !!next.paused;
+        return;
+      }
+      var label = a.label ? a.label(flag) : a.labels[flag];
+      result.querySelector('p').textContent = label + ' — поражение по времени. Партия окончена.';
+      result.hidden = a.resultModal === false;
+    }
+    function packet() { return model ? { key:key, left:model.left.slice(), inc:model.inc.slice(), turn:model.turn, running:model.running && !paused, flag:model.flag, initial:initial } : null; }
+    function publish() { if (!settling && a.role() === 'host') { a.send({ t:'clock-v1', clock:packet() }); lastSend = Date.now(); } }
+    function scheduleDeadline() {
+      clearTimeout(deadlineTimer);
+      if (model && !guest() && model.running && !paused) {
+        deadlineTimer = setTimeout(sync, Math.max(0, model.at + model.left[model.turn] - Date.now()));
+      }
+    }
+    function sync() {
+      if (settling) return;
+      var s = a.state(), now = Date.now();
+      if (!s) {
+        game = null; model = null; key = null; result.hidden = true; paused = false;
+        scheduleDeadline(); draw(); return;
+      }
+      if (game !== s.game) {
+        game = s.game; lastMove = s.moves; ended = false; result.hidden = true; received = lastSend = lastCheck = 0;
+        initial = s.savedClock?.initial || config(); model = null; key = null; paused = false;
+      }
+      if (!model && !guest() && s.ready && !s.over && initial.enabled) {
+        model = new FischerClock(s.savedClock?.left || initial.left, initial.inc, s.turn, now);
+        key = Math.random().toString(36).slice(2);
+      }
+      var wasPaused = paused;
+      paused = !!s.paused || typeof GameEvents !== 'undefined' && GameEvents.waiting();
+      if (typeof GameEvents !== 'undefined') GameEvents.clock(a.id, initial || config());
+      if (model && !guest()) {
+        if (wasPaused) model.at = now;
+        if (s.moves > lastMove) {
+          if (s.noIncrement) { model.tick(now); if (!s.over) model.turn = s.turn; }
+          else model.move(s.over ? model.turn : s.turn, now);
+        } else if (s.over) model.running = false;
+        else if (paused) model.at = now;
+        else model.tick(now);
+        if (s.moves < lastMove && model.flag === null && !s.over) { model.turn = s.turn; model.running = true; }
+        if (s.over) model.running = false;
+        lastMove = s.moves;
+        var flagged = model.flag !== null && !ended;
+        expire();
+        if (flagged || now - lastSend > 500 || wasPaused !== paused) publish();
+      }
+      scheduleDeadline();
+      draw();
+    }
+    function draw() {
+      bar.hidden = !model; var timed = !!model;
+      if (document.body.classList.contains('gc-timed') !== timed) { document.body.classList.toggle('gc-timed', timed); setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 0); }
+      if (!model) return;
+      var now = Date.now(), s = a.state(), from = ownSeat();
+      var localGuest = guest();
+      if (localGuest && key !== null && model.running && now - received >= model.left[model.turn] && now - lastCheck >= 500) {
+        lastCheck = now;
+        a.send({ t:'clock-check-v1', key:key });
+      }
+      faces.forEach(function (f, i) {
+        f.face.hidden = !!(s && s.active && s.active.indexOf(i) < 0 && model.flag !== i);
+        var running = model.running && !paused && i === model.turn;
+        var ms = model.left[i];
+        var predicting = localGuest && model.running && i === model.turn;
+        if (predicting) ms = Math.max(0, ms - (now - received));
+        var sec = Math.ceil(ms / 1000);
+        var text = !ms && predicting ? '…' : ms < 10000 ? (Math.ceil(ms / 100) / 10).toFixed(1) : Math.floor(sec / 60) + ':' + ('0' + sec % 60).slice(-2);
+        var label = a.label ? a.label(i) : a.labels[i];
+        var title = 'Добавить 15 секунд: ' + label;
+        f.face.classList.toggle('gc-active', running);
+        f.face.classList.toggle('gc-low', ms < 10000);
+        f.name.textContent = label + (model.inc[i] ? ' +' + model.inc[i] / 1000 : '');
+        f.time.textContent = text;
+        f.gift.hidden = !canGift(i, from);
+        if (f.gift.title !== title) { f.gift.title = title; f.gift.setAttribute('aria-label', title); }
+      });
+    }
+    function receive(d, from) {
+      if (!d) return false;
+      if (d.t === 'clock-check-v1') {
+        if (a.role() === 'host' && key !== null && d.key === key) sync();
+        return true;
+      }
+      if (d.t === 'clock-gift-v1') {
+        if (a.role() !== 'host') return true;
+        if (from == null && n === 2) { var own = ownSeat(); if (Number.isInteger(own)) from = 1 - own; }
+        if (before() && key !== null && d.key === key && canGift(d.to, from)) give(d.to);
+        return true;
+      }
+      if (d.t !== 'clock-v1') return false;
+      if (!guest()) return true;
+      sync(); var c = d.clock;
+      if (!a.state()) return true;
+      var validTimes = function (xs) { return Array.isArray(xs) && xs.length === n && xs.every(function (x) { return Number.isFinite(x) && x >= 0; }); };
+      if (c && validTimes(c.left) && validTimes(c.inc) && seats.indexOf(c.turn) >= 0 && (c.flag === null || seats.indexOf(c.flag) >= 0)) {
+        if (c.initial && c.initial.enabled && validTimes(c.initial.left) && validTimes(c.initial.inc)) initial = { enabled:true,left:c.initial.left.slice(),inc:c.initial.inc.slice() };
+        key = typeof c.key === 'string' ? c.key : null;
+        model = new FischerClock(c.left, c.inc, c.turn, Date.now()); model.running = !!c.running; model.flag = c.flag; received = Date.now(); expire();
+      } else model = null;
+      draw(); return true;
+    }
+    function before() { sync(); return !(model && model.flag !== null) && !(typeof GameEvents !== 'undefined' && GameEvents.waiting()); }
+    setInterval(sync, 100);
+    document.addEventListener('visibilitychange', sync);
+    window.addEventListener('pageshow', sync);
+    // для бота: сколько осталось у каждого (мс) и добавка
+    function configuration() { var c=initial || config();return {enabled:!!c.enabled,left:c.left.slice(),inc:c.inc.slice()}; }
+    function info() { sync(); if (!model) return null; return { left: model.left.slice(), inc: model.inc.slice(), running: model.running && !paused, initial: configuration() }; }
+    return { sync: sync, before: before, receive: receive, publish: publish, info: info, configuration:configuration, settings: root, enabled: function () { return !!model; } };
+  }
+  return { attach: attach };
+})();
+
+// A fresh game from the displayed analysis branch. Each game owns its rules/seed.
+var ContinueGame = {
+  attach: function (a) {
+    var button = document.createElement('button'); button.id = 'continueBtn'; button.className = 'continue-button'; button.textContent = 'Продолжить с этой позиции'; button.hidden = true;
+    a.mount.appendChild(button);
+    var dialog = document.createElement('dialog'); dialog.id = 'continueDialog'; dialog.setAttribute('aria-labelledby', 'continueTitle');
+    dialog.innerHTML = '<h2 id="continueTitle">Продолжить с этой позиции</h2><p>Новая партия с позиции на доске. Очередь хода и история выбранной ветки сохраняются, часы запускаются заново.</p>' +
+      '<label>С кем играть<select id="continueMode"><option value="duo">Друг на одном устройстве</option><option value="bot">С ботом</option><option value="net">Онлайн по коду</option></select></label>' +
+      '<label id="continueSideRow">Я играю за<select id="continueSide"></select></label>' +
+      '<label id="continueLevelRow">Сложность бота<select id="continueLevel"></select></label>' +
+      '<label>Оценка во время партии<select id="continueEval"><option value="0">Без оценки</option><option value="1">С оценкой</option></select></label>' +
+      '<div id="continueClock"></div><p id="continueError" role="alert"></p><div class="continue-actions"><button id="continueCancel">Назад к анализу</button><button id="continueStart">Начать</button></div>';
+    document.body.appendChild(dialog);
+    var q = function (id) { return dialog.querySelector('#' + id); }, seed = null, anchor = null;
+    a.levels.forEach(function (level, i) { var option = document.createElement('option'); option.value = level.value == null ? i : level.value; option.textContent = level.label; q('continueLevel').appendChild(option); });
+    function modeChanged() { var mode = q('continueMode').value; q('continueSideRow').hidden = mode === 'duo'; q('continueLevelRow').hidden = mode !== 'bot'; q('continueEval').disabled = mode === 'net'; }
+    q('continueMode').onchange = modeChanged;
+    function restoreSettings() { if (anchor && anchor.parentNode) { anchor.parentNode.insertBefore(a.clock.settings, anchor); anchor.remove(); anchor = null; } }
+    dialog.addEventListener('close', restoreSettings);
+    q('continueCancel').onclick = function () { dialog.close(); };
+    button.onclick = function () {
+      if (!a.available()) return;
+      try { seed = a.capture(); } catch (e) { a.notify(e.message); return; }
+      q('continueError').textContent = ''; q('continueMode').value = 'duo'; q('continueEval').value = a.evalOn() ? '1' : '0';
+      q('continueLevel').value = String(a.level()); q('continueSide').innerHTML = '';
+      a.sides(seed).forEach(function (side) { var option = document.createElement('option'); option.value = side.value; option.textContent = side.label; q('continueSide').appendChild(option); });
+      anchor = document.createComment('clock settings'); a.clock.settings.before(anchor); q('continueClock').appendChild(a.clock.settings);
+      modeChanged(); dialog.showModal();
+    };
+    q('continueStart').onclick = function () {
+      var options = { mode: q('continueMode').value, side: q('continueSide').value, level: +q('continueLevel').value, evalOn: q('continueEval').value === '1' };
+      try { restoreSettings(); a.start(seed, options); dialog.close(); }
+      catch (e) { q('continueError').textContent = e.message; if (!anchor) { anchor = document.createComment('clock settings'); a.clock.settings.before(anchor); q('continueClock').appendChild(a.clock.settings); } }
+    };
+    return { refresh: function () {
+      var hidden = !a.available();
+      if (button.hidden === hidden) return;
+      button.hidden = hidden;
+      setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 0);
+    } };
+  }
+};
 </script>
 <script>// Small 2–4 player PeerJS lobby. The host owns the board and validates moves.
 // Uses the existing room's Peer shim when embedded in the two-person hub.
@@ -1393,6 +1734,7 @@ var Review = function (o) {
   $('lavaEval').checked=!!S.evalOn;$('lavaEval').onchange=function(){S.evalOn=this.checked;savePrefs();if(rv)rv.refresh();};
   if (window.IN_ROOM) S.roles = PRESETS.net.slice();
   var state = null, roles = [], gameSetup = null, epoch = 0, netRound = 0, shownResult = '';
+  var clockRound = 0, savedClock = null;
   var busy = false, pending = false, botTimer = 0, pendTimer = 0, toastTimer = 0, resultTimer = 0;
   var VOTE = null, askFor = null, undoWait = false, rv = null, HC = { key: null, line: null };
   var armed = -1, B = 480, pieces = [], tileEls = [], markEls = [], holesKey = '', audio = null;
@@ -1507,13 +1849,17 @@ var Review = function (o) {
   }
   function saveGame() {
     if (LavaLink.current() || !state) return;
-    try { if (state.over) localStorage.removeItem(SAVED); else localStorage.setItem(SAVED, JSON.stringify({ state: state, roles: roles, setup: gameSetup })); } catch (e) {}
+    var time = state.over ? null : clock.info();
+    try {
+      if (state.over) localStorage.removeItem(SAVED);
+      else localStorage.setItem(SAVED, JSON.stringify({state:state, roles:roles, setup:gameSetup, clock:time}));
+    } catch (e) {}
   }
 
   // ---------- размеры ----------
   function layout() {
     if ($('game').hidden) return;
-    var vw = window.innerWidth, vh = window.innerHeight - MatchActions.space(), hub = window.hubH ? window.hubH() : 0;
+    var vw = window.innerWidth, vh = window.innerHeight - MatchActions.space() - $('game').querySelector('.gc-bar').offsetHeight, hub = window.hubH ? window.hubH() : 0;
     var top = $('game').querySelector('.g-top').offsetHeight || 54, bar = 62 + ($('rvMount').offsetHeight || 38), wide = vw >= 700 && vw > vh * 1.15, gem, b;
     if (wide) {
       gem = Math.max(50, Math.min(84, vh * .1));
@@ -1600,6 +1946,7 @@ var Review = function (o) {
   function render() {
     BoardView.refresh('lava');
     if (!state) return;
+    clock.sync();
     var V = viewing(), S0 = V ? rv.display().s : state, vary = V && rv.canPlay();
     var can = canAct(), turn = S0.turn, n = net();
     if (!busy) { paintTiles(S0.tiles); placePieces(S0); }
@@ -1628,7 +1975,7 @@ var Review = function (o) {
       var p = S0.players[seat], nm = label(seat), cn = C[c].name;
       el.querySelector('.nm').textContent = nm;
       el.querySelector('.nm').style.color = C[c].light;
-      var st = !p.alive ? 'сгорел' : S0.over && S0.winner === seat ? 'победил!' : n && roles[seat] === 'net' && !n.online[seat] ? 'нет связи' : nm === cn ? '' : cn.toLowerCase();
+      var st = !p.alive ? (S0.log.includes(45 + seat) ? 'время вышло' : 'сгорел') : S0.over && S0.winner === seat ? 'победил!' : n && roles[seat] === 'net' && !n.online[seat] ? 'нет связи' : nm === cn ? '' : cn.toLowerCase();
       el.querySelector('.st').textContent = st;
       el.classList.toggle('on', !S0.over && seat === turn);
       el.classList.toggle('dead', !p.alive);
@@ -1756,7 +2103,7 @@ var Review = function (o) {
   // ---------- ходы ----------
   function after() { render(); schedule(); }
   function commit(m, seat) {
-    if (!state || state.turn !== seat || busy) return;
+    if (!state || state.turn !== seat || busy || !clock.before()) return;
     if (!L.moves(state, seat).some(function (x) { return x.m === m; })) return;
     var next = L.apply(state, m); if (!next) return;
     var old = state; state = next; pending = false; busy = true; armed = -1;
@@ -1766,7 +2113,7 @@ var Review = function (o) {
   }
   function act(m) {
     if (viewing()) { if (rv.canPlay()) rv.play(m); return; }
-    if (!canAct() || !L.moves(state, state.turn).some(function (x) { return x.m === m; })) return;
+    if (!canAct() || !clock.before() || !L.moves(state, state.turn).some(function (x) { return x.m === m; })) return;
     var n = net();
     if (!n) { commit(m, state.turn); return; }
     if (n.role === 'host') { LavaLink.act(m); return; }
@@ -1953,6 +2300,7 @@ var Review = function (o) {
   $('askYes').onclick = function () { answer(true); }; $('askNo').onclick = function () { answer(false); };
   $('askDialog').addEventListener('cancel', function (e) { e.preventDefault(); answer(false); });
   function onMsg(d, from) {
+    if(clock.receive(d, from)) return;
     if(MA&&MA.receive(d,from))return;
     var n = net(); if (!n || !state || !d) return;
     if (n.role === 'host') {
@@ -1972,7 +2320,8 @@ var Review = function (o) {
     layout();
   }
   function startLocal(saved) {
-    LavaLink.close(); stopTimers();
+    LavaLink.close(); stopTimers(); clockRound++;
+    savedClock = saved ? saved.clock || {initial:{enabled:false,left:[],inc:[]}} : null;
     if (saved) { state = saved.state; roles = saved.roles.slice(); gameSetup = saved.setup || null; }
     else { gameSetup = selectedSetup(); roles = gameSetup.roles.slice(); state = L.create(gameSetup); }
     shownResult = ''; if ($('result').open) $('result').close();
@@ -1987,7 +2336,7 @@ var Review = function (o) {
   function showRules() { $('rulesDialog').showModal(); }
   $('gameRulesBtn').onclick = showRules; $('rulesClose').onclick = function () { $('rulesDialog').close(); };
   function home() {
-    stopTimers(); LavaLink.close(); state = null; roles = [];
+    stopTimers(); LavaLink.close(); state = null; roles = []; savedClock = null; clock.sync();
     document.querySelectorAll('dialog[open]').forEach(function (d) { d.close(); });
     $('game').hidden = true; $('menu').hidden = false;
     if (!window.IN_ROOM && location.hash) history.replaceState(null, '', location.pathname + location.search);
@@ -2003,7 +2352,7 @@ var Review = function (o) {
     if (n) { LavaLink.start(L.create(n.cfg)); return; }
     if (!gameSetup) gameSetup = { mapId: state.mapId, corners: state.players.map(function (p) { return p.corner; }), first: 0, roles: roles.slice() };
     var g = { mapId: gameSetup.mapId, corners: gameSetup.corners, first: Math.floor(Math.random() * gameSetup.corners.length) };
-    state = L.create(g); roles = gameSetup.roles.slice(); rv.reset(); buildBoard(); saveGame(); render(); schedule();
+    clockRound++; savedClock = null; state = L.create(g); roles = gameSetup.roles.slice(); rv.reset(); buildBoard(); saveGame(); render(); schedule();
   }
   $('againBtn').onclick = function () { if (net() || state.over) restart(); else $('restartDialog').showModal(); };
   $('resultAgain').onclick = restart; $('restartConfirm').onclick = restart; $('restartCancel').onclick = function () { $('restartDialog').close(); };
@@ -2035,11 +2384,11 @@ var Review = function (o) {
     if (!n.state) { renderLobby(n); return; }
     if ($('lobby').open) $('lobby').close();
     if (n.state === state) { render(); return; }
-    var old = state, fresh = !old || netRound !== n.round, moved = !fresh && n.state.ply === old.ply + 1;
+    var old = state, fresh = !old || netRound !== n.round, moved = !fresh && n.state.ply === old.ply + 1 && n.state.last?.m < 40;
     netRound = n.round; roles = n.cfg.roles.slice(); gameSetup = n.cfg;
     clearTimeout(pendTimer); pending = false;
     if (fresh) {
-      stopTimers(); shownResult = ''; if ($('result').open) $('result').close();
+      clockRound++; savedClock = null; stopTimers(); shownResult = ''; if ($('result').open) $('result').close();
       state = n.state; VOTE = null; $('menu').hidden = true; $('game').hidden = false; rv.reset(); buildBoard(); layout(); render(); schedule(); return;
     }
     if (busy) { state = n.state; rv.sync(); return; }
@@ -2071,12 +2420,33 @@ var Review = function (o) {
   var hash = /^#([A-Za-z0-9]{5})$/.exec(location.hash);
   if (hash) join(hash[1]);
 
+ var clock = GameClock.attach({
+    id:'lava', labels:['Игрок 1','Игрок 2','Игрок 3','Игрок 4'], label:function(i){return state?.players[i] ? C[state.players[i].corner].name : '';},
+    seat:function(){return net()?.seat ?? (!humansLocal() ? roles.indexOf('human') : null);},
+    eliminate:true, role:function(){return net()?.role;},
+    state:function(){return state ? {game:clockRound, turn:state.turn, moves:state.ply, over:state.over, ready:true, paused:busy,
+      active:state.players.flatMap(function(p,i){return p.alive ? [i] : [];}),
+      noIncrement:state.last && state.last.m>=40, savedClock:savedClock} : null;},
+    send:function(m){if(net()?.role==='host')LavaLink.tellAll(m);else LavaLink.tell(m);},
+    menu:home, analyze:function(){rv.go(0);render();}, changed:saveGame,
+    expire:function(i){
+      if(state.over) return;
+      var next=L.apply(state,45+i);
+      if(!next) return;
+      stopTimers(); state=next; state.settlement={type:'time',actor:i}; armed=-1;
+      if($('askDialog').open)$('askDialog').close();
+      VOTE=null; askFor=null; rv.sync(); saveGame(); render();
+      if(net()?.role==='host')LavaLink.update(state);
+      if(!state.over){toast(C[state.players[i].corner].name+' — время вышло.');schedule();}
+    }
+  });
+  window.addEventListener('pagehide', saveGame);
  var MA = MatchActions.attach({id:'lava',
   // боты согласны на ничью, если у них не больше безопасных прыжков и слоёв под ногами, чем у лучшего соперника
   botDraw:function(ids,cb){if(!state||state.over){cb(true);return;}
     var safety=function(i){var p=state.players[i];if(!p.alive)return -99;return L.moves(state,i).filter(function(m){return !m.fatal;}).length+2*state.tiles[p.pos];};
     cb(ids.every(function(b){var best=-99;state.players.forEach(function(p,i){if(i!==b&&p.alive)best=Math.max(best,safety(i));});return safety(b)<=best+1;}));},
-  events:{eliminated:function(){return state?state.players.map(function(p,i){return p.alive?-1:i;}).filter(function(i){return i>=0;}):[];},fullPlayers:function(){return state?state.players.map(function(p,i){return {id:i,label:C[p.corner].name,kind:roles[i]==='bot'?'bot':net()&&net().role==='guest'?i===net().seat?'human':'remote':roles[i]==='net'?'remote':'human'};}):[];},result:function(){return state&&state.over?{draw:state.draw||state.winner===null,winners:state.winner===null?[]:[state.winner],reason:state.settlement?state.settlement.type:'normal'}:null;},evaluation:function(){return !!S.evalOn;},continued:function(){return !!state&&state.ply>0;},clockSeats:function(){return [];},botLevel:function(){return null;}},
+  events:{eliminated:function(){return state?state.players.map(function(p,i){return p.alive?-1:i;}).filter(function(i){return i>=0;}):[];},fullPlayers:function(){return state?state.players.map(function(p,i){return {id:i,label:C[p.corner].name,kind:roles[i]==='bot'?'bot':net()&&net().role==='guest'?i===net().seat?'human':'remote':roles[i]==='net'?'remote':'human'};}):[];},result:function(){return state&&state.over?{draw:state.draw||state.winner===null,winners:state.winner===null?[]:[state.winner],reason:state.settlement?state.settlement.type:'normal'}:null;},evaluation:function(){return !!S.evalOn;},continued:function(){return !!state&&state.ply>0;},clockSeats:function(){return [0,1,2,3];},botLevel:function(){return null;}},
   state:function(){return state?{ref:net()?'net:'+net().code+':'+netRound:gameSetup,version:state.ply,turn:state.turn,over:state.over,analysis:false,players:state.players.map(function(p,i){return{id:i,label:C[p.corner].name,kind:roles[i]==='bot'?'bot':roles[i]==='net'?'remote':'human'};}).filter(function(p){return state.players[p.id].alive;}),mine:state.players.map(function(p,i){return i;}).filter(function(i){return state.players[i].alive&&(net()&&net().role==='guest'?i===net().seat:roles[i]==='human');})}:null;},
   role:function(){return net()&&net().role;},send:function(m){if(net()&&net().role==='host')LavaLink.tellAll(m);else LavaLink.tell(m);},online:function(){return LavaLink.ready();},notify:toast,menu:home,again:restart,
   analyze:function(){if($('result').open)$('result').close();rv.go(0);render();},

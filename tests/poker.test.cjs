@@ -92,16 +92,14 @@ test('separate player views hide the deck, future cards and folded hands', () =>
   assert.ok(poker.view(h, 0, 1000).players.every((p, i) => !p || i === 0 || p.cards.length === 0));
 });
 
-test('action clock uses reserve, expires to fold or check, and can be disabled', () => {
+test('action clock uses reserve, folds even with a free check, and can be disabled', () => {
   const h = hand([100, 100], {seconds: 5, reserve: 3});
   assert.deepEqual([h.baseUntil, h.deadline], [6000, 9000]);
   assert.equal(poker.act(h, 0, {type: 'call'}, 7500), true);
   assert.equal(h.players[0].reserve, 1500);
   assert.equal(poker.tick(h, 15500), true);
-  assert.equal(h.street, 1);
-  assert.equal(poker.tick(h, 23500), true);
-  assert.equal(poker.tick(h, 30000), true);
-  assert.equal(h.street, 2);
+  assert.equal(h.last.type, 'fold');
+  assert.deepEqual(h.result.pots[0].winners, [0]);
   const untimed = hand([100, 100], {seconds: 0});
   assert.equal(poker.tick(untimed, 1e10), false);
   const expired = hand([100, 100], {seconds: 5, reserve: 0});
@@ -112,4 +110,26 @@ test('action clock uses reserve, expires to fold or check, and can be disabled',
 test('table rejects seven seats and inconsistent blinds', () => {
   assert.throws(() => hand([10, 10, 10, 10, 10, 10, 10]), /6/);
   assert.throws(() => hand([100, 100], {smallBlind: 11}), /блайнд/i);
+});
+
+test('blind levels double at the configured interval and can exceed the starting stack', () => {
+  const cfg = poker.settings({...config, stack: 25, blindMinutes: 2});
+  const first = poker.blindLevel(cfg, 1000, 120999);
+  const next = poker.blindLevel(cfg, 1000, 241000);
+  assert.deepEqual(first, {smallBlind: 5, bigBlind: 10, nextAt: 121000});
+  assert.deepEqual(next, {smallBlind: 20, bigBlind: 40, nextAt: 361000});
+  assert.equal(poker.newHand(seats(25, 25), cfg, -1, 241000, undefined, next).config.bigBlind, 40);
+  assert.equal(poker.blindLevel(poker.settings(config), 1000, 241000).nextAt, null);
+  assert.throws(() => poker.settings({...config, blindMinutes: -1}), /блайнд/i);
+});
+
+test('time gifts are for other seats, preserve the base clock and cannot revive a timeout', () => {
+  const h = hand([100, 100], {seconds: 5, reserve: 0});
+  assert.equal(poker.addTime(h, 0, 0, 2000), false);
+  assert.equal(poker.addTime(h, 1, 0, 2000), true);
+  assert.equal(h.baseUntil, 6000);
+  assert.equal(h.deadline, 21000);
+  assert.equal(poker.addTime(h, 1, 0, 21000), false);
+  assert.equal(poker.tick(h, 21000), true);
+  assert.equal(h.last.type, 'fold');
 });

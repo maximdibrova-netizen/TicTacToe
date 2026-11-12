@@ -447,12 +447,12 @@ onmessage = function (e) {
   }
   function decide(mv) {
     if (GC && !GC.before()) return;
-    if (net() && Net2P.role() === 'host') Net2P.send({ t: 'move', mv: mv, n: G.line.length - 1 });
-    apply(mv);
+    apply(mv, true);
   }
-  function apply(mv) {
-    if (GC && !GC.before()) return;
+  function apply(mv, authoritative) {
+    if (!G || G.s.over) return;
     var n = playMove(G.s, mv); if (!n) return;
+    if (authoritative && net() && Net2P.role() === 'host') Net2P.send({ t: 'move', mv: mv, n: G.line.length - 1 });
     G.line.push({ s: n, mv: mv, by: G.s.turn }); G.s = n; G.netPending = false; hover = -1;
     if (mv >= 0) clack(.6);
     if (mv === -1) toast(NAME[3 - n.turn] + ' пасуют');
@@ -686,10 +686,10 @@ onmessage = function (e) {
   $('joinCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('joinGo').click(); });
   $('joinGo').onclick = function () { var c = Net2P.cleanCode($('joinCode').value); if (c.length === 5) joinGame(c); };
 
-  var GC = GameClock.attach({id:"go", labels:["Чёрные", "Белые"],
+  var GC = GameClock.attach({id:"go", seat:function(){return G&&mySide()?mySide()-1:null;}, labels:["Чёрные", "Белые"],
     state:function(){return G&&!G.analysis?{game:G,turn:(G.s.turn-1),moves:G.line.length-1,over:!!(G.s.over),ready:true}:null;}, role:function(){return Net2P.role();},
     send:function(m){Net2P.send(m);}, menu:toMenu, analyze:analyzeFinished,
-    expire:function(i){if(!G)return;token++;G.s.over=true; G.s.resign=i+1;}
+    expire:function(i){if(!G)return;token++;G.busy=false;G.netPending=false;G.s=Object.assign({},G.s,{over:true,resign:i+1});$('askOv').hidden=true;$('confirmOv').hidden=true;render();}
   });
 
   var pendingContinuation=null;

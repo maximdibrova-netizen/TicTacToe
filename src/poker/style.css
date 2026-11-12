@@ -103,6 +103,9 @@ section.poker-panel { display: grid; gap: 9px; }
 #pokerPot { font: 700 clamp(16px, 2.4vw, 24px)/1 Rubik, system-ui; color: var(--gold); }
 .poker-board, .poker-cards { display: flex; justify-content: center; gap: 5px; }
 .poker-card {
+  position: relative;
+  flex: none;
+  perspective: 340px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -111,17 +114,32 @@ section.poker-panel { display: grid; gap: 9px; }
   height: 57px;
   border: 1px solid #e0d5bf;
   border-radius: 6px;
-  background: #fff8e9;
-  box-shadow: 0 2px 3px #07131155;
+  border-color: transparent;
   color: #162336;
   font: 800 18px/1 Rubik, system-ui;
 }
 .poker-card.red { color: #a72338; }
 .poker-card.empty { background: #113d36; border: 1px dashed #88b39b99; box-shadow: none; }
-.poker-card.back { background: repeating-linear-gradient(135deg, #304d70 0 3px, #213756 3px 6px); border-color: #9eb0c1; }
+.poker-card-turn { position:absolute; inset:-1px; transform-style:preserve-3d; }
+.poker-card-face,.poker-card-back {
+  position:absolute; inset:0; border-radius:6px; backface-visibility:hidden;
+  box-shadow:0 2px 3px #07131155;
+}
+.poker-card-face {
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  background:#fff8e9; border:1px solid #e0d5bf;
+}
+.poker-cards .poker-card-face { flex-direction:row; gap:1px; }
+.poker-card-back { transform:rotateY(180deg); border:1px solid #9eb0c1; }
+.poker-card-back, .poker-card.back { background: repeating-linear-gradient(135deg, #304d70 0 3px, #213756 3px 6px); border-color: #9eb0c1; }
 .poker-cards .poker-card { flex-direction: row; gap: 1px; width: 32px; height: 36px; font-size: 12px; }
 .poker-seat-badges { display: flex; justify-content: center; align-items: center; gap: 4px; min-height: 17px; color: #c0c9db; font-size: 10px; }
 .poker-seat-badges span { border-radius: 4px; background: #33415d; padding: 1px 4px; white-space: nowrap; }
+.poker-folding { pointer-events:none; }
+.poker-seat .poker-gift {
+  min-height:22px; padding:1px 6px; justify-self:center; font-size:11px;
+  background:#253850; color:#dcece7; border-color:#648583;
+}
 .poker-seat-badges .dealer { background: #f2dcb4; color: #251d16; font-weight: 800; }
 .poker-feedback { text-align: center; min-height: 49px; padding: 14px 2px 3px; }
 .poker-feedback p { margin: 0 0 5px; }
