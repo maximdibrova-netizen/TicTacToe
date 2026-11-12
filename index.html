@@ -47,6 +47,8 @@ h1 { margin: 0; font: 800 clamp(26px, 6vw, 40px)/1.05 var(--display); text-wrap:
 .btn:hover { background: #36426d; }
 .btn.main { background: var(--gold); color: #2a1d00; }
 .btn.main:hover { background: #ffdc85; }
+.btn.interrupt, .sbar .interrupt { background: #3c2536; color: #ffd2ce; }
+.btn.interrupt:hover, .sbar .interrupt:hover { background: #543047; }
 .join { display: flex; gap: 6px; }
 .join input { width: 9.5em; border: 0; border-radius: 12px; padding: 10px 12px; font: 800 18px/1 var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--bg); background: var(--ink); }
 .code { font: 800 34px/1 var(--display); letter-spacing: .16em; background: var(--ink); color: var(--bg); border-radius: 12px; padding: 10px 14px 8px; }
@@ -82,8 +84,14 @@ a.game.current::after { content: "сейчас играете"; position: absolu
 .sbar { flex: none; height: calc(42px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px));
   display: flex; align-items: center; gap: 10px; background: #0d1120; border-bottom: 1px solid var(--line); }
 .sbar button { border: 0; border-radius: 9px; padding: 7px 12px; background: #2a3456; font: 800 13.5px/1 var(--body); }
+.sbar button { white-space: nowrap; }
 .sbar .ttl { font: 800 13px/1 var(--display); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sbar .who { display: flex; align-items: center; gap: 7px; font: 700 12.5px/1 var(--body); color: var(--ink-dim); white-space: nowrap; }
+@media (max-width: 520px) {
+  .sbar { gap: 6px; }
+  .sbar button { padding-inline: 8px; }
+  .sbar .who { display: none; }
+}
 #frame { flex: 1; width: 100%; border: 0; background: #000; }
 .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); transform: translateX(-50%); z-index: 30; background: var(--ink); color: var(--bg); font: 800 14px/1.25 var(--body); padding: 10px 16px; border-radius: 12px; max-width: calc(100% - 32px); text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
 .choice { width:min(440px,calc(100% - 32px)); max-height:calc(100dvh - 32px); overflow:auto; padding:24px; border:1px solid var(--line); border-radius:18px; background:var(--bg-2); color:var(--ink); box-shadow:0 24px 80px #0008; }
@@ -399,6 +407,13 @@ a.game.current::after { content: "сейчас играете"; position: absolu
 
 
   <div id="gamesPage" class="games-page" role="tabpanel" aria-labelledby="gamesTab">
+  <section id="currentRoomGame" class="room live" aria-labelledby="currentRoomTitle" hidden>
+    <h2 id="currentRoomTitle">Текущая игра</h2>
+    <div class="row">
+      <button type="button" class="btn main" id="resumeBtn">Вернуться к игре</button>
+      <button type="button" class="btn interrupt" id="interruptFromMenu">Прервать игру</button>
+    </div>
+  </section>
   <section class="rating-panel" aria-label="Рейтинг игроков">
   <div class="rating-heading"><div><h2>Рейтинг</h2><p id="ratingSummary">Начальный рейтинг 1200 · отдельно для каждой игры</p></div><button type="button" class="btn" id="ratingDetails">Мои результаты</button></div>
   <label class="rating-choice"><input type="checkbox" id="ratingToggle"><span>Играть на рейтинг с другом</span></label>
@@ -531,7 +546,7 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     <div><b>Играть без интернета</b><p id="instText"></p></div>
     <button class="btn main" id="instBtn" hidden>Установить</button>
   </section>
-  <p class="foot">Версия от 12.11.2026 12:53<span id="offState"></span></p>
+  <p class="foot">Версия от 12.11.2026 22:12<span id="offState"></span></p>
   </div>
 </main>
 </div>
@@ -542,6 +557,7 @@ a.game.current::after { content: "сейчас играете"; position: absolu
     <span class="ttl" id="stTitle"></span>
     <span class="who" id="stWho"></span>
     <button type="button" id="stageFriends" aria-label="Друзья">Друзья <span class="social-badge" id="stageFriendsBadge" hidden></span></button>
+    <button type="button" class="interrupt" id="interruptGame">Прервать игру</button>
   </div>
   <div id="multiToolbar" class="multi-toolbar" hidden><strong id="multiScore" class="multi-score">0 : 0</strong><span id="multiSummary" class="multi-summary" role="status">Подготовьте игры и начните набор.</span><button type="button" id="multiStart" class="btn main">Начать все</button><button type="button" id="multiNew" class="btn main" hidden>Новый набор</button><button type="button" id="multiGrid" class="btn">Одна доска</button></div>
   <div id="multiTabs" class="multi-tabs" role="tablist" aria-label="Параллельные партии" hidden></div>
@@ -555,6 +571,23 @@ a.game.current::after { content: "сейчас играете"; position: absolu
   <p id="choiceText"></p>
   <div class="row"><button class="btn decline" id="choiceDecline" autofocus>Отклонить</button><button class="btn main" id="choiceAccept">Принять</button><button class="btn" id="choiceCancel">Отменить запрос</button></div>
   <p class="choice-note">Запрос действует 30 секунд. Текущая партия продолжится, пока вы оба не согласитесь сменить игру.</p>
+</dialog>
+<dialog id="sameGameDialog" class="choice" aria-labelledby="sameGameTitle">
+  <h2 id="sameGameTitle"></h2>
+  <p>В комнате уже открыта игра. Для новой партии другу придёт приглашение.</p>
+  <div class="row">
+    <button type="button" class="btn main" id="sameGameResume" autofocus>Вернуться к игре</button>
+    <button type="button" class="btn" id="sameGameNew">Начать новую игру</button>
+    <button type="button" class="btn decline" id="sameGameCancel">Отмена</button>
+  </div>
+</dialog>
+<dialog id="interruptDialog" class="choice" aria-labelledby="interruptTitle" aria-describedby="interruptText">
+  <h2 id="interruptTitle">Прервать игру?</h2>
+  <p id="interruptText"></p>
+  <div class="row">
+    <button type="button" class="btn" id="interruptCancel" autofocus>Отмена</button>
+    <button type="button" class="btn interrupt" id="interruptConfirm">Прервать игру</button>
+  </div>
 </dialog>
 <dialog id="multiDialog" class="choice" aria-labelledby="multiDialogTitle"><h2 id="multiDialogTitle">Выбрать игры для набора</h2><label class="multi-count">Число досок<select id="multiCount"><option value="3">3 игры</option><option value="4">4 игры</option></select></label><div id="multiPicker" class="multi-picker"></div><p id="multiMessage" role="status"></p><div class="row"><button type="button" id="multiCancel" class="btn">Отмена</button><button type="button" id="multiPropose" class="btn main">Предложить набор</button></div></dialog>
 
@@ -708,6 +741,7 @@ var Net2P = (function () {
   var R = { state: 'idle', role: null, code: null, link: '', err: '', inst: null, game: null, seq: 0, retry: 0, slots:[], multi:false, peerUid:null, peerName:'', ranked:false, ratedSession:null };
   var PREFIX = 'room-games-v1-';
   var choice = null, choiceTimer = null, choiceSeq = 0;
+  var interruptInstance = null;
   var roomFingerprint = '', ratingRevision = 0, multiActive = 0, multiView = 'grid', bundleEnded = false;
 
   function validGames(games) { return Array.isArray(games) && (games.length === 3 || games.length === 4) && games.every(function(g,i){return MULTI_GAMES.indexOf(g)>=0 && games.indexOf(g)===i;}); }
@@ -739,6 +773,7 @@ var Net2P = (function () {
   }
   function showChoice(p) {
     if (p.g === 'poker') p.ranked = false;
+    closeGameDialogs();
     clearChoice(); choice = p;
     $('choiceAccept').disabled = false;
     var mine = p.by === R.role, art = document.querySelector('a.game[data-g="'+p.g+'"] .art');
@@ -790,7 +825,7 @@ var Net2P = (function () {
 
   // ---- the bridge: a stand-in for PeerJS inside the game frames, carried over the room connection ----
   var listening = {}, remoteListen = {}, pending = {}, conns = {}, connSeq = 0;
-  function rsend(m) { Net2P.send(m); }
+  function rsend(m) { return Net2P.send(m); }
   function cloneInto(win, d) { try { return win.JSON.parse(JSON.stringify(d)); } catch (e) { return d; } }
   function Emitter() { this._h = {}; }
   Emitter.prototype.on = function (ev, fn) { (this._h[ev] = this._h[ev] || []).push(fn); return this; };
@@ -864,6 +899,8 @@ var Net2P = (function () {
     active: function () { return R.state === 'live' || R.state === 'waiting'; },
     peerFor: peerFor,
     home: function () { showHome(); },
+    catalogue: showCatalogue,
+    resume: showStage,
     openFriend: openFriendRoom,
     closeFriend: function (attempt) { if (R.friend?.attempt===attempt && !R.game) leaveRoom(false); },
     context: roomContext,
@@ -931,7 +968,7 @@ var Net2P = (function () {
     R.slots.forEach(function(s){if(s.localScore!==undefined)rsend({t:'bundle-result',inst:R.inst,id:s.id,score:s.localScore});});
   }
   function joinRoom(code,friend) {
-    R = Object.assign(R, { state: 'joining', role: 'guest', friend:friend||null, peerUid:null, peerName:'', code: Net2P.cleanCode(code), err: '' }); renderRoom();
+    R = Object.assign(R, { state: 'joining', role: 'guest', friend:friend||null, peerUid:null, peerName:'', code: Net2P.cleanCode(code), err: '', rejoiningGame: !!R.inst }); renderRoom();
     Net2P.join(code, { prefix: roomPrefix(friend),
       onOpen: function () { R.state = 'live'; R.retry = 0; renderRoom(); sendIdentity(); if(!R.friend)toast('Ты в комнате друга'); },
       onPeer: function (on) { if (!on) clearChoice(); renderRoom(); },
@@ -976,7 +1013,13 @@ var Net2P = (function () {
     if(m.t==='service'){if(m.data&&typeof m.data==='object')dispatchEvent(new CustomEvent('room:service',{detail:{context:roomContext(),data:m.data}}));return;}
     if(m.t==='bundle-result'){if(R.multi&&m.inst===R.inst&&[0,.5,1].indexOf(m.score)>=0){var slot=R.slots.find(function(s){return s.id===m.id;});if(slot){slot.remoteScore=m.score;updateSlotScore(slot);renderMulti();changed('score');}}return;}
     if (m.t === 'poker-table' && R.role === 'guest' && R.game === 'poker' && m.inst === R.inst) { syncPokerCode(m.code); return; }
-    if (m.t === 'pick' && R.role === 'guest') { clearChoice(); if (Object.prototype.hasOwnProperty.call(NAMES,m.g) && typeof m.inst === 'string' && (m.g!=='multi'||validGames(m.games))) loadGame(m.g, m.inst, true,m.games,!!m.ranked,m.pokerCode); else if (!m.g && R.game) { unloadGame(); showHome(); } }
+    if (m.t === 'room-game-end' && R.role === 'host' && m.inst === R.inst && R.game) { interruptCurrentGame(); return; }
+    if (m.t === 'room-game-ended' && R.role === 'guest' && m.inst === R.inst && R.game) { closeCurrentGame(); return; }
+    if (m.t === 'pick' && R.role === 'guest') {
+      if (Object.prototype.hasOwnProperty.call(NAMES, m.g) && typeof m.inst === 'string' && (m.g !== 'multi' || validGames(m.games))) {
+        loadGame(m.g, m.inst, true, m.games, !!m.ranked, m.pokerCode);
+      } else if (!m.g && R.game) closeCurrentGame();
+    }
     else if (m.t === 'want' && R.role === 'host' && validChoice(m) && Net2P.online()) {
       if (choice) rsend({t:'offer-end',id:m.id,reason:'busy'});
       else showChoice({id:m.id,g:m.g,games:m.games,ranked:!!m.ranked,by:'guest'});
@@ -1004,7 +1047,8 @@ var Net2P = (function () {
   function selectedGames(){return Array.prototype.filter.call($('multiPicker').querySelectorAll('input'),function(x){return x.checked;}).map(function(x){return x.dataset.multiGame;});}
   function paintMultiPicker(){var count=+$('multiCount').value,selected=selectedGames(),ready=R.state==='live'&&Net2P.online();Array.prototype.forEach.call($('multiPicker').querySelectorAll('input'),function(x){x.disabled=!x.checked&&selected.length>=count;});$('multiPropose').disabled=selected.length!==count||!ready;$('multiMessage').textContent=!ready?'Создайте комнату и дождитесь друга. Затем можно предложить набор.':'Выбрано '+selected.length+' из '+count+'. Друг подтвердит набор перед началом.';}
   function openMulti(){paintMultiPicker();if(!$('multiDialog').open)$('multiDialog').showModal();}
-  $('multiOpen').onclick=$('multiNew').onclick=openMulti;
+  $('multiOpen').onclick = function () { if (R.multi && R.inst) openSameGame(); else openMulti(); };
+  $('multiNew').onclick = openMulti;
   $('multiCancel').onclick=function(){$('multiDialog').close();};
   $('multiCount').onchange=function(){var count=+this.value,inputs=Array.prototype.slice.call($('multiPicker').querySelectorAll('input')),chosen=inputs.filter(function(x){return x.checked;});while(chosen.length>count)chosen.pop().checked=false;while(chosen.length<count){var next=inputs.find(function(x){return !x.checked;});if(!next)break;next.checked=true;chosen.push(next);}paintMultiPicker();};
   $('multiPropose').onclick=function(){var games=selectedGames();if(!validGames(games)||games.length!==+$('multiCount').value)return;$('multiDialog').close();pick('multi',games);};
@@ -1045,10 +1089,25 @@ var Net2P = (function () {
     $('frame').contentWindow?.openInvitedPokerTable?.(code);
   }
   function loadGame(g, inst, announced, games, ranked, pokerCode) {
-    if (g === 'poker' && R.game === g && R.inst === inst) { syncPokerCode(pokerCode); return; }
-    if (R.inst !== inst) { dropBridge(true); }
-    var fresh=R.inst!==inst;
-    R.inst = inst; R.game = g;R.multi=g==='multi';R.ranked=g!=='poker'&&!!ranked;if(fresh)R.ratedSession=null;
+    var sameGame = R.game === g && R.inst === inst;
+    var reconnecting = !!R.rejoiningGame;
+    R.rejoiningGame = false;
+    if (sameGame && (!reconnecting || g === 'poker')) {
+      if (g === 'poker') syncPokerCode(pokerCode);
+      return;
+    }
+    // Re-announcing a match on a live link never reloads the board. A guest
+    // whose room link actually dropped must rebuild the game bridge to resync.
+    var keepCatalogue = sameGame && !$('home').hidden;
+    clearChoice();
+    closeGameDialogs();
+    closePokerFrame();
+    dropBridge(true);
+    R.inst = inst;
+    R.game = g;
+    R.multi = g === 'multi';
+    R.ranked = g !== 'poker' && !!ranked;
+    if (!sameGame) R.ratedSession = null;
     R.pokerCode = g==='poker' && validPokerCode(pokerCode) ? pokerCode : '';
     bundleEnded=false;multiActive=0;
     $('stage').classList.toggle('multi-mode',R.multi);$('multiToolbar').hidden=$('multiTabs').hidden=$('multiPanels').hidden=!R.multi;
@@ -1057,21 +1116,91 @@ var Net2P = (function () {
       $('frame').src='about:blank';
       R.slots=games.map(function(game,index){return{game:game,id:inst+':'+index,index:index,frame:document.createElement('iframe'),ready:false,started:false};});
       R.slots.forEach(function(slot,index){var panel=document.createElement('section'),head=document.createElement('header'),title=document.createElement('strong'),status=document.createElement('span'),expand=document.createElement('button'),tab=document.createElement('button');panel.className='multi-panel';panel.setAttribute('role','tabpanel');panel.id='multi-panel-'+index;title.textContent=NAMES[slot.game];expand.type='button';expand.textContent='Развернуть';expand.onclick=function(){multiActive=index;multiView='tabs';renderMulti();};head.append(title,status,expand);slot.panel=panel;slot.status=status;slot.frame.id='multi-frame-'+index;slot.frame.title=NAMES[slot.game];slot.frame.allow='autoplay; clipboard-write';slot.frame.onload=function(){prepareSlot(slot);};slot.frame.src=slot.game+'/'+(R.role==='guest'?'#'+R.code:'');panel.append(head,slot.frame);$('multiPanels').appendChild(panel);tab.type='button';tab.dataset.slot=index;tab.setAttribute('role','tab');tab.setAttribute('aria-controls',panel.id);tab.onclick=function(){selectPanel(index);};$('multiTabs').appendChild(tab);});
-      $('stTitle').textContent=(R.ranked?'Рейтинговая связка · ':'')+games.length+' игры';renderMulti();showStage();renderRoom();changed('pick');return;
+      $('stTitle').textContent=(R.ranked?'Рейтинговая связка · ':'')+games.length+' игры';renderMulti();if(!keepCatalogue)showStage();renderRoom();changed('pick');return;
     }
     R.slots=[{game:g,id:inst,index:0,frame:$('frame')}];
     var src = g + '/' + (R.role === 'guest' && g !== 'poker' ? '#' + R.code : '');
     $('frame').src = 'about:blank';
     setTimeout(function () { if (R.inst === inst) $('frame').src = src; }, 30);
     $('stTitle').textContent = (R.ranked?'Рейтинговая партия · ':'')+(NAMES[g] || g);
-    showStage();
-    if (announced && R.role === 'guest') toast('Друг открыл «' + (NAMES[g] || g) + '»');
+    if (!keepCatalogue) showStage();
+    if (announced && R.role === 'guest' && !sameGame) toast('Друг открыл «' + (NAMES[g] || g) + '»');
     renderRoom();
   }
-  function unloadGame() { $('frame').src = 'about:blank';$('multiPanels').replaceChildren();$('multiTabs').replaceChildren();R.slots=[];R.multi=false;R.ranked=false;R.ratedSession=null;R.game = null; R.inst = null; $('stage').hidden = true;changed('unload'); }
-  function showStage() { $('stage').hidden = false; $('home').hidden = true; renderWho(); }
-  function showHome() { $('home').hidden = false; renderRoom(); }
-  $('backBtn').onclick = function(){showHome();$('gamesTab').click();};
+  function closePokerFrame() { $('frame').contentWindow?.closeRoomPokerTable?.(); }
+  function closeGameDialogs() {
+    for (var id of ['sameGameDialog', 'interruptDialog']) if ($(id).open) $(id).close();
+    interruptInstance = null;
+  }
+  function unloadGame() {
+    closeGameDialogs();
+    closePokerFrame();
+    $('frame').src = 'about:blank';
+    $('multiPanels').replaceChildren();
+    $('multiTabs').replaceChildren();
+    Object.assign(R, {slots: [], multi: false, ranked: false, ratedSession: null, game: null, inst: null, pokerCode: '', rejoiningGame: false});
+    $('stage').hidden = true;
+    changed('unload');
+  }
+  function showStage() {
+    if (!R.inst) return;
+    $('stage').hidden = false;
+    $('stage').inert = false;
+    $('home').hidden = true;
+    renderWho();
+  }
+  function showHome() {
+    $('stage').inert = true;
+    $('home').hidden = false;
+    renderRoom();
+  }
+  function showCatalogue() {
+    showHome();
+    $('gamesTab').click();
+    if (R.inst) $('resumeBtn').focus();
+  }
+  function closeCurrentGame() {
+    clearChoice();
+    dropBridge(true);
+    unloadGame();
+    showCatalogue();
+    toast('Игра прервана. Вы можете выбрать следующую в этой комнате.');
+  }
+  function interruptCurrentGame() {
+    rsend({t: 'room-game-ended', inst: R.inst});
+    closeCurrentGame();
+  }
+  function openInterrupt() {
+    if (!R.inst) return;
+    interruptInstance = R.inst;
+    var text = R.game === 'poker' ? 'Покерный стол закроется для всех игроков.' : 'Текущая игра закроется у вас и друга.';
+    if (R.ranked && R.slots.some(function(slot) { return slot.phase !== 'result'; })) text += ' Незавершённая партия останется без зачёта рейтинга.';
+    $('interruptText').textContent = text + ' Вы останетесь в комнате.';
+    $('interruptDialog').showModal();
+  }
+  function openSameGame() {
+    $('sameGameTitle').textContent = NAMES[R.game];
+    $('sameGameDialog').showModal();
+  }
+  $('backBtn').onclick = showCatalogue;
+  $('resumeBtn').onclick = showStage;
+  $('interruptGame').onclick = $('interruptFromMenu').onclick = openInterrupt;
+  $('interruptCancel').onclick = closeGameDialogs;
+  $('interruptConfirm').onclick = function () {
+    var inst = interruptInstance;
+    closeGameDialogs();
+    if (!R.inst || R.inst !== inst) return;
+    if (R.role === 'host') interruptCurrentGame();
+    else if (!Net2P.online() || !rsend({t: 'room-game-end', inst: inst})) toast('Чтобы прервать игру, дождитесь связи с другом.');
+  };
+  $('sameGameCancel').onclick = closeGameDialogs;
+  $('sameGameResume').onclick = function () { closeGameDialogs(); showStage(); };
+  $('sameGameNew').onclick = function () {
+    closeGameDialogs();
+    if (R.state !== 'live' || !Net2P.online()) { toast('Дождитесь связи с другом, чтобы предложить новую игру.'); return; }
+    if (R.multi) openMulti();
+    else if (R.game) pick(R.game);
+  };
 
   // ---- render ----
   function renderWho() {
@@ -1099,8 +1228,8 @@ var Net2P = (function () {
     else if (s === 'live') {
       var on = Net2P.online();
       html = '<h2><span class="dot ' + (on ? 'on' : 'off') + '"></span>'+(R.friend?'Комната по вызову':'Комната '+R.code)+' <span class="pill">' + (on ? 'друг здесь' : 'нет связи с другом') + '</span></h2>' +
-        '<p>' + (R.game ? 'Сейчас: «' + NAMES[R.game] + '». Любой из вас может предложить другую игру.' : 'Любой из вас может выбрать игру ниже и отправить предложение.') + ' Игра откроется у обоих, когда второй игрок примет запрос.</p>' +
-        '<div class="row">' + (R.game ? '<button class="btn main" id="resumeBtn">Вернуться к игре</button>' : '') +
+        '<p>' + (R.game ? 'Новая игра откроется у обоих после согласия друга.' : 'Выберите игру и отправьте приглашение другу.') + '</p>' +
+        '<div class="row">' +
         (R.role === 'host' && !R.friend ? '<button class="btn" id="copyBtn2">Скопировать ссылку</button>' : '') + '<button class="btn" id="leaveBtn">Выйти из комнаты</button></div>';
     } else if (s === 'error') html = '<h2>Не получилось</h2><p class="err">' + R.err + '</p><div class="row"><button class="btn main" id="retryBtn">Попробовать ещё раз</button><button class="btn" id="leaveBtn">Отмена</button></div>';
     el.innerHTML = html;
@@ -1109,20 +1238,22 @@ var Net2P = (function () {
     on('joinGo', function () { var c = Net2P.cleanCode($('joinCode').value); if (c.length === 5) { history.replaceState(null, '', '#' + c); joinRoom(c); } else $('joinCode').focus(); });
     var jc = $('joinCode'); if (jc) { jc.addEventListener('input', function () { this.value = Net2P.cleanCode(this.value); }); jc.addEventListener('keydown', function (e) { if (e.key === 'Enter') $('joinGo').click(); }); }
     on('leaveBtn', leaveRoom);
-    on('resumeBtn', showStage);
     on('retryBtn', function () { if (R.role === 'guest') joinRoom(R.code,R.friend); else createRoom(R.friend); });
     var copy = function (btn) { try { navigator.clipboard.writeText(R.link).then(function () { btn.textContent = 'Скопировано'; }, function () { var i = $('roomLink'); if (i) i.select(); }); } catch (e) {} };
     on('copyBtn', function () { copy(this); }); on('copyBtn2', function () { copy(this); });
     Array.prototype.forEach.call(document.querySelectorAll('a.game'), function (a) { a.classList.toggle('current', a.dataset.g === R.game && s === 'live'); });
+    $('currentRoomGame').hidden = !R.inst;
+    $('currentRoomTitle').textContent = R.game ? NAMES[R.game] : 'Текущая игра';
     renderWho();
     paintMultiPicker();renderMulti();changed('room');
   }
   // a game card: inside a room it opens the game for both; otherwise it's a normal link (solo play)
   Array.prototype.forEach.call(document.querySelectorAll('a.game'), function (a) {
     a.addEventListener('click', function (e) {
-      if (R.state !== 'live') return;
+      if (R.state !== 'live' && !R.inst) return;
       e.preventDefault();
-      if (R.game === a.dataset.g && R.inst) { showStage(); return; }
+      if (R.game === a.dataset.g && R.inst) { openSameGame(); return; }
+      if (R.state !== 'live') { toast('Дождитесь связи с другом, чтобы предложить игру.'); return; }
       pick(a.dataset.g);
     });
   });

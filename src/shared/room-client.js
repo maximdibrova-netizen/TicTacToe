@@ -17,10 +17,10 @@
     if (!location.hash) { var m = document.getElementById('m-net'); if (m) m.click(); }
     // «В меню», «Меню», «← все игры», «Отмена» в ожидании — назад к списку игр комнаты (партия не рвётся)
     document.addEventListener('click', function (e) {
-      var t = e.target && e.target.closest && e.target.closest('#homeBtn,#endMenu,#lbCancel,a[href="../"]');
+      var t = e.target && e.target.closest && e.target.closest('#homeBtn,#endMenu,#lbCancel,#matchMenu,.gc-menu,a[href="../"]');
       if (!t) return;
       e.preventDefault(); e.stopImmediatePropagation();
-      window.parent.ROOM.home();
+      window.parent.ROOM.catalogue();
     }, true);
     var lt = document.getElementById('lbText');
     if (lt) {

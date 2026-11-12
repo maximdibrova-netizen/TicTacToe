@@ -60,7 +60,7 @@ $('stageFriends').onclick = () => {
   selectTab(true);
   friendsTab.focus();
 };
-$('socialResume').onclick = () => $('resumeBtn')?.click();
+$('socialResume').onclick = () => window.ROOM.resume();
 $('socialSignIn').onclick = () => window.GameAccount.signIn();
 $('socialCode').onclick = async () => {
   if (!store) return;

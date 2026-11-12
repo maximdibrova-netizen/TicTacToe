@@ -273,6 +273,8 @@
   if (invite) $('Settings').open = false;
   if (room) {
     document.documentElement.classList.add('in-poker-room');
+    $('Leave').hidden = true;
+    window.closeRoomPokerTable = () => table.leave();
     $('Name').value ||= room.role === 'host' ? 'Хозяин' : 'Друг';
     window.openInvitedPokerTable = code => {
       if (room.role !== 'guest') return;

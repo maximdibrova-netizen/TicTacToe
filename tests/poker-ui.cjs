@@ -110,6 +110,14 @@ async function main() {
     await third.locator('#pokerStreet').filter({hasText: 'Префлоп'}).waitFor();
     await guestTable.locator('#pokerClock').waitFor();
     await table.locator('#pokerSeats [data-seat="0"].is-folded').waitFor();
+    await owner.locator('#backBtn').click();
+    await owner.locator('a[data-g=poker]').click();
+    await owner.locator('#sameGameResume').click();
+    assert.equal(await table.locator('#pokerCode').textContent(), pokerCode);
+    await friend.locator('#interruptGame').click();
+    await friend.locator('#interruptConfirm').click();
+    for (const p of [owner, friend]) await p.waitForFunction(() => !ROOM.context().game && ROOM.context().online);
+    await third.locator('#pokerNotice').filter({hasText: /Хозяин закрыл стол|Связь со столом потеряна/}).waitFor();
     assert.deepEqual(errors, []);
     console.log('Ordinary room proposal opens one real poker table, expandable to more friends PASS');
   } finally {

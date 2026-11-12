@@ -61,10 +61,10 @@ body.in-game:has(#game[data-match-actions=tochki].match-actions-active) .corner[
     if (!location.hash) { var m = document.getElementById('m-net'); if (m) m.click(); }
     // «В меню», «Меню», «← все игры», «Отмена» в ожидании — назад к списку игр комнаты (партия не рвётся)
     document.addEventListener('click', function (e) {
-      var t = e.target && e.target.closest && e.target.closest('#homeBtn,#endMenu,#lbCancel,a[href="../"]');
+      var t = e.target && e.target.closest && e.target.closest('#homeBtn,#endMenu,#lbCancel,#matchMenu,.gc-menu,a[href="../"]');
       if (!t) return;
       e.preventDefault(); e.stopImmediatePropagation();
-      window.parent.ROOM.home();
+      window.parent.ROOM.catalogue();
     }, true);
     var lt = document.getElementById('lbText');
     if (lt) {
@@ -620,7 +620,7 @@ h2, .eyebrow { font: 800 11px/1.4 var(--body); text-transform: uppercase; letter
       <li>Стены нельзя пересекать, накладывать друг на друга или перекрывать ими последний путь к цели любого игрока.</li>
       <li>Вдвоём у каждого по 10 стен, вчетвером — по 5. Побеждает первый, кто дошёл до своего цветного края.</li>
     </ol></details>
-    <p class="hint version">Версия от 12.11.2026 12:53</p>
+    <p class="hint version">Версия от 12.11.2026 22:12</p>
   </div>
 </section>
 

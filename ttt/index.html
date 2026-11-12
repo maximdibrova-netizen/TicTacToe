@@ -61,10 +61,10 @@ body.in-game:has(#game[data-match-actions=tochki].match-actions-active) .corner[
     if (!location.hash) { var m = document.getElementById('m-net'); if (m) m.click(); }
     // «В меню», «Меню», «← все игры», «Отмена» в ожидании — назад к списку игр комнаты (партия не рвётся)
     document.addEventListener('click', function (e) {
-      var t = e.target && e.target.closest && e.target.closest('#homeBtn,#endMenu,#lbCancel,a[href="../"]');
+      var t = e.target && e.target.closest && e.target.closest('#homeBtn,#endMenu,#lbCancel,#matchMenu,.gc-menu,a[href="../"]');
       if (!t) return;
       e.preventDefault(); e.stopImmediatePropagation();
-      window.parent.ROOM.home();
+      window.parent.ROOM.catalogue();
     }, true);
     var lt = document.getElementById('lbText');
     if (lt) {
@@ -675,7 +675,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
         <li>Побеждает тот, кто соберёт <b>три своих доски в ряд</b> на большом поле. Если так не вышел никто — ничья.</li>
       </ol>
     </div>
-    <p class="hint" style="font-size:11.5px"><a href="../" style="color:var(--ink-dim)">← все игры</a> · <span style="opacity:.7">версия от 12.11.2026 12:53</span></p>
+    <p class="hint" style="font-size:11.5px"><a href="../" style="color:var(--ink-dim)">← все игры</a> · <span style="opacity:.7">версия от 12.11.2026 22:12</span></p>
   </div>
 </section>
 

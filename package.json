@@ -24,6 +24,7 @@
     "test:export": "node tests/export-ui.cjs",
     "test:study": "node tests/study.cjs",
     "test:room": "node tests/room-choice.cjs",
+    "test:room-resume": "node tests/room-resume-ui.cjs",
     "test:preferences": "node tests/preferences.cjs",
     "test:browser": "node tests/browser.cjs"
   },

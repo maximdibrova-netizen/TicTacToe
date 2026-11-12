@@ -61,10 +61,10 @@ body.in-game:has(#game[data-match-actions=tochki].match-actions-active) .corner[
     if (!location.hash) { var m = document.getElementById('m-net'); if (m) m.click(); }
     // «В меню», «Меню», «← все игры», «Отмена» в ожидании — назад к списку игр комнаты (партия не рвётся)
     document.addEventListener('click', function (e) {
-      var t = e.target && e.target.closest && e.target.closest('#homeBtn,#endMenu,#lbCancel,a[href="../"]');
+      var t = e.target && e.target.closest && e.target.closest('#homeBtn,#endMenu,#lbCancel,#matchMenu,.gc-menu,a[href="../"]');
       if (!t) return;
       e.preventDefault(); e.stopImmediatePropagation();
-      window.parent.ROOM.home();
+      window.parent.ROOM.catalogue();
     }, true);
     var lt = document.getElementById('lbText');
     if (lt) {
@@ -674,7 +674,7 @@ dialog p{margin:0 0 10px;color:#d8c8bd}
     </div>
 
     <details class="card rules"><summary><h2>Как играть</h2></summary><div class="rules-body" id="rulesMenu"></div></details>
-    <p class="version">Версия от 12.11.2026 12:53</p>
+    <p class="version">Версия от 12.11.2026 22:12</p>
   </div>
 </section>
 

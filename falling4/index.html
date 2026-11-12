@@ -61,10 +61,10 @@ body.in-game:has(#game[data-match-actions=tochki].match-actions-active) .corner[
     if (!location.hash) { var m = document.getElementById('m-net'); if (m) m.click(); }
     // «В меню», «Меню», «← все игры», «Отмена» в ожидании — назад к списку игр комнаты (партия не рвётся)
     document.addEventListener('click', function (e) {
-      var t = e.target && e.target.closest && e.target.closest('#homeBtn,#endMenu,#lbCancel,a[href="../"]');
+      var t = e.target && e.target.closest && e.target.closest('#homeBtn,#endMenu,#lbCancel,#matchMenu,.gc-menu,a[href="../"]');
       if (!t) return;
       e.preventDefault(); e.stopImmediatePropagation();
-      window.parent.ROOM.home();
+      window.parent.ROOM.catalogue();
     }, true);
     var lt = document.getElementById('lbText');
     if (lt) {
@@ -509,7 +509,7 @@ body.view-no-history:not(.view-analysis) #abMain{display:block;max-width:620px}b
   <div class="card" id="netCard" hidden><h2>Онлайн с другом</h2><div class="seg" style="--cols:2"><button id="netCreate">Создать игру</button><button id="netJoinBtn">Войти по коду</button></div><div class="join" id="joinRow" hidden><input id="joinCode" maxlength="5" placeholder="КОД" aria-label="Код игры" autocomplete="off" spellcheck="false"><button id="joinGo">Войти</button></div><p class="hint">Хозяин выбирает расстановку и время. Другу достаточно ссылки или кода.</p></div>
   <button class="play" id="playBtn">Играть</button><button class="secondary" id="analyzeBtn">Анализ позиции</button>
   <details class="card rules"><summary>Как играть</summary><p>Поле 7 × 6. Нажми на колонку: фишка падает на самое нижнее свободное место. Игроки ходят по очереди. Собери четыре своих фишки по горизонтали, вертикали или диагонали. Если поле заполнено и линии нет — ничья.</p></details>
-  <p class="hint version">Версия от 12.11.2026 12:53</p>
+  <p class="hint version">Версия от 12.11.2026 22:12</p>
  </div>
 </section>
 <section id="game" class="screen" hidden>
