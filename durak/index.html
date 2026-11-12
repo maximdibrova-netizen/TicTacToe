@@ -349,7 +349,35 @@ var MatchActions = (function () {
       if (type === 'resign') { commit(type, seat); return; }
       if (type !== 'draw' || offer) return;
       if (role() && a.online && !a.online()) { note('Дождитесь подключения всех игроков.'); return; }
-      offer = MatchVote.create(s.players, seat, s.version, uid()); publishOffer();
+      offer = MatchVote.create(s.players, seat, s.version, uid());
+      // Боты соглашаются на ничью, только если сами не стоят лучше (оценка своим движком).
+      var bots = s.players.filter(function (p) { return p.kind === 'bot' && p.id !== seat; });
+      if (bots.length) {
+        var mine = offer, decide = a.botDraw || defaultBotDraw;
+        refresh();
+        decide(bots.map(function (p) { return p.id; }), function (ok) {
+          if (offer !== mine) return;
+          if (!ok) { offer = null; closeQuestion(); note(bots.length > 1 ? 'Боты отказались от ничьей. Игра продолжается.' : 'Бот отказался от ничьей: у него позиция лучше.'); refresh(); return; }
+          publishOffer();
+        }, s);
+        return;
+      }
+      publishOffer();
+    }
+    // общий случай: спросить оценку у движка разбора игры (Review.analyze), шанс бота ≤ 60 % — согласен
+    function defaultBotDraw(bots, cb, s) {
+      var R = window.ReviewOpts && window.ReviewOpts[0], done = false;
+      if (!R || !R.analyze || bots.length !== 1 || s.players.length !== 2) { cb(true); return; }
+      var finish = function (ok) { if (!done) { done = true; clearTimeout(timer); cb(ok); } };
+      var timer = setTimeout(function () { finish(true); }, 5000);
+      try {
+        var L = R.line(), pos = L[L.length - 1].s;
+        R.analyze(pos, function (r) {
+          if (!r || typeof r.p !== 'number') { finish(true); return; }
+          var p = R.toMove(pos) === bots[0] ? r.p : 1 - r.p;
+          finish(p <= 0.6);
+        });
+      } catch (e) { finish(true); }
     }
     el('surrenderBtn').onclick = function () {
       refresh(); var s = state(), p = s && actor(s); if (!p || !active(s)) return;
@@ -677,7 +705,7 @@ button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px sol
       <li>Если берёшь, соперники могут ещё подкинуть. После захода первым добирает тот, кто ходил, а отбивавшийся добирает последним.</li>
       <li>Когда колода пуста, игрок без карт выходит. Кто остался с картами последним, проиграл.</li>
     </ol></details>
-    <p class="hint version">Версия от 11.11.2026 20:29</p>
+    <p class="hint version">Версия от 12.11.2026 12:30</p>
   </div>
 </section>
 
@@ -1109,7 +1137,8 @@ var Net2P = (function () {
       && (v.result === null || (['cards','draw','resign'].includes(v.result.reason) && (v.result.loser === null || player(v.result.loser))));
   }
 
-  function bot(v) {
+  // простой бот: самой дешёвой картой; им же доигрываются партии при переборе
+  function simpleBot(v) {
     const options = legal(v);
     const value = card => rank(card) + (suit(card) === v.trump ? RANKS.length : 0);
     const cards = options.cards.slice().sort((a,b) => value(a) - value(b));
@@ -1126,7 +1155,183 @@ var Net2P = (function () {
     return options.pass ? {type:'pass'} : null;
   }
 
-  return {RANKS, SUITS, rank, suit, isCard, beats, shuffle, create, play, settle, view, validView, legal, bot};
+  // Сильный бот: в эндшпиле на двоих (колода кончилась) — точный перебор, иначе пробует каждый ход в сотне
+  // случайных раздач невидимых карт (видит только то, что видит игрок: свою руку, стол и вышедшие карты).
+  const strong = (function (D) {
+const {rank, suit, beats, legal, play} = D;
+  const HAND = 6;
+  function value(v, card) { return rank(card) + (suit(card) === v.trump ? 20 : 0); }
+  function cheapest(v, cards) { return cards.slice().sort((a, b) => value(v, a) - value(v, b)); }
+  const isTrump = (v, c) => suit(c) === v.trump;
+  // high card: an ace/king or any trump of rank ≥ queen-equivalent
+  function rankOf(name, v) { return v.size === 52 ? ['2','3','4','5','6','7','8','9','10','J','Q','K','A'].indexOf(name) : ['6','7','8','9','10','J','Q','K','A'].indexOf(name) + 4; }
+
+  // ---------- exact endgame ----------
+  function fullState(v, unseen) {
+    const opp = 1 - v.seat, hands = [];
+    hands[v.seat] = v.hand.slice(); hands[opp] = unseen.slice();
+    return {count: 2, size: v.size || 36, variant: v.variant || 'throw', cheat: false, deck: [], hands, trump: v.trump, trumpCard: v.trumpCard,
+      discard: [], round: v.round, version: v.version, result: null, resolved: null, last: null,
+      attacker: v.attacker, originalAttacker: v.attacker, defender: v.defender, limit: v.limit, actor: v.actor, phase: v.phase,
+      table: v.table.map(p => ({...p})), taking: v.taking, passed: [], honest: false};
+  }
+  function actions(state) {
+    const view = D.view(state, state.actor), o = legal(view), out = [];
+    // order: cheap cards first (good for alpha-beta)
+    cheapest(view, o.cards).forEach(card => out.push({type: 'card', card}));
+    o.transfers.forEach(card => out.push({type: 'transfer', card}));
+    if (o.take) out.push({type: 'take'});
+    if (o.pass) out.push({type: 'pass'});
+    return out;
+  }
+  function solve(v, unseen, budget) {
+    const me = v.seat, memo = new Map();
+    let nodes = 0;
+    const key = s => s.hands.map(h => h.slice().sort((a, b) => a - b).join('.')).join('|') + '/' + s.table.map(p => p.attack + ':' + p.cover).join(',') + '/' + s.phase + s.actor + s.attacker + s.defender + (s.taking ? 1 : 0) + s.limit;
+    function go(s, alpha, beta, depth = 0) {
+      if (depth > 150) throw 'budget';
+      if (s.result) return s.result.loser === null ? 0 : s.result.loser === me ? -1 : 1;
+      if (++nodes > budget) throw 'budget';
+      const k = key(s), hit = memo.get(k);
+      if (hit !== undefined) return hit;
+      const maximize = s.actor === me;
+      let best = maximize ? -2 : 2;
+      for (const a of actions(s)) {
+        const n = play(s, s.actor, a); if (!n) continue;
+        const val = go(n, alpha, beta, depth + 1);
+        if (maximize) { if (val > best) best = val; if (best > alpha) alpha = best; }
+        else { if (val < best) best = val; if (best < beta) beta = best; }
+        if (alpha >= beta) break;
+      }
+      // only exact values are stored (window-independent): [-1, 0, 1] with a full window, or a cut proving a bound
+      if (best === 1 || best === -1 || (alpha < best && best < beta)) memo.set(k, best);
+      return best;
+    }
+    try {
+      const root = fullState(v, unseen);
+      let bestA = null, bestV = -2;
+      for (const a of actions(root)) {
+        const n = play(root, me, a); if (!n) continue;
+        const val = go(n, bestV, 2);
+        if (val > bestV) { bestV = val; bestA = a; }
+        if (bestV === 1) break;
+      }
+      return bestA && {action: bestA, value: bestV};
+    } catch (e) { if (e === 'budget') return null; throw e; }
+  }
+
+  // ---------- heuristics ----------
+  function lead(v, cards) {
+    const opp = 1 - v.seat, endgame = !v.deckCount;
+    const byRank = {};
+    cards.forEach(c => { (byRank[rank(c)] = byRank[rank(c)] || []).push(c); });
+    const scored = cards.map(c => {
+      let s = value(v, c);
+      const same = byRank[rank(c)].filter(x => !isTrump(v, x)).length;
+      if (same > 1 && !isTrump(v, c) && !F.includes('nopair')) s -= 3 * (same - 1);          // lead pairs: more to throw in later
+      if (endgame && v.counts && v.counts[opp] === 1) s = -value(v, c); // last card of the defender: hit hard
+      return {c, s};
+    }).sort((a, b) => a.s - b.s);
+    return scored[0].c;
+  }
+  function throwIn(v, o) {
+    const cards = cheapest(v, o.cards), deck = v.deckCount;
+    if (!cards.length) return {type: 'pass'};
+    const c = cards[0], hi = value(v, c);
+    if (v.taking) {
+      // the defender is taking anyway: hand over cheap non-trumps; late in the game anything that is not a top trump
+      if (!isTrump(v, c) && (hi < 11 + (v.size === 52 ? -4 : 0) || deck <= 6)) return {type: 'card', card: c};
+      if (!deck && !(isTrump(v, c) && rank(c) >= rankOf('Q', v))) return {type: 'card', card: c};
+      return {type: 'pass'};
+    }
+    if (F.includes('throwall')) return isTrump(v, c) && deck ? {type: 'pass'} : {type: 'card', card: c};
+    // keep pressing with cheap cards; spend trumps only when the deck is gone
+    if (!isTrump(v, c) && (rank(c) <= rankOf('10', v) || deck <= 4)) return {type: 'card', card: c};
+    if (!deck) return {type: 'card', card: c};
+    return {type: 'pass'};
+  }
+  function defend(v, o) {
+    const pair = v.table.find(p => p.cover === null), attack = pair.attack, deck = v.deckCount;
+    const covers = cheapest(v, o.cards);
+    const transfer = cheapest(v, o.transfers)[0];
+    if (transfer !== undefined && (!isTrump(v, transfer) || deck === 0) && (!covers.length || value(v, transfer) <= value(v, covers[0]) + 4)) return {type: 'transfer', card: transfer};
+    if (!covers.length) return {type: 'take'};
+    const c = covers[0];
+    // what does taking cost? cards on the table go to our hand
+    const onTable = v.table.reduce((n, p) => n + 1 + (p.cover !== null ? 1 : 0), 0);
+    const spendsTrump = isTrump(v, c) && !isTrump(v, attack);
+    if (F.includes('notake')) return {type: 'card', card: c};
+    if (spendsTrump && deck > 8 && rank(c) >= rankOf('J', v) && onTable <= 2 && v.hand.length <= 6 && rank(attack) <= rankOf('10', v)) return {type: 'take'};
+    if (spendsTrump && deck > 14 && onTable <= 1 && rank(attack) <= rankOf('8', v) && v.hand.filter(x => isTrump(v, x)).length <= 2) return {type: 'take'};
+    return {type: 'card', card: c};
+  }
+  const F = [];
+  // ---------- sampling (deck still has cards): try every option in many dealt-out worlds ----------
+  function shuffled(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  function world(v, unseen) {
+    const pool = shuffled(unseen), hands = [];
+    let at = 0;
+    for (let i = 0; i < v.count; i++) if (i === v.seat) hands[i] = v.hand.slice(); else { hands[i] = pool.slice(at, at + v.counts[i]); at += v.counts[i]; }
+    const rest = pool.slice(at), deck = v.deckCount ? [v.trumpCard].concat(rest.slice(0, v.deckCount - 1)) : [];
+    return {count: v.count, size: v.size || 36, variant: v.variant || 'throw', cheat: false, deck, hands, trump: v.trump, trumpCard: v.trumpCard,
+      discard: [], round: v.round, version: v.version, result: null, resolved: null, last: null,
+      attacker: v.attacker, originalAttacker: v.attacker, defender: v.defender, limit: v.limit, actor: v.actor, phase: v.phase,
+      table: v.table.map(p => ({...p})), taking: v.taking, passed: [], honest: false};
+  }
+  function rollout(s, me) {
+    for (let k = 0; k < 400 && !s.result; k++) { const n = play(s, s.actor, D.simpleBot(D.view(s, s.actor))); if (!n) break; s = n; }
+    if (!s.result) return 0;
+    return s.result.loser === null ? 0 : s.result.loser === me ? -1 : 1;
+  }
+  function sample(v, unseen, ms) {
+    const opts = actions({...world(v, unseen)});
+    if (opts.length < 2) return opts[0] || null;
+    const total = opts.map(() => 0), end = Date.now() + ms;
+    let n = 0;
+    while (Date.now() < end && n < 400) {
+      const w = world(v, unseen);
+      opts.forEach((a, i) => { const s = play(w, v.seat, a); if (s) total[i] += rollout(s, v.seat); else total[i] -= 9; });
+      n++;
+    }
+    let bi = 0; total.forEach((t, i) => { if (t > total[bi]) bi = i; });
+    return opts[bi];
+  }
+  function bot(v, info) {
+    const o = legal(v);
+    if (!o.cards.length && !o.transfers.length && !o.take && !o.pass && o.challenge == null) return null;
+    if (v.phase === 'review') return {type: 'pass'};
+    // two players, empty deck: the opponent's hand is known — search it out
+    if (info && Array.isArray(info.unseen) && !v.deckCount && v.count === 2 && !v.cheat) {
+      const s = solve(v, info.unseen, info.budget || 20000);
+      if (s) return s.action;
+    }
+    if (info && Array.isArray(info.unseen) && !v.cheat && !F.includes('nosample')) {
+      const a = sample(v, info.unseen, info.ms || 150);
+      if (a) return a;
+    }
+    if (v.phase === 'lead') return {type: 'card', card: lead(v, o.cards)};
+    if (v.phase === 'throw') return throwIn(v, o);
+    if (o.take) return defend(v, o);
+    if (o.cards.length) return {type: 'card', card: cheapest(v, o.cards)[0]};
+    return o.pass ? {type: 'pass'} : null;
+  }
+  // cards nobody has seen leave the table: everything minus own hand, discard, table and the face-up trump
+  function unseen(state, seat) {
+    const seen = new Set(state.hands[seat].concat(state.discard, state.table.flatMap(p => p.cover === null ? [p.attack] : [p.attack, p.cover])));
+    if (state.deck.length) seen.add(state.trumpCard);
+    const out = [];
+    for (let c = 0; c < state.size; c++) if (!seen.has(c)) out.push(c);
+    return out;
+  }
+  function estimate(v, unseen, n) {
+    let total = 0, k = 0;
+    for (; k < n; k++) total += rollout(world(v, unseen), v.seat);
+    return k ? total / k : 0;
+  }
+  return {bot, unseen, solve, estimate};
+  })({rank, suit, beats, legal, play, view, simpleBot});
+  function bot(v, info) { return info ? strong.bot(v, info) : simpleBot(v); }
+  return {RANKS, SUITS, rank, suit, isCard, beats, shuffle, create, play, settle, view, validView, legal, bot, simpleBot, unseen: strong.unseen, estimate: (state, seat, n = 60) => strong.estimate(view(state, seat), strong.unseen(state, seat), n)};
 })();
 if (typeof module !== 'undefined') module.exports = Durak;
 </script><script>(function () {
@@ -1526,7 +1731,7 @@ if (typeof module !== 'undefined') module.exports = Durak;
     botTimer = setTimeout(() => {
       if (game !== current || game.state !== state || game.moving) return;
       const seat = state.actor;
-      update(D.play(state,seat,D.bot(D.view(state,seat))));
+      update(D.play(state,seat,D.bot(D.view(state,seat),{unseen:D.unseen(state,seat)})));
     },isOut(game.view,game.seat)?180:300);
   }
   function act(action) {
@@ -1668,6 +1873,13 @@ if (typeof module !== 'undefined') module.exports = Durak;
   };
   hand.onpointerup = e => {
     if (!drag || drag.id !== e.pointerId) return;
+    // a tap (no drag) on a card plays it, like a drop on the table
+    if (!drag.mode && canPlayCard()) {
+      const button = drag.button;
+      releaseDrag(false);
+      playCard(Number(button.dataset.card),button.getBoundingClientRect());
+      return;
+    }
     if (drag.mode === 'card') {
       const card = Number(drag.button.dataset.card);
       if (overArea(dropZone,e) && playCard(card,drag.ghost.getBoundingClientRect())) {
@@ -1819,6 +2031,8 @@ if (typeof module !== 'undefined') module.exports = Durak;
   }
   const match = MatchActions.attach({
   id:ID, resultModal:false,
+  // боты соглашаются на ничью, если по разыгрышам случайных раздач их шансы не лучше
+  botDraw:(ids,cb) => cb(!game || !game.state || game.view.result || ids.every(id => D.estimate(game.state,id,60) <= 0.1)),
   events:{fullPlayers:()=>game?game.view.counts.map((_,id)=>({id,label:playerName(id),kind:id===game.seat?'human':game.online?'remote':'bot'})):[],result:()=>game&&game.view.result?{draw:game.view.result.loser===null,winners:game.view.result.loser===null?[]:game.view.counts.map((_,i)=>i).filter(i=>i!==game.view.result.loser),reason:game.view.result.reason}:null,evaluation:()=>false,continued:()=>!!game&&game.view.version>0,clockSeats:()=>[],botLevel:()=>null},
   state:() => {
     if (!game) return null;

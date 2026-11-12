@@ -349,7 +349,35 @@ var MatchActions = (function () {
       if (type === 'resign') { commit(type, seat); return; }
       if (type !== 'draw' || offer) return;
       if (role() && a.online && !a.online()) { note('Дождитесь подключения всех игроков.'); return; }
-      offer = MatchVote.create(s.players, seat, s.version, uid()); publishOffer();
+      offer = MatchVote.create(s.players, seat, s.version, uid());
+      // Боты соглашаются на ничью, только если сами не стоят лучше (оценка своим движком).
+      var bots = s.players.filter(function (p) { return p.kind === 'bot' && p.id !== seat; });
+      if (bots.length) {
+        var mine = offer, decide = a.botDraw || defaultBotDraw;
+        refresh();
+        decide(bots.map(function (p) { return p.id; }), function (ok) {
+          if (offer !== mine) return;
+          if (!ok) { offer = null; closeQuestion(); note(bots.length > 1 ? 'Боты отказались от ничьей. Игра продолжается.' : 'Бот отказался от ничьей: у него позиция лучше.'); refresh(); return; }
+          publishOffer();
+        }, s);
+        return;
+      }
+      publishOffer();
+    }
+    // общий случай: спросить оценку у движка разбора игры (Review.analyze), шанс бота ≤ 60 % — согласен
+    function defaultBotDraw(bots, cb, s) {
+      var R = window.ReviewOpts && window.ReviewOpts[0], done = false;
+      if (!R || !R.analyze || bots.length !== 1 || s.players.length !== 2) { cb(true); return; }
+      var finish = function (ok) { if (!done) { done = true; clearTimeout(timer); cb(ok); } };
+      var timer = setTimeout(function () { finish(true); }, 5000);
+      try {
+        var L = R.line(), pos = L[L.length - 1].s;
+        R.analyze(pos, function (r) {
+          if (!r || typeof r.p !== 'number') { finish(true); return; }
+          var p = R.toMove(pos) === bots[0] ? r.p : 1 - r.p;
+          finish(p <= 0.6);
+        });
+      } catch (e) { finish(true); }
     }
     el('surrenderBtn').onclick = function () {
       refresh(); var s = state(), p = s && actor(s); if (!p || !active(s)) return;
@@ -646,7 +674,7 @@ dialog p{margin:0 0 10px;color:#d8c8bd}
     </div>
 
     <details class="card rules"><summary><h2>Как играть</h2></summary><div class="rules-body" id="rulesMenu"></div></details>
-    <p class="version">Версия от 11.11.2026 20:29</p>
+    <p class="version">Версия от 12.11.2026 12:30</p>
   </div>
 </section>
 
@@ -1112,6 +1140,7 @@ var LavaArt = (function () {
 //   o.noBar        — без полосы оценки и графика (только история, варианты и подсказка)
 //   o.canVary()    — необязательно: можно ли сейчас играть варианты (например, только после конца партии)
 var Review = function (o) {
+  if (typeof window !== 'undefined') (window.ReviewOpts = window.ReviewOpts || []).push(o);
   var css = '.rv{width:100%;display:flex;flex-direction:column;gap:6px;font-family:inherit}' +
     '.rv-bar{position:relative;height:20px;border-radius:7px;overflow:hidden;background:var(--rv-them,#3b3b46);box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}' +
     '.rv-fill{position:absolute;left:0;top:0;bottom:0;width:50%;background:var(--rv-me,#e8e2d0);transition:width .35s}' +
@@ -2043,6 +2072,10 @@ var Review = function (o) {
   if (hash) join(hash[1]);
 
  var MA = MatchActions.attach({id:'lava',
+  // боты согласны на ничью, если у них не больше безопасных прыжков и слоёв под ногами, чем у лучшего соперника
+  botDraw:function(ids,cb){if(!state||state.over){cb(true);return;}
+    var safety=function(i){var p=state.players[i];if(!p.alive)return -99;return L.moves(state,i).filter(function(m){return !m.fatal;}).length+2*state.tiles[p.pos];};
+    cb(ids.every(function(b){var best=-99;state.players.forEach(function(p,i){if(i!==b&&p.alive)best=Math.max(best,safety(i));});return safety(b)<=best+1;}));},
   events:{eliminated:function(){return state?state.players.map(function(p,i){return p.alive?-1:i;}).filter(function(i){return i>=0;}):[];},fullPlayers:function(){return state?state.players.map(function(p,i){return {id:i,label:C[p.corner].name,kind:roles[i]==='bot'?'bot':net()&&net().role==='guest'?i===net().seat?'human':'remote':roles[i]==='net'?'remote':'human'};}):[];},result:function(){return state&&state.over?{draw:state.draw||state.winner===null,winners:state.winner===null?[]:[state.winner],reason:state.settlement?state.settlement.type:'normal'}:null;},evaluation:function(){return !!S.evalOn;},continued:function(){return !!state&&state.ply>0;},clockSeats:function(){return [];},botLevel:function(){return null;}},
   state:function(){return state?{ref:net()?'net:'+net().code+':'+netRound:gameSetup,version:state.ply,turn:state.turn,over:state.over,analysis:false,players:state.players.map(function(p,i){return{id:i,label:C[p.corner].name,kind:roles[i]==='bot'?'bot':roles[i]==='net'?'remote':'human'};}).filter(function(p){return state.players[p.id].alive;}),mine:state.players.map(function(p,i){return i;}).filter(function(i){return state.players[i].alive&&(net()&&net().role==='guest'?i===net().seat:roles[i]==='human');})}:null;},
   role:function(){return net()&&net().role;},send:function(m){if(net()&&net().role==='host')LavaLink.tellAll(m);else LavaLink.tell(m);},online:function(){return LavaLink.ready();},notify:toast,menu:home,again:restart,

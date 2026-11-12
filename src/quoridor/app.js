@@ -15,7 +15,7 @@
     outside: 'Выбери стык внутри поля.',
     over: 'Партия уже закончена.'
   };
-  const settings = {mode: 'bot', count: 2, side: 0, level: 1};
+  const settings = {mode: 'bot', count: 2, side: 0, level: 2};
   try { Object.assign(settings, JSON.parse(localStorage.getItem(ID + '-settings') || '{}')); } catch (e) {}
   if (!['bot','duo','net'].includes(settings.mode)) settings.mode = 'bot';
   if (settings.count !== 4) settings.count = 2;

@@ -1,12 +1,12 @@
 (function () {
  'use strict';
  var A=FallingFour,$=function(id){return document.getElementById(id);},NAME=['','Красные','Жёлтые'];
- var S={mode:'bot',level:1,side:1,setup:0,evalOn:false};
+ var S={mode:'bot',level:2,side:1,setup:0,evalOn:false};
  try{Object.assign(S,JSON.parse(localStorage.getItem('falling4-set')||'{}'));}catch(e){}
   BoardView.defaults(S,save);
  if(!/^(bot|duo|net)$/.test(S.mode))S.mode='bot';
  if(!Number.isInteger(S.setup)||!A.setups[S.setup])S.setup=0;
- if(!A.levels[S.level])S.level=1;if(S.side!==2)S.side=1;
+ if(!A.levels[S.level])S.level=2;if(S.side!==2)S.side=1;
  function save(){try{localStorage.setItem('falling4-set',JSON.stringify(S));}catch(e){}}
  var G=null,token=0,CONT=null,pendingContinuation=null,lastJoin=null,hostSide=0,toastTimer=null;
  function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(function(){$('toast').hidden=true;},2600);}
@@ -39,7 +39,7 @@
  function makeWorker(){var obj={w:null,id:0,cb:{}};try{obj.w=new Worker(URL.createObjectURL(new Blob([$('core').textContent+'\nonmessage=function(e){var d=e.data;try{postMessage({id:d.id,r:FallingFour.think(FallingFour.clone(d.s),d.level,d.ms)});}catch(err){postMessage({id:d.id,r:null});}}'],{type:'text/javascript'})));obj.w.onmessage=function(e){var cb=obj.cb[e.data.id];delete obj.cb[e.data.id];if(cb)cb(e.data.r);};obj.w.onerror=function(){var callbacks=obj.cb;obj.cb={};obj.w=null;Object.keys(callbacks).forEach(function(id){callbacks[id](null);});};}catch(e){}return obj;}
  var bot=makeWorker(),analyzer=makeWorker();
  function ask(worker,s,level,ms,cb){if(worker.w){var id=++worker.id;worker.cb[id]=cb;try{worker.w.postMessage({id:id,s:s,level:level,ms:ms});return;}catch(e){delete worker.cb[id];worker.w=null;}}setTimeout(function(){cb(A.think(s,level,Math.min(ms||150,180)));},20);}
- function lineFor(setup,list){if(!Number.isInteger(setup)||!A.setups[setup]||!Array.isArray(list)||list.length>2000)throw Error('Некорректная партия Абалона.');var s=A.create(setup),line=[{s:s,mv:null,by:0}];list.forEach(function(m){var n=A.play(s,m);if(!n)throw Error('В записи есть недопустимый ход.');line.push({s:n,mv:n.last,by:s.turn});s=n;});return line;}
+ function lineFor(setup,list){if(!Number.isInteger(setup)||!A.setups[setup]||!Array.isArray(list)||list.length>2000)throw Error('Некорректная партия «Четырёх в ряд».');var s=A.create(setup),line=[{s:s,mv:null,by:0}];list.forEach(function(m){var n=A.play(s,m);if(!n)throw Error('В записи есть недопустимый ход.');line.push({s:n,mv:n.last,by:s.turn});s=n;});return line;}
  function newGame(kind,opts){
   opts=opts||{};var setup=opts.setup==null?S.setup:opts.setup,line=lineFor(setup,opts.moves||[]);token++;clearVote();
   G={kind:kind,setup:setup,level:S.level,evalOn:!!S.evalOn,analysis:!!opts.analysis,line:line,s:line[line.length-1].s,moves:line.slice(1).map(function(e){return e.mv;}),sel:[],over:!!line[line.length-1].s.winner,busy:false,netPending:false};

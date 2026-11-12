@@ -78,7 +78,35 @@ var MatchActions = (function () {
       if (type === 'resign') { commit(type, seat); return; }
       if (type !== 'draw' || offer) return;
       if (role() && a.online && !a.online()) { note('Дождитесь подключения всех игроков.'); return; }
-      offer = MatchVote.create(s.players, seat, s.version, uid()); publishOffer();
+      offer = MatchVote.create(s.players, seat, s.version, uid());
+      // Боты соглашаются на ничью, только если сами не стоят лучше (оценка своим движком).
+      var bots = s.players.filter(function (p) { return p.kind === 'bot' && p.id !== seat; });
+      if (bots.length) {
+        var mine = offer, decide = a.botDraw || defaultBotDraw;
+        refresh();
+        decide(bots.map(function (p) { return p.id; }), function (ok) {
+          if (offer !== mine) return;
+          if (!ok) { offer = null; closeQuestion(); note(bots.length > 1 ? 'Боты отказались от ничьей. Игра продолжается.' : 'Бот отказался от ничьей: у него позиция лучше.'); refresh(); return; }
+          publishOffer();
+        }, s);
+        return;
+      }
+      publishOffer();
+    }
+    // общий случай: спросить оценку у движка разбора игры (Review.analyze), шанс бота ≤ 60 % — согласен
+    function defaultBotDraw(bots, cb, s) {
+      var R = window.ReviewOpts && window.ReviewOpts[0], done = false;
+      if (!R || !R.analyze || bots.length !== 1 || s.players.length !== 2) { cb(true); return; }
+      var finish = function (ok) { if (!done) { done = true; clearTimeout(timer); cb(ok); } };
+      var timer = setTimeout(function () { finish(true); }, 5000);
+      try {
+        var L = R.line(), pos = L[L.length - 1].s;
+        R.analyze(pos, function (r) {
+          if (!r || typeof r.p !== 'number') { finish(true); return; }
+          var p = R.toMove(pos) === bots[0] ? r.p : 1 - r.p;
+          finish(p <= 0.6);
+        });
+      } catch (e) { finish(true); }
     }
     el('surrenderBtn').onclick = function () {
       refresh(); var s = state(), p = s && actor(s); if (!p || !active(s)) return;

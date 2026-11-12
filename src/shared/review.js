@@ -16,6 +16,7 @@
 //   o.noBar        — без полосы оценки и графика (только история, варианты и подсказка)
 //   o.canVary()    — необязательно: можно ли сейчас играть варианты (например, только после конца партии)
 var Review = function (o) {
+  if (typeof window !== 'undefined') (window.ReviewOpts = window.ReviewOpts || []).push(o);
   var css = '.rv{width:100%;display:flex;flex-direction:column;gap:6px;font-family:inherit}' +
     '.rv-bar{position:relative;height:20px;border-radius:7px;overflow:hidden;background:var(--rv-them,#3b3b46);box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}' +
     '.rv-fill{position:absolute;left:0;top:0;bottom:0;width:50%;background:var(--rv-me,#e8e2d0);transition:width .35s}' +

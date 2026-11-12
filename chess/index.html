@@ -349,7 +349,35 @@ var MatchActions = (function () {
       if (type === 'resign') { commit(type, seat); return; }
       if (type !== 'draw' || offer) return;
       if (role() && a.online && !a.online()) { note('Дождитесь подключения всех игроков.'); return; }
-      offer = MatchVote.create(s.players, seat, s.version, uid()); publishOffer();
+      offer = MatchVote.create(s.players, seat, s.version, uid());
+      // Боты соглашаются на ничью, только если сами не стоят лучше (оценка своим движком).
+      var bots = s.players.filter(function (p) { return p.kind === 'bot' && p.id !== seat; });
+      if (bots.length) {
+        var mine = offer, decide = a.botDraw || defaultBotDraw;
+        refresh();
+        decide(bots.map(function (p) { return p.id; }), function (ok) {
+          if (offer !== mine) return;
+          if (!ok) { offer = null; closeQuestion(); note(bots.length > 1 ? 'Боты отказались от ничьей. Игра продолжается.' : 'Бот отказался от ничьей: у него позиция лучше.'); refresh(); return; }
+          publishOffer();
+        }, s);
+        return;
+      }
+      publishOffer();
+    }
+    // общий случай: спросить оценку у движка разбора игры (Review.analyze), шанс бота ≤ 60 % — согласен
+    function defaultBotDraw(bots, cb, s) {
+      var R = window.ReviewOpts && window.ReviewOpts[0], done = false;
+      if (!R || !R.analyze || bots.length !== 1 || s.players.length !== 2) { cb(true); return; }
+      var finish = function (ok) { if (!done) { done = true; clearTimeout(timer); cb(ok); } };
+      var timer = setTimeout(function () { finish(true); }, 5000);
+      try {
+        var L = R.line(), pos = L[L.length - 1].s;
+        R.analyze(pos, function (r) {
+          if (!r || typeof r.p !== 'number') { finish(true); return; }
+          var p = R.toMove(pos) === bots[0] ? r.p : 1 - r.p;
+          finish(p <= 0.6);
+        });
+      } catch (e) { finish(true); }
     }
     el('surrenderBtn').onclick = function () {
       refresh(); var s = state(), p = s && actor(s); if (!p || !active(s)) return;
@@ -658,7 +686,7 @@ body.blind.peek .sq .pc { visibility: visible; }
         <li>Можно сдаться. На время — проигрывает тот, у кого кончились часы.</li>
       </ol>
     </div>
-    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 11.11.2026 20:29</span></p>
+    <p class="hint"><a href="../">← все игры</a> · <span style="opacity:.7">версия от 12.11.2026 12:30</span></p>
   </div>
 </section>
 
@@ -5567,6 +5595,14 @@ function chessBot(chess) {
 
   $('playEval').appendChild($('flipBtn'));
   var MA = MatchActions.attach({id:'chess',
+  botDraw:function(ids,cb){
+    if(!G||G.busy||G.over){cb(false);return;}
+    var bot=ids[0],turn=G.c.turn(),done=false;
+    BOT.evalCb=true;BOT.evalTurn=turn;BOT.last=null;setStrength(null);
+    botEng.send('position fen '+G.c.fen());botEng.send('go depth 14');
+    BOT.cb=function(){if(done)return;done=true;BOT.evalCb=false;var r=BOT.last;if(!r){cb(true);return;}
+      var sg=bot==='w'?1:-1;if(r.mate!=null){cb(sg*r.mate<0);return;}cb(sg*r.cp<=30);};
+  },
   events:{result:function(){if(!G||!G.result)return null;return {draw:G.result.w==='d',winners:G.result.w==='d'?[]:[G.result.w],reason:G.adjudication?G.adjudication.type:'normal'};},evaluation:function(){return !!(G&&G.evalOn);},continued:function(){return !!G&&(G.c.history().length>0||G.root.fen!==START);},clockSeats:function(){return ['w','b'];},botLevel:function(){return G&&G.level;}},
   state:function(){return G?{ref:G,version:G.c.history().length,turn:G.c.turn(),over:G.over,analysis:G.analysis,players:['w','b'].map(function(i){return{id:i,label:i==='w'?'Белые':'Чёрные',kind:G.kind[i]==='bot'?'bot':G.kind[i]==='net'?'remote':'human'};}),mine:['w','b'].filter(function(i){return G.kind[i]==='me';})}:null;},
   role:function(){return Net2P.role();},send:function(m){Net2P.send(m);},online:function(){return Net2P.online();},notify:toast,menu:toMenu,again:again,analyze:analyzeFinished,

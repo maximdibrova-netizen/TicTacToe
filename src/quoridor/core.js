@@ -237,8 +237,130 @@ var Quoridor = (function () {
     return candidates.sort((a, b) => b.value - a.value);
   }
 
+  // Бот для двоих: перебор с отсечениями на 3–8 полуходов. Кандидаты — все ходы пешкой и стены, режущие
+  // кратчайший путь соперника (и стены рядом с пешками), оценка — разница путей с учётом очереди и запаса стен.
+  const engine = (function (Q) {
+const SIZE = 9, WIN = 10000, WALLW = 130, ZEROPEN = 0, W4 = 12;
+  function dist(s, seat) { const r = Q.route(s, seat); return r.length ? r.length - 1 : 99; }
+  function slotsBlocking(a, b) {
+    const r = Math.floor(a / SIZE), c = a % SIZE, out = [];
+    if (b === a + SIZE || b === a - SIZE) {           // vertical step → horizontal walls
+      const top = Math.min(a, b), tr = Math.floor(top / SIZE), tc = top % SIZE;
+      if (tr <= 7) { if (tc <= 7) out.push('h:' + (tr * 8 + tc)); if (tc >= 1) out.push('h:' + (tr * 8 + tc - 1)); }
+    } else {                                           // horizontal step → vertical walls
+      const left = Math.min(a, b), lr = Math.floor(left / SIZE), lc = left % SIZE;
+      if (lc <= 7) { if (lr <= 7) out.push('v:' + (lr * 8 + lc)); if (lr >= 1) out.push('v:' + ((lr - 1) * 8 + lc)); }
+    }
+    return out;
+  }
+  function rivals(s, me) { const out = []; s.pawns.forEach((p, i) => { if (i !== me && p >= 0) out.push(i); }); return out; }
+  // evaluation from `me`'s point of view
+  function evaluate(s, me) {
+    if (s.winner !== null) return s.winner === me ? WIN : -WIN;
+    if (s.draw) return 0;
+    if (s.pawns[me] < 0) return -WIN;
+    const dm = dist(s, me), rs = rivals(s, me);
+    let worst = Infinity, wallsOpp = 0;
+    for (const o of rs) { const d = dist(s, o) - (s.turn === o ? 1 : 0); if (d < worst) worst = d; wallsOpp += s.remaining[o]; }
+    const myD = dm - (s.turn === me ? 1 : 0);
+    let v = (worst - myD) * 100;
+    const oppW = wallsOpp / Math.max(1, rs.length), myW = s.remaining[me];
+    v += (myW - oppW) * (s.count === 2 ? WALLW : W4);
+    if (s.count === 2) { if (!myW && oppW) v -= ZEROPEN; if (myW && !oppW) v += ZEROPEN; }
+    // a pure race: nobody has walls left — the shorter path simply wins (tempo already counted)
+    if (s.count === 2 && !myW && !oppW) v += myD < worst ? 3000 : myD > worst ? -3000 : (s.turn === me ? -3000 : 3000);
+    return v;
+  }
+  // candidate moves for the side to move, best guesses first
+  function candidates(s, wide) {
+    const seat = s.turn, out = [];
+    Q.pawnMoves(s).forEach(cell => {
+      const n = Q.play(s, 'p:' + cell); if (!n) return;
+      out.push({key: 'p:' + cell, n, g: n.winner === seat ? 1e6 : (dist(s, seat) - dist(n, seat)) * 100 + 50});
+    });
+    if (s.remaining[seat]) {
+      const seen = new Set(), myBefore = dist(s, seat), rs = rivals(s, seat);
+      const before = rs.map(o => dist(s, o));
+      const consider = key => {
+        if (seen.has(key)) return; seen.add(key);
+        const n = Q.play(s, key); if (!n) return;
+        let gain = 0;
+        rs.forEach((o, k) => { gain += (dist(n, o) - before[k]) * (s.count === 2 ? 1 : 1 / rs.length); });
+        const cost = dist(n, seat) - myBefore;
+        if (gain <= 0 && cost >= 0 && !wide) return;
+        out.push({key, n, g: (gain - cost) * 100 - 30});
+      };
+      for (const o of rs) {
+        const path = Q.route(s, o);
+        for (let i = 0; i + 1 < path.length && i < 9; i++) slotsBlocking(path[i], path[i + 1]).forEach(consider);
+      }
+      if (wide) {   // also walls around the pawns (defensive / shaping)
+        for (const p of s.pawns) if (p >= 0) {
+          const r = Math.floor(p / SIZE), c = p % SIZE;
+          for (let dr = -2; dr <= 1; dr++) for (let dc = -2; dc <= 1; dc++) {
+            const rr = r + dr, cc = c + dc; if (rr < 0 || cc < 0 || rr > 7 || cc > 7) continue;
+            consider('h:' + (rr * 8 + cc)); consider('v:' + (rr * 8 + cc));
+          }
+        }
+      }
+    }
+    return out.sort((a, b) => b.g - a.g);
+  }
+  function think(state, maxDepth, ms, opts = {}) {
+    if (Q.over(state)) return {best: null};
+    const me = state.turn, deadline = Date.now() + ms, ABORT = {};
+    let nodes = 0;
+    const root = candidates(state, true);
+    if (!root.length) return {best: null};
+    const win = root.find(m => m.n.winner === me);
+    if (win) return {best: win.key, v: WIN, depth: 1};
+    function search(s, depth, alpha, beta, ply) {
+      if ((++nodes & 127) === 0 && Date.now() > deadline) throw ABORT;
+      if (Q.over(s) || depth === 0) { const e = evaluate(s, me); return e >= WIN ? e - ply : e <= -WIN ? e + ply : e; }
+      const list = candidates(s, false), cap = depth >= 2 ? 10 : 14;
+      if (!list.length) return evaluate(s, me);
+      const maximize = s.turn === me;
+      let best = maximize ? -Infinity : Infinity;
+      for (let i = 0; i < list.length && i < cap; i++) {
+        const v = search(list[i].n, depth - 1, alpha, beta, ply + 1);
+        if (maximize) { if (v > best) best = v; if (v > alpha) alpha = v; }
+        else { if (v < best) best = v; if (v < beta) beta = v; }
+        if (alpha >= beta) break;
+      }
+      return best;
+    }
+    let order = root.slice(0, 24), best = order[0].key, bestV = -Infinity, depthDone = 0, scores = [];
+    for (let depth = 1; depth <= maxDepth; depth++) {
+      try {
+        let alpha = -Infinity, curBest = best, curV = -Infinity;
+        const rows = [];
+        for (const m of order) {
+          const v = search(m.n, depth - 1, opts.noise ? -Infinity : alpha, Infinity, 1);
+          rows.push({m, v});
+          if (v > curV) { curV = v; curBest = m.key; }
+          if (v > alpha) alpha = v;
+        }
+        best = curBest; bestV = curV; depthDone = depth; scores = rows;
+        order = rows.sort((a, b) => b.v - a.v).map(r => r.m);
+        if (Math.abs(bestV) >= WIN - 100) break;
+      } catch (e) { if (e !== ABORT) throw e; break; }
+    }
+    if (opts.noise && scores.length && Math.abs(bestV) < WIN - 100) {
+      const pool = scores.filter(r => r.v >= bestV - opts.noise);
+      best = pool[Math.floor(Math.random() * pool.length)].m.key;
+    }
+    return {best, v: bestV, depth: depthDone, nodes};
+  }
+  return {think, evaluate, candidates};
+  })({route, pawnMoves, play, over});
+  const LEVELS2 = [{depth: 1, ms: 150, noise: 150}, {depth: 3, ms: 500, noise: 25}, {depth: 8, ms: 1500, noise: 0}];
+
   function think(state, level = 1) {
     if (over(state)) return {best: null};
+    if (state.count === 2) {
+      const L = LEVELS2[level] || LEVELS2[1], r = engine.think(state, L.depth, L.ms, {noise: L.noise});
+      if (r.best) return {best: r.best, v: r.v, depth: r.depth, p: r.v >= 9000 ? 1 : r.v <= -9000 ? 0 : 1 / (1 + Math.exp(-r.v / 300))};
+    }
     const deadline = Date.now() + [80, 240, 520][level];
     const choices = rank(state, deadline);
     if (!choices.length) return {best: null};

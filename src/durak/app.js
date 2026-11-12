@@ -395,7 +395,7 @@
     botTimer = setTimeout(() => {
       if (game !== current || game.state !== state || game.moving) return;
       const seat = state.actor;
-      update(D.play(state,seat,D.bot(D.view(state,seat))));
+      update(D.play(state,seat,D.bot(D.view(state,seat),{unseen:D.unseen(state,seat)})));
     },isOut(game.view,game.seat)?180:300);
   }
   function act(action) {
@@ -537,6 +537,13 @@
   };
   hand.onpointerup = e => {
     if (!drag || drag.id !== e.pointerId) return;
+    // a tap (no drag) on a card plays it, like a drop on the table
+    if (!drag.mode && canPlayCard()) {
+      const button = drag.button;
+      releaseDrag(false);
+      playCard(Number(button.dataset.card),button.getBoundingClientRect());
+      return;
+    }
     if (drag.mode === 'card') {
       const card = Number(drag.button.dataset.card);
       if (overArea(dropZone,e) && playCard(card,drag.ghost.getBoundingClientRect())) {

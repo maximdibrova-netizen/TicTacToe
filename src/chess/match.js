@@ -1,4 +1,12 @@
 var MA = MatchActions.attach({id:'chess',
+  botDraw:function(ids,cb){
+    if(!G||G.busy||G.over){cb(false);return;}
+    var bot=ids[0],turn=G.c.turn(),done=false;
+    BOT.evalCb=true;BOT.evalTurn=turn;BOT.last=null;setStrength(null);
+    botEng.send('position fen '+G.c.fen());botEng.send('go depth 14');
+    BOT.cb=function(){if(done)return;done=true;BOT.evalCb=false;var r=BOT.last;if(!r){cb(true);return;}
+      var sg=bot==='w'?1:-1;if(r.mate!=null){cb(sg*r.mate<0);return;}cb(sg*r.cp<=30);};
+  },
   events:{result:function(){if(!G||!G.result)return null;return {draw:G.result.w==='d',winners:G.result.w==='d'?[]:[G.result.w],reason:G.adjudication?G.adjudication.type:'normal'};},evaluation:function(){return !!(G&&G.evalOn);},continued:function(){return !!G&&(G.c.history().length>0||G.root.fen!==START);},clockSeats:function(){return ['w','b'];},botLevel:function(){return G&&G.level;}},
   state:function(){return G?{ref:G,version:G.c.history().length,turn:G.c.turn(),over:G.over,analysis:G.analysis,players:['w','b'].map(function(i){return{id:i,label:i==='w'?'Белые':'Чёрные',kind:G.kind[i]==='bot'?'bot':G.kind[i]==='net'?'remote':'human'};}),mine:['w','b'].filter(function(i){return G.kind[i]==='me';})}:null;},
   role:function(){return Net2P.role();},send:function(m){Net2P.send(m);},online:function(){return Net2P.online();},notify:toast,menu:toMenu,again:again,analyze:analyzeFinished,

@@ -13,6 +13,6 @@ function eligibility(e){
  if(!e.mine||e.mine.length!==1)return{ok:false,reason:'Каждому участнику рейтинговой партии нужен отдельный аккаунт.'};
  return{ok:true};
 }
-function botEstimate(game,level=0,count=6){const ranges={chess:[400,2800],checkers:[500,2100],go:[300,1900],ttt:[500,1800],tochki:[400,1700],battleship:[400,1700],lava:[500,1300],abalone:[400,2200],falling4:[500,1900],quoridor:[400,1800],durak:[400,1500]},r=ranges[game]||[400,1600],i=Math.max(0,Math.min(count-1,Number(level)||0)),rating=Math.round((r[0]+(r[1]-r[0])*i/Math.max(1,count-1))/50)*50;return{rating,label:'≈'+rating,note:'Ориентировочная сила бота; не калибрована по рейтингу людей.'};}
+function botEstimate(game,level=0,count=6){const ranges={chess:[400,2800],checkers:[500,2100],go:[300,1900],ttt:[500,1800],tochki:[400,1700],battleship:[400,1700],lava:[500,1300],abalone:[400,2200],falling4:[500,1900],quoridor:[400,1800],durak:[1500,1500]},r=ranges[game]||[400,1600],i=Math.max(0,Math.min(count-1,Number(level)||0)),rating=Math.round((r[0]+(r[1]-r[0])*i/Math.max(1,count-1))/50)*50;return{rating,label:'≈'+rating,note:'Ориентировочная сила бота; не калибрована по рейтингу людей.'};}
 function nickname(user){return String(user?.displayName||('Игрок '+(user?.uid||'').slice(0,5))).trim().slice(0,32)||'Игрок';}
 module.exports={GAMES,MULTI,validBundle,bundleScore,ranksFromResult,eligibility,botEstimate,nickname};

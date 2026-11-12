@@ -1,7 +1,7 @@
 (function () {
  'use strict';
  var A=Abalone,$=function(id){return document.getElementById(id);},NAME=['','Чёрные','Белые'];
- var S={mode:'bot',level:1,side:1,setup:0,evalOn:false};
+ var S={mode:'bot',level:2,side:1,setup:0,evalOn:false};
  try{Object.assign(S,JSON.parse(localStorage.getItem('abalone-set')||'{}'));}catch(e){}
   BoardView.defaults(S,save);
  if(!/^(bot|duo|net)$/.test(S.mode))S.mode='bot';
